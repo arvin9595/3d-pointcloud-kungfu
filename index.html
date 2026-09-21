@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>3D 灰階點雲武術模擬 - Monochrome Point Cloud Martial Arts</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #030305;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+            color: #d1d5db;
+        }
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            cursor: grab;
+        }
+        canvas:active {
+            cursor: grabbing;
+        }
+        .ui-panel {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            background: rgba(15, 15, 20, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 16px;
+            width: 280px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+            z-index: 10;
+        }
+        .ui-header {
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #ffffff;
+            margin-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .ui-group {
+            margin-bottom: 10px;
+        }
+        .ui-group label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #9ca3af;
+            margin-bottom: 4px;
+        }
+        .ui-group input[type=range] {
+            width: 100%;
+            accent-color: #ffffff;
+            background: #262626;
+            height: 4px;
+            border-radius: 2px;
+        }
+        .btn-group {
+            display: flex;
+            gap: 6px;
+            margin-top: 12px;
+        }
+        .btn {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #e5e7eb;
+            padding: 6px;
+            font-size: 11px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn:hover, .btn.active {
+            background: #ffffff;
+            color: #000000;
+            font-weight: bold;
+        }
+        .hint {
+            position: absolute;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            letter-spacing: 1px;
+            color: rgba(255,255,255,0.4);
+            pointer-events: none;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ui-panel">
+        <div class="ui-header">
+            <span>POINT CLOUD // 點雲體</span>
+            <span id="fps">60 FPS</span>
+        </div>
+
+        <div class="ui-group">
+            <label>點雲密度 (Density) <span id="val-density">1800</span></label>
+            <input type="range" id="input-density" min="600" max="3500" step="100" value="1800">
+        </div>
+
+        <div class="ui-group">
+            <label>微粒大小 (Point Size) <span id="val-size">1.5</span></label>
+            <input type="range" id="input-size" min="0.8" max="3.5" step="0.1" value="1.5">
+        </div>
+
+        <div class="ui-group">
+            <label>演武速度 (Speed) <span id="val-speed">1.0</span></label>
+            <input type="range" id="input-speed" min="0.2" max="2.5" step="0.1" value="1.0">
+        </div>
+
+        <div class="ui-group">
+            <label>體積噪波 (Jitter) <span id="val-jitter">1.0</span></label>
+            <input type="range" id="input-jitter" min="0" max="3" step="0.1" value="1.0">
+        </div>
+
+        <div class="btn-group">
+            <button class="btn active" id="btn-taichi">太極圓融</button>
+            <button class="btn" id="btn-kick">飛踢連擊</button>
+            <button class="btn" id="btn-chun">詠春中線</button>
+        </div>
+    </div>
+
+    <div class="hint">拖曳畫面旋轉 3D 視角 // 點擊畫面釋放灰階衝擊波</div>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        const params = {
+            density: 1800,
+            pointSize: 1.5,
+            speed: 1.0,
+            jitter: 1.0,
+            motion: 'taichi'
+        };
+
+        let rotX = 0.1;
+        let rotY = 0;
+        let isDragging = false;
+        let lastMouseX = 0, lastMouseY = 0;
+
+        let shockwave = { x: 0, y: 0, z: 0, radius: 0, active: false };
+
+        const JOINTS_COUNT = 16;
+        const joints = Array.from({ length: JOINTS_COUNT }, () => ({ x: 0, y: 0, z: 0 }));
+        
+        const BONES = [
+            { from: 0, to: 1, radius: 14, density: 0.10 },
+            { from: 1, to: 2, radius: 22, density: 0.20 },
+            { from: 2, to: 3, radius: 20, density: 0.18 },
+            { from: 2, to: 4, radius: 12, density: 0.08 },
+            { from: 4, to: 5, radius: 9,  density: 0.07 },
+            { from: 5, to: 6, radius: 7,  density: 0.05 },
+            { from: 2, to: 7, radius: 12, density: 0.08 },
+            { from: 7, to: 8, radius: 9,  density: 0.07 },
+            { from: 8, to: 9, radius: 7,  density: 0.05 },
+            { from: 3, to: 10, radius: 14, density: 0.08 },
+            { from: 10, to: 11, radius: 11, density: 0.08 },
+            { from: 11, to: 12, radius: 8,  density: 0.06 },
+            { from: 3, to: 13, radius: 14, density: 0.08 },
+            { from: 13, to: 14, radius: 11, density: 0.08 },
+            { from: 14, to: 15, radius: 8,  density: 0.06 }
+        ];
+
+        class CloudPoint {
+            constructor() {
+                this.boneIndex = 0;
+                this.u = 0;
+                this.theta = 0;
+                this.rRatio = 0;
+                this.x = 0; this.y = 0; this.z = 0;
+                this.vx = 0; this.vy = 0; this.vz = 0;
+                this.baseBrightness = 0.3 + Math.random() * 0.7;
+                this.reset();
+            }
+
+            reset() {
+                this.boneIndex = Math.floor(Math.random() * BONES.length);
+                this.u = Math.random();
+                this.theta = Math.random() * Math.PI * 2;
+                this.rRatio = Math.sqrt(Math.random()); 
+                this.vx = 0; this.vy = 0; this.vz = 0;
+            }
+
+            update(bonesJoints) {
+                const bone = BONES[this.boneIndex];
+                const jA = bonesJoints[bone.from];
+                const jB = bonesJoints[bone.to];
+
+                const cx = jA.x + (jB.x - jA.x) * this.u;
+                const cy = jA.y + (jB.y - jA.y) * this.u;
+                const cz = jA.z + (jB.z - jA.z) * this.u;
+
+                const r = bone.radius * this.rRatio;
+                const jitter = (Math.random() - 0.5) * params.jitter * 3;
+
+                const px = cx + Math.cos(this.theta) * r + jitter;
+                const py = cy + Math.sin(this.theta) * r + jitter;
+                const pz = cz + Math.sin(this.theta * 2) * (r * 0.5) + jitter;
+
+                if (shockwave.active) {
+                    const dX = px - shockwave.x;
+                    const dY = py - shockwave.y;
+                    const dZ = pz - shockwave.z;
+                    const dist = Math.sqrt(dX*dX + dY*dY + dZ*dZ);
+
+                    if (dist < shockwave.radius + 40 && dist > shockwave.radius - 40) {
+                        const force = (1 - dist / 600) * 15;
+                        this.vx += (dX / dist) * force;
+                        this.vy += (dY / dist) * force;
+                        this.vz += (dZ / dist) * force;
+                    }
+                }
+
+                this.vx *= 0.88;
+                this.vy *= 0.88;
+                this.vz *= 0.88;
+
+                this.x = px + this.vx;
+                this.y = py + this.vy;
+                this.z = pz + this.vz;
+            }
+        }
+
+        let particles = [];
+        function rebuildParticles() {
+            particles = [];
+            for (let i = 0; i < params.density; i++) {
+                particles.push(new CloudPoint());
+            }
+        }
+        rebuildParticles();
+
+        function updateSkeleton(t) {
+            const time = t * params.speed;
+            
+            if (params.motion === 'taichi') {
+                const baseY = Math.sin(time * 1.5) * 12;
+                joints[3] = { x: 0, y: 40 + baseY, z: 0 };
+                joints[2] = { x: Math.sin(time) * 10, y: -40 + baseY, z: Math.cos(time * 0.8) * 15 };
+                joints[1] = { x: joints[2].x * 0.8, y: joints[2].y - 25, z: joints[2].z * 0.8 };
+                joints[0] = { x: joints[1].x, y: joints[1].y - 22, z: joints[1].z };
+
+                joints[4] = { x: joints[2].x - 30, y: joints[2].y + 5, z: joints[2].z };
+                joints[5] = { x: joints[4].x - 25 + Math.sin(time * 1.2) * 20, y: joints[4].y + 20, z: joints[4].z + Math.cos(time * 1.2) * 30 };
+                joints[6] = { x: joints[5].x - 15 + Math.cos(time * 1.5) * 25, y: joints[5].y - 10, z: joints[5].z + Math.sin(time * 1.5) * 20 };
+
+                joints[7] = { x: joints[2].x + 30, y: joints[2].y + 5, z: joints[2].z };
+                joints[8] = { x: joints[7].x + 25 + Math.cos(time * 1.2) * 20, y: joints[7].y + 25, z: joints[7].z - Math.sin(time * 1.2) * 30 };
+                joints[9] = { x: joints[8].x + 15 - Math.sin(time * 1.5) * 25, y: joints[8].y - 15, z: joints[8].z - Math.cos(time * 1.5) * 20 };
+
+                joints[10] = { x: -22, y: joints[3].y + 15, z: 0 };
+                joints[11] = { x: -45, y: joints[10].y + 50, z: 20 };
+                joints[12] = { x: -50, y: joints[11].y + 55, z: 0 };
+
+                joints[13] = { x: 22, y: joints[3].y + 15, z: 0 };
+                joints[14] = { x: 45, y: joints[13].y + 50, z: -10 };
+                joints[15] = { x: 50, y: joints[14].y + 55, z: -20 };
+            } 
+            else if (params.motion === 'kick') {
+                const cycle = (time * 2) % (Math.PI * 2);
+                const kickExt = Math.max(0, Math.sin(cycle));
+
+                joints[3] = { x: -10, y: 20 - kickExt * 20, z: 0 };
+                joints[2] = { x: -20, y: -50, z: -10 };
+                joints[1] = { x: -22, y: -75, z: -10 };
+                joints[0] = { x: -25, y: -98, z: -10 };
+
+                joints[10] = { x: -15, y: joints[3].y + 15, z: 10 };
+                joints[11] = { x: 10 + kickExt * 40, y: joints[10].y - kickExt * 30, z: 20 };
+                joints[12] = { x: 30 + kickExt * 90, y: joints[11].y - kickExt * 50, z: 30 };
+
+                joints[13] = { x: 15, y: joints[3].y + 15, z: -10 };
+                joints[14] = { x: 20, y: joints[13].y + 55, z: -10 };
+                joints[15] = { x: 20, y: joints[14].y + 55, z: -10 };
+
+                joints[4] = { x: -35, y: -45, z: 15 };
+                joints[5] = { x: -20, y: -25, z: 35 };
+                joints[6] = { x: 0, y: -40, z: 40 };
+
+                joints[7] = { x: 0, y: -45, z: -15 };
+                joints[8] = { x: 15, y: -30, z: -10 };
+                joints[9] = { x: 20, y: -50, z: 0 };
+            }
+            else if (params.motion === 'chun') {
+                const punchR = Math.sin(time * 8);
+                const punchL = Math.cos(time * 8);
+
+                joints[3] = { x: 0, y: 30, z: 0 };
+                joints[2] = { x: 0, y: -45, z: 0 };
+                joints[1] = { x: 0, y: -70, z: 0 };
+                joints[0] = { x: 0, y: -92, z: 0 };
+
+                joints[10] = { x: -25, y: 45, z: 0 };
+                joints[11] = { x: -18, y: 90, z: 15 };
+                joints[12] = { x: -28, y: 135, z: 0 };
+
+                joints[13] = { x: 25, y: 45, z: 0 };
+                joints[14] = { x: 18, y: 90, z: 15 };
+                joints[15] = { x: 28, y: 135, z: 0 };
+
+                joints[4] = { x: -25, y: -40, z: 0 };
+                joints[5] = { x: -15, y: -25, z: 20 + punchL * 20 };
+                joints[6] = { x: 0, y: -30, z: 40 + punchL * 60 };
+
+                joints[7] = { x: 25, y: -40, z: 0 };
+                joints[8] = { x: 15, y: -25, z: 20 + punchR * 20 };
+                joints[9] = { x: 0, y: -30, z: 40 + punchR * 60 };
+            }
+        }
+
+        function project3D(x, y, z) {
+            let cosY = Math.cos(rotY), sinY = Math.sin(rotY);
+            let x1 = x * cosY - z * sinY;
+            let z1 = z * cosY + x * sinY;
+
+            let cosX = Math.cos(rotX), sinX = Math.sin(rotX);
+            let y2 = y * cosX - z1 * sinX;
+            let z2 = z1 * cosX + y * sinX;
+
+            const fov = 450;
+            const distance = 500;
+            const scale = fov / (fov + z2 + distance);
+
+            return {
+                x: width / 2 + x1 * scale,
+                y: height / 2 + 30 + y2 * scale,
+                scale: scale,
+                z: z2
+            };
+        }
+
+        let lastTime = performance.now();
+        let frameCount = 0;
+
+        function animate(now) {
+            frameCount++;
+            if (now - lastTime >= 1000) {
+                document.getElementById('fps').innerText = `${frameCount} FPS`;
+                frameCount = 0;
+                lastTime = now;
+            }
+
+            ctx.fillStyle = '#030305';
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
+            for (let gx = -600; gx <= 600; gx += 120) {
+                for (let gz = -600; gz <= 600; gz += 120) {
+                    let p = project3D(gx, 180, gz);
+                    ctx.fillRect(p.x, p.y, 1.5 * p.scale, 1.5 * p.scale);
+                }
+            }
+
+            updateSkeleton(now * 0.001);
+
+            if (shockwave.active) {
+                shockwave.radius += 12;
+                if (shockwave.radius > 600) shockwave.active = false;
+            }
+
+            const renderList = [];
+
+            for (let i = 0; i < particles.length; i++) {
+                const p = particles[i];
+                p.update(joints);
+
+                const proj = project3D(p.x, p.y, p.z);
+                renderList.push({
+                    x: proj.x,
+                    y: proj.y,
+                    scale: proj.scale,
+                    z: proj.z,
+                    brightness: p.baseBrightness
+                });
+            }
+
+            renderList.sort((a, b) => b.z - a.z);
+
+            for (let i = 0; i < renderList.length; i++) {
+                const p = renderList[i];
+                const depthAlpha = Math.min(1, Math.max(0.1, (p.z + 300) / 600));
+                const grayValue = Math.floor(p.brightness * depthAlpha * 255);
+                
+                const renderSize = params.pointSize * p.scale;
+
+                ctx.fillStyle = `rgb(${grayValue}, ${grayValue}, ${grayValue})`;
+                ctx.fillRect(p.x - renderSize / 2, p.y - renderSize / 2, renderSize, renderSize);
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const deltaX = e.clientX - lastMouseX;
+                const deltaY = e.clientY - lastMouseY;
+                rotY += deltaX * 0.005;
+                rotX += deltaY * 0.005;
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+            }
+        });
+
+        window.addEventListener('mouseup', () => isDragging = false);
+
+        canvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                isDragging = true;
+                lastMouseX = e.touches[0].clientX;
+                lastMouseY = e.touches[0].clientY;
+            }
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (isDragging && e.touches.length === 1) {
+                const deltaX = e.touches[0].clientX - lastMouseX;
+                const deltaY = e.touches[0].clientY - lastMouseY;
+                rotY += deltaX * 0.005;
+                rotX += deltaY * 0.005;
+                lastMouseX = e.touches[0].clientX;
+                lastMouseY = e.touches[0].clientY;
+            }
+        });
+
+        canvas.addEventListener('touchend', () => isDragging = false);
+
+        canvas.addEventListener('click', () => {
+            shockwave.x = 0;
+            shockwave.y = 0;
+            shockwave.z = 0;
+            shockwave.radius = 0;
+            shockwave.active = true;
+        });
+
+        document.getElementById('input-density').addEventListener('input', (e) => {
+            params.density = parseInt(e.target.value);
+            document.getElementById('val-density').innerText = params.density;
+            rebuildParticles();
+        });
+
+        document.getElementById('input-size').addEventListener('input', (e) => {
+            params.pointSize = parseFloat(e.target.value);
+            document.getElementById('val-size').innerText = params.pointSize.toFixed(1);
+        });
+
+        document.getElementById('input-speed').addEventListener('input', (e) => {
+            params.speed = parseFloat(e.target.value);
+            document.getElementById('val-speed').innerText = params.speed.toFixed(1);
+        });
+
+        document.getElementById('input-jitter').addEventListener('input', (e) => {
+            params.jitter = parseFloat(e.target.value);
+            document.getElementById('val-jitter').innerText = params.jitter.toFixed(1);
+        });
+
+        const buttons = {
+            'btn-taichi': 'taichi',
+            'btn-kick': 'kick',
+            'btn-chun': 'chun'
+        };
+
+        Object.keys(buttons).forEach(id => {
+            document.getElementById(id).addEventListener('click', (e) => {
+                document.querySelectorAll('.btn').forEach(btn => btn.classList.remove('active'));
+                e.target.classList.add('active');
+                params.motion = buttons[id];
+            });
+        });
+
+        requestAnimationFrame(animate);
+    </script>
+</body>
+</html>
