@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D Point Cloud Martial Arts - Ultimate</title>
+    <title>3D Point Cloud Motion Cinema</title>
     <style>
         * {
             box-sizing: border-box;
@@ -26,18 +26,18 @@
             height: 100vh;
             touch-action: none;
         }
-        /* 分頁 UI 面板 */
+        /* UI 面板 */
         .ui-panel {
             position: absolute;
             top: 12px;
             left: 12px;
-            background: rgba(10, 10, 10, 0.85);
+            background: rgba(10, 10, 10, 0.88);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 12px;
             padding: 12px;
-            width: 250px;
+            width: 260px;
             z-index: 10;
             box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
@@ -103,7 +103,7 @@
             border-radius: 2px;
         }
         .ui-group input[type=color] {
-            height: 24px;
+            height: 22px;
             cursor: pointer;
             border-radius: 4px;
         }
@@ -111,12 +111,12 @@
         .palette-grid {
             display: grid;
             grid-template-columns: repeat(6, 1fr);
-            gap: 6px;
+            gap: 5px;
             margin-bottom: 8px;
         }
         .color-dot {
             width: 100%;
-            height: 22px;
+            height: 20px;
             border-radius: 4px;
             border: 1px solid rgba(255, 255, 255, 0.2);
             cursor: pointer;
@@ -149,6 +149,16 @@
             font-weight: bold;
             border-color: #ffffff;
         }
+        .toggle-btn {
+            grid-column: span 2;
+            background: rgba(0, 240, 255, 0.1);
+            border-color: rgba(0, 240, 255, 0.4);
+            color: #00f0ff;
+        }
+        .toggle-btn.active {
+            background: #00f0ff;
+            color: #000;
+        }
         .hint {
             position: absolute;
             bottom: 12px;
@@ -165,29 +175,42 @@
 
     <div class="ui-panel">
         <div class="ui-header">
-            <span>3D POINTCLOUD</span>
+            <span>MOTION CINEMA</span>
             <span id="fps" style="color: #00ffcc;">60 FPS</span>
         </div>
 
         <!-- 分頁按鈕 -->
         <div class="tab-nav">
-            <button class="tab-btn active" onclick="switchTab('style', event)">風格模式</button>
-            <button class="tab-btn" onclick="switchTab('visual', event)">視覺參數</button>
-            <button class="tab-btn" onclick="switchTab('motion', event)">招式選擇</button>
+            <button class="tab-btn active" onclick="switchTab('motion', event)">運動動作</button>
+            <button class="tab-btn" onclick="switchTab('scene', event)">動態場景</button>
+            <button class="tab-btn" onclick="switchTab('style', event)">風格視覺</button>
         </div>
 
-        <!-- 分頁 1: 風格模式 -->
-        <div id="tab-style" class="tab-content active">
+        <!-- 分頁 1: 運動動作 -->
+        <div id="tab-motion" class="tab-content active">
             <div class="btn-grid">
-                <button class="btn active" id="mode-halftone" onclick="setRenderMode('halftone')">網點 Halftone</button>
-                <button class="btn" id="mode-glow" onclick="setRenderMode('glow')">絢麗光暈 Glow</button>
-                <button class="btn" id="mode-wireframe" onclick="setRenderMode('wireframe')">骨架網格 Wire</button>
-                <button class="btn" id="mode-classic" onclick="setRenderMode('classic')">經典點雲 Pure</button>
+                <button class="btn active" id="btn-taichi" onclick="setMotion('taichi')">太極圓融</button>
+                <button class="btn" id="btn-kick" onclick="setMotion('kick')">飛踢連擊</button>
+                <button class="btn" id="btn-boxing" onclick="setMotion('boxing')">拳擊攻防</button>
+                <button class="btn" id="btn-sprint" onclick="setMotion('sprint')">百米衝刺</button>
+                <button class="btn" id="btn-dunk" onclick="setMotion('dunk')">跳躍扣籃</button>
+                <button class="btn" id="btn-chun" onclick="setMotion('chun')">詠春中線</button>
             </div>
         </div>
 
-        <!-- 分頁 2: 視覺參數 -->
-        <div id="tab-visual" class="tab-content">
+        <!-- 分頁 2: 動態場景 (影片感) -->
+        <div id="tab-scene" class="tab-content">
+            <div class="btn-grid">
+                <button class="btn active" id="scene-grid" onclick="setScene('grid')">科幻地平線</button>
+                <button class="btn" id="scene-tunnel" onclick="setScene('tunnel')">時空隧道</button>
+                <button class="btn" id="scene-dust" onclick="setScene('dust')">深空星塵</button>
+                <button class="btn" id="scene-none" onclick="setScene('none')">純黑簡約</button>
+                <button class="btn toggle-btn active" id="btn-camera" onclick="toggleCamera()">🎥 電影運鏡鏡頭：開啟</button>
+            </div>
+        </div>
+
+        <!-- 分頁 3: 風格與調色 -->
+        <div id="tab-style" class="tab-content">
             <div class="ui-group">
                 <label>快捷色卡 (Color Presets)</label>
                 <div class="palette-grid">
@@ -196,33 +219,26 @@
                     <div class="color-dot" style="background: #ff2a5f;" onclick="setColor('#ff2a5f', this)" title="朱砂紅"></div>
                     <div class="color-dot" style="background: #00ff66;" onclick="setColor('#00ff66', this)" title="矩陣綠"></div>
                     <div class="color-dot" style="background: #ffb700;" onclick="setColor('#ffb700', this)" title="鈦金黃"></div>
-                    <div class="color-dot" style="background: #888888;" onclick="setColor('#888888', this)" title="暗黑灰"></div>
+                    <div class="color-dot" style="background: #9d00ff;" onclick="setColor('#9d00ff', this)" title="賽博紫"></div>
                 </div>
             </div>
             <div class="ui-group">
                 <label>自訂調色 (Custom Color)</label>
                 <input type="color" id="input-color" value="#ffffff">
             </div>
+            <div class="btn-grid" style="margin-bottom: 8px;">
+                <button class="btn active" id="mode-halftone" onclick="setRenderMode('halftone')">網點 Halftone</button>
+                <button class="btn" id="mode-glow" onclick="setRenderMode('glow')">絢麗光暈 Glow</button>
+                <button class="btn" id="mode-wireframe" onclick="setRenderMode('wireframe')">骨架 Wire</button>
+                <button class="btn" id="mode-classic" onclick="setRenderMode('classic')">點雲 Pure</button>
+            </div>
             <div class="ui-group">
                 <label>粒子密度 (Density) <span id="val-density">2200</span></label>
                 <input type="range" id="input-density" min="800" max="4000" step="100" value="2200">
             </div>
             <div class="ui-group">
-                <label>粒子/網點尺寸 (Size) <span id="val-size">2.2</span></label>
-                <input type="range" id="input-size" min="0.8" max="5.0" step="0.1" value="2.2">
-            </div>
-            <div class="ui-group">
                 <label>演武速度 (Speed) <span id="val-speed">1.0</span></label>
                 <input type="range" id="input-speed" min="0.2" max="2.5" step="0.1" value="1.0">
-            </div>
-        </div>
-
-        <!-- 分頁 3: 招式選擇 -->
-        <div id="tab-motion" class="tab-content">
-            <div class="btn-grid">
-                <button class="btn active" id="btn-taichi" onclick="setMotion('taichi')">太極圓融</button>
-                <button class="btn" id="btn-kick" onclick="setMotion('kick')">飛踢連擊</button>
-                <button class="btn" id="btn-chun" onclick="setMotion('chun')">詠春中線</button>
             </div>
         </div>
     </div>
@@ -245,18 +261,28 @@
         updateScreenDimensions();
 
         const params = {
-            renderMode: 'halftone', // halftone, glow, wireframe, classic
+            renderMode: 'halftone',
             density: 2200,
             pointSize: 2.2,
             speed: 1.0,
             color: '#ffffff',
-            motion: 'taichi'
+            motion: 'taichi',
+            scene: 'grid',
+            autoCamera: true
         };
 
         let rotX = 0.1, rotY = 0;
         let isDragging = false;
         let lastMouseX = 0, lastMouseY = 0;
         let shockwave = { x: 0, y: 0, z: 0, radius: 0, active: false };
+
+        // 背景粒子系統 (深空星塵 / 隧道)
+        const bgParticles = Array.from({ length: 120 }, () => ({
+            x: (Math.random() - 0.5) * 1200,
+            y: (Math.random() - 0.5) * 1200,
+            z: Math.random() * 1000,
+            speed: Math.random() * 4 + 2
+        }));
 
         const JOINTS_COUNT = 16;
         const joints = Array.from({ length: JOINTS_COUNT }, () => ({ x: 0, y: 0, z: 0 }));
@@ -386,6 +412,85 @@
                 joints[8] = { x: 20, y: -40, z: -15 };
                 joints[9] = { x: 25, y: -70, z: 0 };
             }
+            else if (params.motion === 'boxing') { // 新增：拳擊攻防
+                const bob = Math.sin(time * 5) * 12;
+                const sway = Math.cos(time * 2.5) * 20;
+                const jab = Math.sin(time * 6) > 0.3 ? Math.sin(time * 6) * 60 : 0;
+
+                joints[3] = { x: sway, y: 20 + bob, z: 0 };
+                joints[2] = { x: sway * 1.2, y: -50 + bob, z: 0 };
+                joints[1] = { x: sway * 1.2, y: -80 + bob, z: 0 };
+                joints[0] = { x: sway * 1.2, y: -105 + bob, z: 0 };
+
+                joints[4] = { x: sway - 25, y: -45, z: 15 };
+                joints[5] = { x: sway - 20, y: -25, z: 40 + jab };
+                joints[6] = { x: sway - 15, y: -35, z: 65 + jab * 1.5 };
+
+                joints[7] = { x: sway + 25, y: -45, z: 15 };
+                joints[8] = { x: sway + 18, y: -20, z: 35 };
+                joints[9] = { x: sway + 10, y: -30, z: 50 };
+
+                joints[10] = { x: sway - 25, y: joints[3].y + 15, z: 10 };
+                joints[11] = { x: sway - 30, y: joints[10].y + 50, z: 20 };
+                joints[12] = { x: sway - 35, y: joints[11].y + 55, z: 0 };
+
+                joints[13] = { x: sway + 25, y: joints[3].y + 15, z: -10 };
+                joints[14] = { x: sway + 20, y: joints[13].y + 55, z: -20 };
+                joints[15] = { x: sway + 15, y: joints[14].y + 60, z: -30 };
+            }
+            else if (params.motion === 'sprint') { // 新增：百米衝刺
+                const runCycle = time * 8;
+                const legL = Math.sin(runCycle) * 50;
+                const legR = -legL;
+                const armL = -legL * 0.8;
+                const armR = -armL;
+
+                joints[3] = { x: 0, y: 15 + Math.abs(Math.sin(runCycle)) * 15, z: 0 };
+                joints[2] = { x: 0, y: -50, z: 20 }; // 前傾
+                joints[1] = { x: 0, y: -80, z: 30 };
+                joints[0] = { x: 0, y: -105, z: 40 };
+
+                joints[4] = { x: -28, y: -45, z: 20 };
+                joints[5] = { x: -35, y: -20, z: 20 + armL };
+                joints[6] = { x: -30, y: -35, z: 20 + armL * 1.5 };
+
+                joints[7] = { x: 28, y: -45, z: 20 };
+                joints[8] = { x: 35, y: -20, z: 20 + armR };
+                joints[9] = { x: 30, y: -35, z: 20 + armR * 1.5 };
+
+                joints[10] = { x: -20, y: joints[3].y + 15, z: 0 };
+                joints[11] = { x: -22, y: joints[10].y + 40, z: legL };
+                joints[12] = { x: -25, y: joints[11].y + 50, z: legL - 20 };
+
+                joints[13] = { x: 20, y: joints[3].y + 15, z: 0 };
+                joints[14] = { x: 22, y: joints[13].y + 40, z: legR };
+                joints[15] = { x: 25, y: joints[14].y + 50, z: legR - 20 };
+            }
+            else if (params.motion === 'dunk') { // 新增：跳躍扣籃
+                const jumpPhase = Math.sin(time * 2.5);
+                const jumpY = Math.min(0, jumpPhase * 90);
+
+                joints[3] = { x: 0, y: -20 + jumpY, z: 0 };
+                joints[2] = { x: 0, y: -80 + jumpY, z: -10 };
+                joints[1] = { x: 0, y: -110 + jumpY, z: -15 };
+                joints[0] = { x: 0, y: -135 + jumpY, z: -10 };
+
+                joints[4] = { x: -30, y: -80 + jumpY, z: 0 };
+                joints[5] = { x: -25, y: -130 + jumpY, z: 25 };
+                joints[6] = { x: -10, y: -160 + jumpY, z: 45 };
+
+                joints[7] = { x: 30, y: -80 + jumpY, z: 0 };
+                joints[8] = { x: 25, y: -130 + jumpY, z: 25 };
+                joints[9] = { x: 10, y: -160 + jumpY, z: 45 };
+
+                joints[10] = { x: -22, y: joints[3].y + 15, z: 0 };
+                joints[11] = { x: -30, y: joints[10].y + 45, z: -30 };
+                joints[12] = { x: -25, y: joints[11].y + 50, z: 10 };
+
+                joints[13] = { x: 22, y: joints[3].y + 15, z: 0 };
+                joints[14] = { x: 18, y: joints[13].y + 55, z: 20 };
+                joints[15] = { x: 20, y: joints[14].y + 55, z: 40 };
+            }
             else if (params.motion === 'chun') {
                 const punchR = Math.sin(time * 9);
                 const punchL = Math.cos(time * 9);
@@ -435,6 +540,37 @@
             };
         }
 
+        // 繪製動態背景 (電影場景)
+        function drawScene(now) {
+            if (params.scene === 'grid') {
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+                ctx.lineWidth = 1;
+                const gridY = 160;
+                const speedOffset = (now * 0.1) % 40;
+
+                for (let z = -200; z < 600; z += 40) {
+                    const p1 = project3D(-800, gridY, z - speedOffset);
+                    const p2 = project3D(800, gridY, z - speedOffset);
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.stroke();
+                }
+            } 
+            else if (params.scene === 'tunnel' || params.scene === 'dust') {
+                ctx.fillStyle = params.color;
+                bgParticles.forEach(p => {
+                    p.z -= p.speed * params.speed * 1.5;
+                    if (p.z < -300) p.z = 600;
+                    const proj = project3D(p.x, p.y, p.z);
+                    const size = Math.max(0.5, (1 - p.z / 600) * 2.5);
+                    ctx.globalAlpha = Math.max(0.1, 1 - p.z / 600) * 0.5;
+                    ctx.fillRect(proj.x, proj.y, size, size);
+                });
+                ctx.globalAlpha = 1.0;
+            }
+        }
+
         let lastTime = performance.now();
         let frameCount = 0;
 
@@ -446,16 +582,16 @@
                 lastTime = now;
             }
 
+            // 電影鏡頭自動運鏡
+            if (params.autoCamera && !isDragging) {
+                rotY = Math.sin(now * 0.0006) * 0.4;
+                rotX = 0.1 + Math.cos(now * 0.0004) * 0.15;
+            }
+
             ctx.fillStyle = '#050505';
             ctx.fillRect(0, 0, width, height);
 
-            // 背景細微網點
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-            for (let x = 0; x < width; x += 24) {
-                for (let y = 0; y < height; y += 24) {
-                    if ((x + y) % 48 === 0) ctx.fillRect(x, y, 1, 1);
-                }
-            }
+            drawScene(now);
 
             updateSkeleton(now * 0.001);
 
@@ -464,7 +600,7 @@
                 if (shockwave.radius > 700) shockwave.active = false;
             }
 
-            // 繪製骨架線條 (Wireframe 模式)
+            // 繪製骨架線條
             if (params.renderMode === 'wireframe') {
                 ctx.strokeStyle = params.color;
                 ctx.lineWidth = 1.5;
@@ -488,7 +624,7 @@
 
             renderList.sort((a, b) => b.z - a.z);
 
-            // 粒子/網點繪製
+            // 繪製粒子
             for (let i = 0; i < renderList.length; i++) {
                 const p = renderList[i];
                 
@@ -507,12 +643,12 @@
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
                     ctx.fillStyle = params.color;
-                    ctx.shadowBlur = 10;
+                    ctx.shadowBlur = 8;
                     ctx.shadowColor = params.color;
                     ctx.fill();
                     ctx.shadowBlur = 0;
                 }
-                else { // classic & wireframe
+                else {
                     const radius = params.pointSize * p.scale;
                     ctx.fillStyle = params.color;
                     ctx.fillRect(p.x - radius/2, p.y - radius/2, radius, radius);
@@ -524,16 +660,14 @@
 
         window.addEventListener('resize', updateScreenDimensions);
 
-        // 分頁切換
+        // UI 互動事件 handling
         window.switchTab = function(tabName, evt) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
             evt.target.classList.add('active');
             document.getElementById(`tab-${tabName}`).classList.add('active');
         };
 
-        // 色卡切換
         window.setColor = function(hexColor, el) {
             params.color = hexColor;
             document.getElementById('input-color').value = hexColor;
@@ -541,21 +675,36 @@
             if(el) el.classList.add('active');
         };
 
-        // 視覺模式切換
         window.setRenderMode = function(mode) {
             params.renderMode = mode;
             document.querySelectorAll('#tab-style .btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(`mode-${mode}`).classList.add('active');
         };
 
-        // 招式切換
         window.setMotion = function(motion) {
             params.motion = motion;
             document.querySelectorAll('#tab-motion .btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(`btn-${motion}`).classList.add('active');
         };
 
-        // 滑鼠與觸控事件
+        window.setScene = function(scene) {
+            params.scene = scene;
+            document.querySelectorAll('#tab-scene .btn:not(.toggle-btn)').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`scene-${scene}`).classList.add('active');
+        };
+
+        window.toggleCamera = function() {
+            params.autoCamera = !params.autoCamera;
+            const btn = document.getElementById('btn-camera');
+            if (params.autoCamera) {
+                btn.classList.add('active');
+                btn.innerText = '🎥 電影運鏡鏡頭：開啟';
+            } else {
+                btn.classList.remove('active');
+                btn.innerText = '🎥 電影運鏡鏡頭：手動';
+            }
+        };
+
         canvas.addEventListener('mousedown', (e) => {
             isDragging = true;
             lastMouseX = e.clientX;
@@ -598,16 +747,10 @@
             shockwave.active = true;
         });
 
-        // 選單 Slider 控制
         document.getElementById('input-density').addEventListener('input', (e) => {
             params.density = parseInt(e.target.value);
             document.getElementById('val-density').innerText = params.density;
             rebuildParticles();
-        });
-
-        document.getElementById('input-size').addEventListener('input', (e) => {
-            params.pointSize = parseFloat(e.target.value);
-            document.getElementById('val-size').innerText = params.pointSize.toFixed(1);
         });
 
         document.getElementById('input-speed').addEventListener('input', (e) => {
