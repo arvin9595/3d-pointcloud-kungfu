@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D Halftone Point Cloud Martial Arts</title>
+    <title>3D Point Cloud Martial Arts - Ultimate</title>
     <style>
         * {
             box-sizing: border-box;
@@ -17,7 +17,7 @@
             height: 100%;
             overflow: hidden;
             background-color: #050505;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             color: #ffffff;
         }
         canvas {
@@ -26,30 +26,63 @@
             height: 100vh;
             touch-action: none;
         }
+        /* 分頁 UI 面板 */
         .ui-panel {
             position: absolute;
             top: 12px;
             left: 12px;
-            background: rgba(0, 0, 0, 0.75);
-            backdrop-filter: blur(10px);
+            background: rgba(10, 10, 10, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-            padding: 12px 14px;
-            width: 240px;
+            border-radius: 12px;
+            padding: 12px;
+            width: 250px;
             z-index: 10;
             box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
         .ui-header {
             font-size: 11px;
             font-weight: 800;
-            letter-spacing: 2px;
+            letter-spacing: 1.5px;
             text-transform: uppercase;
             color: #ffffff;
-            margin-bottom: 8px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            padding-bottom: 4px;
+            margin-bottom: 10px;
             display: flex;
             justify-content: space-between;
+            align-items: center;
+        }
+        /* 頁籤標籤 */
+        .tab-nav {
+            display: flex;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            padding: 2px;
+            margin-bottom: 10px;
+        }
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #888888;
+            padding: 5px 0;
+            font-size: 10px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: #ffffff;
+            color: #000000;
+        }
+        /* 頁籤內容內容 */
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
         }
         .ui-group {
             margin-bottom: 8px;
@@ -59,34 +92,42 @@
             justify-content: space-between;
             font-size: 10px;
             color: #aaaaaa;
-            margin-bottom: 2px;
+            margin-bottom: 3px;
         }
-        .ui-group input[type=range] {
+        .ui-group input[type=range], .ui-group input[type=color] {
             width: 100%;
             accent-color: #ffffff;
             background: #222222;
-            height: 3px;
+            height: 4px;
+            border: none;
+            border-radius: 2px;
         }
-        .btn-group {
-            display: flex;
+        .ui-group input[type=color] {
+            height: 24px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .btn-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 4px;
-            margin-top: 8px;
         }
         .btn {
-            flex: 1;
-            background: #111111;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             color: #ffffff;
-            padding: 5px 2px;
+            padding: 6px 4px;
             font-size: 10px;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
             transition: all 0.2s;
+            text-align: center;
         }
         .btn:hover, .btn.active {
             background: #ffffff;
             color: #000000;
             font-weight: bold;
+            border-color: #ffffff;
         }
         .hint {
             position: absolute;
@@ -97,7 +138,6 @@
             letter-spacing: 1.5px;
             color: rgba(255,255,255,0.4);
             pointer-events: none;
-            text-transform: uppercase;
         }
     </style>
 </head>
@@ -105,29 +145,54 @@
 
     <div class="ui-panel">
         <div class="ui-header">
-            <span>HALFTONE // 武術點陣</span>
-            <span id="fps">60 FPS</span>
+            <span>3D POINTCLOUD</span>
+            <span id="fps" style="color: #00ffcc;">60 FPS</span>
         </div>
 
-        <div class="ui-group">
-            <label>網點密度 (Density) <span id="val-density">2200</span></label>
-            <input type="range" id="input-density" min="1000" max="4000" step="100" value="2200">
+        <!-- 分頁按鈕 -->
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('style')">風格模式</button>
+            <button class="tab-btn" onclick="switchTab('visual')">視覺參數</button>
+            <button class="tab-btn" onclick="switchTab('motion')">招式選擇</button>
         </div>
 
-        <div class="ui-group">
-            <label>半色調尺寸 (Dot Scale) <span id="val-size">2.2</span></label>
-            <input type="range" id="input-size" min="1.0" max="4.5" step="0.1" value="2.2">
+        <!-- 分頁 1: 風格模式 -->
+        <div id="tab-style" class="tab-content active">
+            <div class="btn-grid">
+                <button class="btn active" id="mode-halftone" onclick="setRenderMode('halftone')">網點 Halftone</button>
+                <button class="btn" id="mode-glow" onclick="setRenderMode('glow')">絢麗光暈 Glow</button>
+                <button class="btn" id="mode-wireframe" onclick="setRenderMode('wireframe')">骨架網格 Wire</button>
+                <button class="btn" id="mode-classic" onclick="setRenderMode('classic')">經典點雲 Pure</button>
+            </div>
         </div>
 
-        <div class="ui-group">
-            <label>演武速度 (Speed) <span id="val-speed">1.0</span></label>
-            <input type="range" id="input-speed" min="0.2" max="2.5" step="0.1" value="1.0">
+        <!-- 分頁 2: 視覺參數 -->
+        <div id="tab-visual" class="tab-content">
+            <div class="ui-group">
+                <label>粒子密度 (Density) <span id="val-density">2200</span></label>
+                <input type="range" id="input-density" min="800" max="4000" step="100" value="2200">
+            </div>
+            <div class="ui-group">
+                <label>粒子/網點尺寸 (Size) <span id="val-size">2.2</span></label>
+                <input type="range" id="input-size" min="0.8" max="5.0" step="0.1" value="2.2">
+            </div>
+            <div class="ui-group">
+                <label>演武速度 (Speed) <span id="val-speed">1.0</span></label>
+                <input type="range" id="input-speed" min="0.2" max="2.5" step="0.1" value="1.0">
+            </div>
+            <div class="ui-group">
+                <label>主體顏色 (Color)</label>
+                <input type="color" id="input-color" value="#ffffff">
+            </div>
         </div>
 
-        <div class="btn-group">
-            <button class="btn active" id="btn-taichi">太極圓融</button>
-            <button class="btn" id="btn-kick">飛踢連擊</button>
-            <button class="btn" id="btn-chun">詠春中線</button>
+        <!-- 分頁 3: 招式選擇 -->
+        <div id="tab-motion" class="tab-content">
+            <div class="btn-grid">
+                <button class="btn active" id="btn-taichi" onclick="setMotion('taichi')">太極圓融</button>
+                <button class="btn" id="btn-kick" onclick="setMotion('kick')">飛踢連擊</button>
+                <button class="btn" id="btn-chun" onclick="setMotion('chun')">詠春中線</button>
+            </div>
         </div>
     </div>
 
@@ -143,17 +208,17 @@
         function updateScreenDimensions() {
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
-            // 自適應計算：讓長身或橫身都能儘量滿畫面
             const minDim = Math.min(width, height);
             autoFitScale = (minDim / 450) * (height > width ? 1.25 : 1.0);
         }
         updateScreenDimensions();
 
         const params = {
+            renderMode: 'halftone', // halftone, glow, wireframe, classic
             density: 2200,
             pointSize: 2.2,
             speed: 1.0,
-            jitter: 0.8,
+            color: '#ffffff',
             motion: 'taichi'
         };
 
@@ -183,11 +248,8 @@
             { from: 14, to: 15, radius: 10 }
         ];
 
-        class HalftoneParticle {
-            constructor() {
-                this.reset();
-            }
-
+        class Particle {
+            constructor() { this.reset(); }
             reset() {
                 this.boneIndex = Math.floor(Math.random() * BONES.length);
                 this.u = Math.random();
@@ -196,7 +258,6 @@
                 this.vx = 0; this.vy = 0; this.vz = 0;
                 this.x = 0; this.y = 0; this.z = 0;
             }
-
             update(bonesJoints) {
                 const bone = BONES[this.boneIndex];
                 const jA = bonesJoints[bone.from];
@@ -207,7 +268,7 @@
                 const cz = jA.z + (jB.z - jA.z) * this.u;
 
                 const r = bone.radius * this.rRatio;
-                const jitter = (Math.random() - 0.5) * params.jitter * 4;
+                const jitter = (Math.random() - 0.5) * 1.5;
 
                 const px = cx + Math.cos(this.theta) * r + jitter;
                 const py = cy + Math.sin(this.theta) * r + jitter;
@@ -228,7 +289,6 @@
                 }
 
                 this.vx *= 0.85; this.vy *= 0.85; this.vz *= 0.85;
-
                 this.x = px + this.vx;
                 this.y = py + this.vy;
                 this.z = pz + this.vz;
@@ -239,7 +299,7 @@
         function rebuildParticles() {
             particles = [];
             for (let i = 0; i < params.density; i++) {
-                particles.push(new HalftoneParticle());
+                particles.push(new Particle());
             }
         }
         rebuildParticles();
@@ -355,18 +415,14 @@
                 lastTime = now;
             }
 
-            // 清空畫布 (高對比黑底)
             ctx.fillStyle = '#050505';
             ctx.fillRect(0, 0, width, height);
 
-            // 繪製微弱背景點陣 (強化空間感)
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
-            const step = 24;
-            for (let x = 0; x < width; x += step) {
-                for (let y = 0; y < height; y += step) {
-                    if ((x + y) % (step * 2) === 0) {
-                        ctx.fillRect(x, y, 1, 1);
-                    }
+            // 背景細微網點
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+            for (let x = 0; x < width; x += 24) {
+                for (let y = 0; y < height; y += 24) {
+                    if ((x + y) % 48 === 0) ctx.fillRect(x, y, 1, 1);
                 }
             }
 
@@ -377,37 +433,58 @@
                 if (shockwave.radius > 700) shockwave.active = false;
             }
 
-            const renderList = [];
-
-            for (let i = 0; i < particles.length; i++) {
-                const p = particles[i];
-                p.update(joints);
-
-                const proj = project3D(p.x, p.y, p.z);
-                renderList.push({
-                    x: proj.x,
-                    y: proj.y,
-                    scale: proj.scale,
-                    z: proj.z
+            // 繪製骨架線條 (Wireframe 模式)
+            if (params.renderMode === 'wireframe') {
+                ctx.strokeStyle = params.color;
+                ctx.lineWidth = 1.5;
+                BONES.forEach(bone => {
+                    const pA = project3D(joints[bone.from].x, joints[bone.from].y, joints[bone.from].z);
+                    const pB = project3D(joints[bone.to].x, joints[bone.to].y, joints[bone.to].z);
+                    ctx.beginPath();
+                    ctx.moveTo(pA.x, pA.y);
+                    ctx.lineTo(pB.x, pB.y);
+                    ctx.stroke();
                 });
             }
 
-            // 深度排序 Z-buffer
+            const renderList = [];
+            for (let i = 0; i < particles.length; i++) {
+                const p = particles[i];
+                p.update(joints);
+                const proj = project3D(p.x, p.y, p.z);
+                renderList.push({ x: proj.x, y: proj.y, scale: proj.scale, z: proj.z });
+            }
+
             renderList.sort((a, b) => b.z - a.z);
 
-            // 渲染 Halftone 網點效果
+            // 粒子/網點繪製
             for (let i = 0; i < renderList.length; i++) {
                 const p = renderList[i];
                 
-                // 依景深計算網點圓圈大小 (Halftone 原理)
-                const depthFactor = Math.min(1.2, Math.max(0.1, (p.z + 280) / 500));
-                const radius = params.pointSize * p.scale * depthFactor * 1.8;
-
-                if (radius > 0.2) {
+                if (params.renderMode === 'halftone') {
+                    const depthFactor = Math.min(1.2, Math.max(0.1, (p.z + 280) / 500));
+                    const radius = params.pointSize * p.scale * depthFactor * 1.8;
+                    if (radius > 0.2) {
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+                        ctx.fillStyle = params.color;
+                        ctx.fill();
+                    }
+                } 
+                else if (params.renderMode === 'glow') {
+                    const radius = params.pointSize * p.scale * 1.2;
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
-                    ctx.fillStyle = '#ffffff';
+                    ctx.fillStyle = params.color;
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = params.color;
                     ctx.fill();
+                    ctx.shadowBlur = 0; // 重設 Glow 防止卡頓
+                }
+                else { // classic & wireframe
+                    const radius = params.pointSize * p.scale;
+                    ctx.fillStyle = params.color;
+                    ctx.fillRect(p.x - radius/2, p.y - radius/2, radius, radius);
                 }
             }
 
@@ -416,7 +493,30 @@
 
         window.addEventListener('resize', updateScreenDimensions);
 
-        // 觸控與滑鼠互動
+        // 分頁切換
+        window.switchTab = function(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+        };
+
+        // 視覺模式切換
+        window.setRenderMode = function(mode) {
+            params.renderMode = mode;
+            document.querySelectorAll('#tab-style .btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`mode-${mode}`).classList.add('active');
+        };
+
+        // 招式切換
+        window.setMotion = function(motion) {
+            params.motion = motion;
+            document.querySelectorAll('#tab-motion .btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${motion}`).classList.add('active');
+        };
+
+        // 滑鼠與觸控事件
         canvas.addEventListener('mousedown', (e) => {
             isDragging = true;
             lastMouseX = e.clientX;
@@ -459,7 +559,7 @@
             shockwave.active = true;
         });
 
-        // UI 控制控制項
+        // 選單 Slider 控制
         document.getElementById('input-density').addEventListener('input', (e) => {
             params.density = parseInt(e.target.value);
             document.getElementById('val-density').innerText = params.density;
@@ -476,18 +576,8 @@
             document.getElementById('val-speed').innerText = params.speed.toFixed(1);
         });
 
-        const buttons = {
-            'btn-taichi': 'taichi',
-            'btn-kick': 'kick',
-            'btn-chun': 'chun'
-        };
-
-        Object.keys(buttons).forEach(id => {
-            document.getElementById(id).addEventListener('click', (e) => {
-                document.querySelectorAll('.btn').forEach(btn => btn.classList.remove('active'));
-                e.target.classList.add('active');
-                params.motion = buttons[id];
-            });
+        document.getElementById('input-color').addEventListener('input', (e) => {
+            params.color = e.target.value;
         });
 
         requestAnimationFrame(animate);
