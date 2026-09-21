@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D Point Cloud Studio - 劇本與分鏡工作室</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #050505;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: #ffffff;
+        }
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            touch-action: none;
+        }
+        /* 側邊導演控制塔 UI */
+        .studio-panel {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: rgba(12, 12, 14, 0.9);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 14px;
+            width: 300px;
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+            z-index: 10;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+        }
+        .studio-header {
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            color: #00f0ff;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 8px;
+        }
+        .section-title {
+            font-size: 10px;
+            font-weight: bold;
+            color: #888888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 12px 0 6px 0;
+        }
+        .btn-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+        .btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            padding: 7px 6px;
+            font-size: 11px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .btn:hover, .btn.active {
+            background: #00f0ff;
+            color: #000000;
+            font-weight: bold;
+            border-color: #00f0ff;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+        }
+        .btn-rec {
+            background: rgba(255, 42, 95, 0.15);
+            border-color: rgba(255, 42, 95, 0.5);
+            color: #ff2a5f;
+            grid-column: span 2;
+        }
+        .btn-rec.recording {
+            background: #ff2a5f;
+            color: #ffffff;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        /* 底部劇本時間軸控制列 */
+        .timeline-bar {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 24px);
+            max-width: 800px;
+            background: rgba(12, 12, 14, 0.9);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 10px 16px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .play-btn {
+            background: #ffffff;
+            color: #000;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .timeline-slider {
+            flex: 1;
+            accent-color: #00f0ff;
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            cursor: pointer;
+        }
+        .time-display {
+            font-size: 11px;
+            font-family: monospace;
+            color: #00f0ff;
+            flex-shrink: 0;
+        }
+        .prompt-input {
+            width: 100%;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            padding: 6px 8px;
+            color: #fff;
+            font-size: 11px;
+            margin-bottom: 8px;
+        }
+        .prompt-input:focus {
+            outline: none;
+            border-color: #00f0ff;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 導演控制面板 -->
+    <div class="studio-panel">
+        <div class="studio-header">
+            <span>🎬 STUDIO DIRECTOR</span>
+            <span id="fps" style="color: #00ffcc;">60 FPS</span>
+        </div>
+
+        <div class="section-title">自然語言指令 (AI Command)</div>
+        <input type="text" class="prompt-input" id="input-prompt" placeholder="輸入指令：如「雙人對決」、「極速閃電」..." onkeydown="handlePrompt(event)">
+
+        <div class="section-title">角色與佈局 (Actors Layout)</div>
+        <div class="btn-grid">
+            <button class="btn active" id="actor-single" onclick="setActorMode('single')">單人主演</button>
+            <button class="btn" id="actor-duo" onclick="setActorMode('duo')">雙人對攻</button>
+        </div>
+
+        <div class="section-title">電影運鏡 (Camera Presets)</div>
+        <div class="btn-grid">
+            <button class="btn active" id="cam-auto" onclick="setCameraMode('auto')">環繞追蹤</button>
+            <button class="btn" id="cam-close" onclick="setCameraMode('close')">特寫鏡頭</button>
+            <button class="btn" id="cam-low" onclick="setCameraMode('low')">低角仰拍</button>
+            <button class="btn" id="cam-top" onclick="setCameraMode('top')">俯瞰視野</button>
+        </div>
+
+        <div class="section-title">媒體與輸出 (Media Export)</div>
+        <div class="btn-grid">
+            <button class="btn btn-rec" id="btn-record" onclick="toggleRecording()">⏺ 錄製影片 (Record WebM)</button>
+            <button class="btn" onclick="takeSnapshot()">📸 快照截圖</button>
+            <button class="btn" onclick="triggerAudioUpload()">🎵 音樂連動</button>
+        </div>
+        <input type="file" id="audio-file" accept="audio/*" style="display:none" onchange="loadAudio(event)">
+    </div>
+
+    <!-- 時間軸播放器 -->
+    <div class="timeline-bar">
+        <button class="play-btn" id="btn-play" onclick="togglePlay()">▶</button>
+        <input type="range" class="timeline-slider" id="timeline" min="0" max="100" value="0" oninput="seekTimeline(this.value)">
+        <span class="time-display" id="time-text">00:00 / 00:10</span>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height, autoFitScale = 1.0;
+        function updateScreenDimensions() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            autoFitScale = Math.min(width, height) / 450;
+        }
+        updateScreenDimensions();
+
+        // 系統狀態架構 (State Architecture)
+        const state = {
+            isPlaying: true,
+            currentTime: 0,
+            duration: 10, // 劇本總長度 10 秒
+            actorMode: 'single', // single, duo
+            cameraMode: 'auto', // auto, close, low, top
+            color: '#00f0ff',
+            isRecording: false,
+            mediaRecorder: null,
+            recordedChunks: [],
+            audioCtx: null,
+            analyser: null,
+            audioBoost: 0
+        };
+
+        // 骨架結構
+        const BONES = [
+            { from: 0, to: 1, radius: 18 }, { from: 1, to: 2, radius: 28 }, { from: 2, to: 3, radius: 24 },
+            { from: 2, to: 4, radius: 14 }, { from: 4, to: 5, radius: 11 }, { from: 5, to: 6, radius: 9 },
+            { from: 2, to: 7, radius: 14 }, { from: 7, to: 8, radius: 11 }, { from: 8, to: 9, radius: 9 },
+            { from: 3, to: 10, radius: 18 }, { from: 10, to: 11, radius: 14 }, { from: 11, to: 12, radius: 10 },
+            { from: 3, to: 13, radius: 18 }, { from: 13, to: 14, radius: 14 }, { from: 14, to: 15, radius: 10 }
+        ];
+
+        function createActor(offsetX = 0) {
+            const joints = Array.from({ length: 16 }, () => ({ x: 0, y: 0, z: 0 }));
+            const particles = Array.from({ length: 1200 }, () => ({
+                boneIndex: Math.floor(Math.random() * BONES.length),
+                u: Math.random(),
+                theta: Math.random() * Math.PI * 2,
+                rRatio: Math.sqrt(Math.random()),
+                x: 0, y: 0, z: 0
+            }));
+            return { offsetX, joints, particles };
+        }
+
+        let actor1 = createActor(0);
+        let actor2 = createActor(120);
+
+        function updateSkeleton(actor, time, motionType) {
+            const joints = actor.joints;
+            const bob = Math.sin(time * 6) * 10;
+
+            if (motionType === 'boxing') {
+                const punch = Math.sin(time * 8) * 50;
+                joints[3] = { x: actor.offsetX, y: 20 + bob, z: 0 };
+                joints[2] = { x: actor.offsetX, y: -50, z: 0 };
+                joints[1] = { x: actor.offsetX, y: -80, z: 0 };
+                joints[0] = { x: actor.offsetX, y: -105, z: 0 };
+                joints[4] = { x: actor.offsetX - 25, y: -45, z: 15 };
+                joints[5] = { x: actor.offsetX - 20, y: -25, z: 30 + punch };
+                joints[6] = { x: actor.offsetX - 15, y: -35, z: 50 + punch * 1.2 };
+                joints[7] = { x: actor.offsetX + 25, y: -45, z: 15 };
+                joints[8] = { x: actor.offsetX + 18, y: -20, z: 20 };
+                joints[9] = { x: actor.offsetX + 10, y: -30, z: 35 };
+                joints[10] = { x: actor.offsetX - 20, y: joints[3].y + 15, z: 0 };
+                joints[11] = { x: actor.offsetX - 25, y: joints[10].y + 50, z: 20 };
+                joints[12] = { x: actor.offsetX - 25, y: joints[11].y + 50, z: 0 };
+                joints[13] = { x: actor.offsetX + 20, y: joints[3].y + 15, z: 0 };
+                joints[14] = { x: actor.offsetX + 25, y: joints[13].y + 50, z: -20 };
+                joints[15] = { x: actor.offsetX + 25, y: joints[14].y + 50, z: 0 };
+            }
+
+            // 更新粒子位置
+            actor.particles.forEach(p => {
+                const bone = BONES[p.boneIndex];
+                const jA = joints[bone.from];
+                const jB = joints[bone.to];
+                const cx = jA.x + (jB.x - jA.x) * p.u;
+                const cy = jA.y + (jB.y - jA.y) * p.u;
+                const cz = jA.z + (jB.z - jA.z) * p.u;
+                const r = bone.radius * p.rRatio;
+                p.x = cx + Math.cos(p.theta) * r;
+                p.y = cy + Math.sin(p.theta) * r;
+                p.z = cz + Math.sin(p.theta * 2) * (r * 0.5);
+            });
+        }
+
+        function project3D(x, y, z, rotX, rotY) {
+            let cosY = Math.cos(rotY), sinY = Math.sin(rotY);
+            let x1 = x * cosY - z * sinY;
+            let z1 = z * cosY + x * sinY;
+            let cosX = Math.cos(rotX), sinX = Math.sin(rotX);
+            let y2 = y * cosX - z1 * sinX;
+            let z2 = z1 * cosX + y * sinX;
+
+            const fov = 400;
+            const scale = (fov / (fov + z2 + 480)) * autoFitScale;
+            return {
+                x: width / 2 + x1 * scale,
+                y: height / 2 + y2 * scale,
+                scale: scale,
+                z: z2
+            };
+        }
+
+        let rotX = 0.1, rotY = 0;
+
+        function animate(now) {
+            if (state.isPlaying) {
+                state.currentTime = (state.currentTime + 0.016) % state.duration;
+                document.getElementById('timeline').value = (state.currentTime / state.duration) * 100;
+                document.getElementById('time-text').innerText = `00:0${Math.floor(state.currentTime)} / 00:${state.duration}`;
+            }
+
+            // 音樂節奏分析
+            if (state.analyser) {
+                const dataArray = new Uint8Array(state.analyser.frequencyBinCount);
+                state.analyser.getByteFrequencyData(dataArray);
+                state.audioBoost = (dataArray[10] / 255) * 20; // 低音頻率連動
+            }
+
+            // 鏡頭模式分鏡控制 (Camera Control)
+            if (state.cameraMode === 'auto') {
+                rotY = Math.sin(now * 0.0005) * 0.5;
+                rotX = 0.1 + Math.cos(now * 0.0003) * 0.1;
+            } else if (state.cameraMode === 'close') {
+                rotY = 0.2; rotX = -0.05;
+            } else if (state.cameraMode === 'low') {
+                rotY = 0; rotX = 0.45;
+            } else if (state.cameraMode === 'top') {
+                rotY = 0; rotX = 1.2;
+            }
+
+            ctx.fillStyle = '#050505';
+            ctx.fillRect(0, 0, width, height);
+
+            // 更新與繪製角色
+            if (state.actorMode === 'single') {
+                actor1.offsetX = 0;
+                updateSkeleton(actor1, state.currentTime, 'boxing');
+                drawActor(actor1);
+            } else {
+                actor1.offsetX = -80;
+                actor2.offsetX = 80;
+                updateSkeleton(actor1, state.currentTime, 'boxing');
+                updateSkeleton(actor2, state.currentTime + 0.5, 'boxing');
+                drawActor(actor1);
+                drawActor(actor2);
+            }
+
+            document.getElementById('fps').innerText = `60 FPS`;
+            requestAnimationFrame(animate);
+        }
+
+        function drawActor(actor) {
+            ctx.fillStyle = state.color;
+            actor.particles.forEach(p => {
+                const proj = project3D(p.x, p.y, p.z, rotX, rotY);
+                const size = (2.0 + state.audioBoost * 0.1) * proj.scale;
+                ctx.beginPath();
+                ctx.arc(proj.x, proj.y, Math.max(0.5, size), 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        // 互動事件 handling
+        window.setActorMode = function(mode) {
+            state.actorMode = mode;
+            document.querySelectorAll('#actor-single, #actor-duo').forEach(b => b.classList.remove('active'));
+            document.getElementById(`actor-${mode}`).classList.add('active');
+        };
+
+        window.setCameraMode = function(mode) {
+            state.cameraMode = mode;
+            document.querySelectorAll('#cam-auto, #cam-close, #cam-low, #cam-top').forEach(b => b.classList.remove('active'));
+            document.getElementById(`cam-${mode}`).classList.add('active');
+        };
+
+        window.togglePlay = function() {
+            state.isPlaying = !state.isPlaying;
+            document.getElementById('btn-play').innerText = state.isPlaying ? '❚❚' : '▶';
+        };
+
+        window.seekTimeline = function(val) {
+            state.currentTime = (val / 100) * state.duration;
+        };
+
+        // 自然語言比對 (Keyword AI Parser)
+        window.handlePrompt = function(e) {
+            if (e.key === 'Enter') {
+                const val = e.target.value.trim();
+                if (val.includes('雙人') || val.includes('對決')) setActorMode('duo');
+                if (val.includes('單人')) setActorMode('single');
+                if (val.includes('特寫')) setCameraMode('close');
+                if (val.includes('仰拍') || val.includes('低角')) setCameraMode('low');
+                if (val.includes('俯瞰')) setCameraMode('top');
+                if (val.includes('紅')) state.color = '#ff2a5f';
+                if (val.includes('藍')) state.color = '#00f0ff';
+                if (val.includes('綠')) state.color = '#00ff66';
+            }
+        };
+
+        // 影片錄製導出 (MediaRecorder)
+        window.toggleRecording = function() {
+            const btn = document.getElementById('btn-record');
+            if (!state.isRecording) {
+                state.recordedChunks = [];
+                const stream = canvas.captureStream(30);
+                state.mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+                state.mediaRecorder.ondataavailable = e => state.recordedChunks.push(e.data);
+                state.mediaRecorder.onstop = exportVideo;
+                state.mediaRecorder.start();
+                state.isRecording = true;
+                btn.classList.add('recording');
+                btn.innerText = '⏹ 停止並下載影片...';
+            } else {
+                state.mediaRecorder.stop();
+                state.isRecording = false;
+                btn.classList.remove('recording');
+                btn.innerText = '⏺ 錄製影片 (Record WebM)';
+            }
+        };
+
+        function exportVideo() {
+            const blob = new Blob(state.recordedChunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '3d-motion-scene.webm';
+            a.click();
+        }
+
+        // 快照截圖
+        window.takeSnapshot = function() {
+            const a = document.createElement('a');
+            a.href = canvas.toDataURL('image/png');
+            a.download = '3d-snapshot.png';
+            a.click();
+        };
+
+        // 音樂分析連動
+        window.triggerAudioUpload = function() {
+            document.getElementById('audio-file').click();
+        };
+
+        window.loadAudio = function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const url = URL.createObjectURL(file);
+                const audio = new Audio(url);
+                state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const source = state.audioCtx.createMediaElementSource(audio);
+                state.analyser = state.audioCtx.createAnalyser();
+                source.connect(state.analyser);
+                state.analyser.connect(state.audioCtx.destination);
+                audio.play();
+            }
+        };
+
+        window.addEventListener('resize', updateScreenDimensions);
+        requestAnimationFrame(animate);
+    </script>
+</body>
+</html>
