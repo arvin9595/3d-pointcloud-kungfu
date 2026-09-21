@@ -2,86 +2,83 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>3D 灰階點雲武術模擬 - Monochrome Point Cloud Martial Arts</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D Halftone Point Cloud Martial Arts</title>
     <style>
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
             user-select: none;
+            -webkit-user-select: none;
         }
         body, html {
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: #030305;
+            background-color: #050505;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
-            color: #d1d5db;
+            color: #ffffff;
         }
         canvas {
             display: block;
             width: 100vw;
             height: 100vh;
-            cursor: grab;
-        }
-        canvas:active {
-            cursor: grabbing;
+            touch-action: none;
         }
         .ui-panel {
             position: absolute;
-            top: 16px;
-            left: 16px;
-            background: rgba(15, 15, 20, 0.75);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            top: 12px;
+            left: 12px;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 8px;
-            padding: 16px;
-            width: 280px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+            padding: 12px 14px;
+            width: 240px;
             z-index: 10;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
         .ui-header {
-            font-size: 13px;
-            font-weight: 700;
+            font-size: 11px;
+            font-weight: 800;
             letter-spacing: 2px;
             text-transform: uppercase;
             color: #ffffff;
-            margin-bottom: 12px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding-bottom: 6px;
+            margin-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 4px;
             display: flex;
             justify-content: space-between;
         }
         .ui-group {
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
         .ui-group label {
             display: flex;
             justify-content: space-between;
-            font-size: 11px;
-            color: #9ca3af;
-            margin-bottom: 4px;
+            font-size: 10px;
+            color: #aaaaaa;
+            margin-bottom: 2px;
         }
         .ui-group input[type=range] {
             width: 100%;
             accent-color: #ffffff;
-            background: #262626;
-            height: 4px;
-            border-radius: 2px;
+            background: #222222;
+            height: 3px;
         }
         .btn-group {
             display: flex;
-            gap: 6px;
-            margin-top: 12px;
+            gap: 4px;
+            margin-top: 8px;
         }
         .btn {
             flex: 1;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: #e5e7eb;
-            padding: 6px;
-            font-size: 11px;
+            background: #111111;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #ffffff;
+            padding: 5px 2px;
+            font-size: 10px;
             border-radius: 4px;
             cursor: pointer;
             transition: all 0.2s;
@@ -93,14 +90,14 @@
         }
         .hint {
             position: absolute;
-            bottom: 16px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 11px;
-            letter-spacing: 1px;
+            bottom: 12px;
+            width: 100%;
+            text-align: center;
+            font-size: 10px;
+            letter-spacing: 1.5px;
             color: rgba(255,255,255,0.4);
             pointer-events: none;
-            text-align: center;
+            text-transform: uppercase;
         }
     </style>
 </head>
@@ -108,28 +105,23 @@
 
     <div class="ui-panel">
         <div class="ui-header">
-            <span>POINT CLOUD // 點雲體</span>
+            <span>HALFTONE // 武術點陣</span>
             <span id="fps">60 FPS</span>
         </div>
 
         <div class="ui-group">
-            <label>點雲密度 (Density) <span id="val-density">1800</span></label>
-            <input type="range" id="input-density" min="600" max="3500" step="100" value="1800">
+            <label>網點密度 (Density) <span id="val-density">2200</span></label>
+            <input type="range" id="input-density" min="1000" max="4000" step="100" value="2200">
         </div>
 
         <div class="ui-group">
-            <label>微粒大小 (Point Size) <span id="val-size">1.5</span></label>
-            <input type="range" id="input-size" min="0.8" max="3.5" step="0.1" value="1.5">
+            <label>半色調尺寸 (Dot Scale) <span id="val-size">2.2</span></label>
+            <input type="range" id="input-size" min="1.0" max="4.5" step="0.1" value="2.2">
         </div>
 
         <div class="ui-group">
             <label>演武速度 (Speed) <span id="val-speed">1.0</span></label>
             <input type="range" id="input-speed" min="0.2" max="2.5" step="0.1" value="1.0">
-        </div>
-
-        <div class="ui-group">
-            <label>體積噪波 (Jitter) <span id="val-jitter">1.0</span></label>
-            <input type="range" id="input-jitter" min="0" max="3" step="0.1" value="1.0">
         </div>
 
         <div class="btn-group">
@@ -139,61 +131,60 @@
         </div>
     </div>
 
-    <div class="hint">拖曳畫面旋轉 3D 視角 // 點擊畫面釋放灰階衝擊波</div>
+    <div class="hint">SWIPE TO ROTATE // TAP FOR SHOCKWAVE</div>
     <canvas id="canvas"></canvas>
 
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
 
-        let width = canvas.width = window.innerWidth;
-        let height = canvas.height = window.innerHeight;
+        let width, height, autoFitScale = 1.0;
+
+        function updateScreenDimensions() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            // 自適應計算：讓長身或橫身都能儘量滿畫面
+            const minDim = Math.min(width, height);
+            autoFitScale = (minDim / 450) * (height > width ? 1.25 : 1.0);
+        }
+        updateScreenDimensions();
 
         const params = {
-            density: 1800,
-            pointSize: 1.5,
+            density: 2200,
+            pointSize: 2.2,
             speed: 1.0,
-            jitter: 1.0,
+            jitter: 0.8,
             motion: 'taichi'
         };
 
-        let rotX = 0.1;
-        let rotY = 0;
+        let rotX = 0.1, rotY = 0;
         let isDragging = false;
         let lastMouseX = 0, lastMouseY = 0;
-
         let shockwave = { x: 0, y: 0, z: 0, radius: 0, active: false };
 
         const JOINTS_COUNT = 16;
         const joints = Array.from({ length: JOINTS_COUNT }, () => ({ x: 0, y: 0, z: 0 }));
         
         const BONES = [
-            { from: 0, to: 1, radius: 14, density: 0.10 },
-            { from: 1, to: 2, radius: 22, density: 0.20 },
-            { from: 2, to: 3, radius: 20, density: 0.18 },
-            { from: 2, to: 4, radius: 12, density: 0.08 },
-            { from: 4, to: 5, radius: 9,  density: 0.07 },
-            { from: 5, to: 6, radius: 7,  density: 0.05 },
-            { from: 2, to: 7, radius: 12, density: 0.08 },
-            { from: 7, to: 8, radius: 9,  density: 0.07 },
-            { from: 8, to: 9, radius: 7,  density: 0.05 },
-            { from: 3, to: 10, radius: 14, density: 0.08 },
-            { from: 10, to: 11, radius: 11, density: 0.08 },
-            { from: 11, to: 12, radius: 8,  density: 0.06 },
-            { from: 3, to: 13, radius: 14, density: 0.08 },
-            { from: 13, to: 14, radius: 11, density: 0.08 },
-            { from: 14, to: 15, radius: 8,  density: 0.06 }
+            { from: 0, to: 1, radius: 18 },
+            { from: 1, to: 2, radius: 28 },
+            { from: 2, to: 3, radius: 24 },
+            { from: 2, to: 4, radius: 14 },
+            { from: 4, to: 5, radius: 11 },
+            { from: 5, to: 6, radius: 9 },
+            { from: 2, to: 7, radius: 14 },
+            { from: 7, to: 8, radius: 11 },
+            { from: 8, to: 9, radius: 9 },
+            { from: 3, to: 10, radius: 18 },
+            { from: 10, to: 11, radius: 14 },
+            { from: 11, to: 12, radius: 10 },
+            { from: 3, to: 13, radius: 18 },
+            { from: 13, to: 14, radius: 14 },
+            { from: 14, to: 15, radius: 10 }
         ];
 
-        class CloudPoint {
+        class HalftoneParticle {
             constructor() {
-                this.boneIndex = 0;
-                this.u = 0;
-                this.theta = 0;
-                this.rRatio = 0;
-                this.x = 0; this.y = 0; this.z = 0;
-                this.vx = 0; this.vy = 0; this.vz = 0;
-                this.baseBrightness = 0.3 + Math.random() * 0.7;
                 this.reset();
             }
 
@@ -203,6 +194,7 @@
                 this.theta = Math.random() * Math.PI * 2;
                 this.rRatio = Math.sqrt(Math.random()); 
                 this.vx = 0; this.vy = 0; this.vz = 0;
+                this.x = 0; this.y = 0; this.z = 0;
             }
 
             update(bonesJoints) {
@@ -215,7 +207,7 @@
                 const cz = jA.z + (jB.z - jA.z) * this.u;
 
                 const r = bone.radius * this.rRatio;
-                const jitter = (Math.random() - 0.5) * params.jitter * 3;
+                const jitter = (Math.random() - 0.5) * params.jitter * 4;
 
                 const px = cx + Math.cos(this.theta) * r + jitter;
                 const py = cy + Math.sin(this.theta) * r + jitter;
@@ -227,17 +219,15 @@
                     const dZ = pz - shockwave.z;
                     const dist = Math.sqrt(dX*dX + dY*dY + dZ*dZ);
 
-                    if (dist < shockwave.radius + 40 && dist > shockwave.radius - 40) {
-                        const force = (1 - dist / 600) * 15;
+                    if (dist < shockwave.radius + 50 && dist > shockwave.radius - 50) {
+                        const force = (1 - dist / 700) * 18;
                         this.vx += (dX / dist) * force;
                         this.vy += (dY / dist) * force;
                         this.vz += (dZ / dist) * force;
                     }
                 }
 
-                this.vx *= 0.88;
-                this.vy *= 0.88;
-                this.vz *= 0.88;
+                this.vx *= 0.85; this.vy *= 0.85; this.vz *= 0.85;
 
                 this.x = px + this.vx;
                 this.y = py + this.vy;
@@ -249,7 +239,7 @@
         function rebuildParticles() {
             particles = [];
             for (let i = 0; i < params.density; i++) {
-                particles.push(new CloudPoint());
+                particles.push(new HalftoneParticle());
             }
         }
         rebuildParticles();
@@ -258,77 +248,77 @@
             const time = t * params.speed;
             
             if (params.motion === 'taichi') {
-                const baseY = Math.sin(time * 1.5) * 12;
-                joints[3] = { x: 0, y: 40 + baseY, z: 0 };
-                joints[2] = { x: Math.sin(time) * 10, y: -40 + baseY, z: Math.cos(time * 0.8) * 15 };
-                joints[1] = { x: joints[2].x * 0.8, y: joints[2].y - 25, z: joints[2].z * 0.8 };
-                joints[0] = { x: joints[1].x, y: joints[1].y - 22, z: joints[1].z };
+                const baseY = Math.sin(time * 1.5) * 15;
+                joints[3] = { x: 0, y: 30 + baseY, z: 0 };
+                joints[2] = { x: Math.sin(time) * 12, y: -60 + baseY, z: Math.cos(time * 0.8) * 18 };
+                joints[1] = { x: joints[2].x * 0.8, y: joints[2].y - 30, z: joints[2].z * 0.8 };
+                joints[0] = { x: joints[1].x, y: joints[1].y - 25, z: joints[1].z };
 
-                joints[4] = { x: joints[2].x - 30, y: joints[2].y + 5, z: joints[2].z };
-                joints[5] = { x: joints[4].x - 25 + Math.sin(time * 1.2) * 20, y: joints[4].y + 20, z: joints[4].z + Math.cos(time * 1.2) * 30 };
-                joints[6] = { x: joints[5].x - 15 + Math.cos(time * 1.5) * 25, y: joints[5].y - 10, z: joints[5].z + Math.sin(time * 1.5) * 20 };
+                joints[4] = { x: joints[2].x - 35, y: joints[2].y + 8, z: joints[2].z };
+                joints[5] = { x: joints[4].x - 30 + Math.sin(time * 1.2) * 25, y: joints[4].y + 25, z: joints[4].z + Math.cos(time * 1.2) * 35 };
+                joints[6] = { x: joints[5].x - 20 + Math.cos(time * 1.5) * 30, y: joints[5].y - 12, z: joints[5].z + Math.sin(time * 1.5) * 25 };
 
-                joints[7] = { x: joints[2].x + 30, y: joints[2].y + 5, z: joints[2].z };
-                joints[8] = { x: joints[7].x + 25 + Math.cos(time * 1.2) * 20, y: joints[7].y + 25, z: joints[7].z - Math.sin(time * 1.2) * 30 };
-                joints[9] = { x: joints[8].x + 15 - Math.sin(time * 1.5) * 25, y: joints[8].y - 15, z: joints[8].z - Math.cos(time * 1.5) * 20 };
+                joints[7] = { x: joints[2].x + 35, y: joints[2].y + 8, z: joints[2].z };
+                joints[8] = { x: joints[7].x + 30 + Math.cos(time * 1.2) * 25, y: joints[7].y + 30, z: joints[7].z - Math.sin(time * 1.2) * 35 };
+                joints[9] = { x: joints[8].x + 20 - Math.sin(time * 1.5) * 30, y: joints[8].y - 18, z: joints[8].z - Math.cos(time * 1.5) * 25 };
 
-                joints[10] = { x: -22, y: joints[3].y + 15, z: 0 };
-                joints[11] = { x: -45, y: joints[10].y + 50, z: 20 };
-                joints[12] = { x: -50, y: joints[11].y + 55, z: 0 };
+                joints[10] = { x: -28, y: joints[3].y + 20, z: 0 };
+                joints[11] = { x: -55, y: joints[10].y + 60, z: 25 };
+                joints[12] = { x: -60, y: joints[11].y + 65, z: 0 };
 
-                joints[13] = { x: 22, y: joints[3].y + 15, z: 0 };
-                joints[14] = { x: 45, y: joints[13].y + 50, z: -10 };
-                joints[15] = { x: 50, y: joints[14].y + 55, z: -20 };
+                joints[13] = { x: 28, y: joints[3].y + 20, z: 0 };
+                joints[14] = { x: 55, y: joints[13].y + 60, z: -15 };
+                joints[15] = { x: 60, y: joints[14].y + 65, z: -25 };
             } 
             else if (params.motion === 'kick') {
                 const cycle = (time * 2) % (Math.PI * 2);
                 const kickExt = Math.max(0, Math.sin(cycle));
 
-                joints[3] = { x: -10, y: 20 - kickExt * 20, z: 0 };
-                joints[2] = { x: -20, y: -50, z: -10 };
-                joints[1] = { x: -22, y: -75, z: -10 };
-                joints[0] = { x: -25, y: -98, z: -10 };
+                joints[3] = { x: -10, y: 10 - kickExt * 25, z: 0 };
+                joints[2] = { x: -20, y: -70, z: -10 };
+                joints[1] = { x: -22, y: -100, z: -10 };
+                joints[0] = { x: -25, y: -125, z: -10 };
 
-                joints[10] = { x: -15, y: joints[3].y + 15, z: 10 };
-                joints[11] = { x: 10 + kickExt * 40, y: joints[10].y - kickExt * 30, z: 20 };
-                joints[12] = { x: 30 + kickExt * 90, y: joints[11].y - kickExt * 50, z: 30 };
+                joints[10] = { x: -20, y: joints[3].y + 20, z: 10 };
+                joints[11] = { x: 15 + kickExt * 50, y: joints[10].y - kickExt * 40, z: 25 };
+                joints[12] = { x: 40 + kickExt * 110, y: joints[11].y - kickExt * 70, z: 35 };
 
-                joints[13] = { x: 15, y: joints[3].y + 15, z: -10 };
-                joints[14] = { x: 20, y: joints[13].y + 55, z: -10 };
-                joints[15] = { x: 20, y: joints[14].y + 55, z: -10 };
+                joints[13] = { x: 20, y: joints[3].y + 20, z: -10 };
+                joints[14] = { x: 25, y: joints[13].y + 70, z: -10 };
+                joints[15] = { x: 25, y: joints[14].y + 70, z: -10 };
 
-                joints[4] = { x: -35, y: -45, z: 15 };
-                joints[5] = { x: -20, y: -25, z: 35 };
-                joints[6] = { x: 0, y: -40, z: 40 };
+                joints[4] = { x: -40, y: -65, z: 20 };
+                joints[5] = { x: -25, y: -35, z: 45 };
+                joints[6] = { x: 0, y: -50, z: 50 };
 
-                joints[7] = { x: 0, y: -45, z: -15 };
-                joints[8] = { x: 15, y: -30, z: -10 };
-                joints[9] = { x: 20, y: -50, z: 0 };
+                joints[7] = { x: 0, y: -65, z: -20 };
+                joints[8] = { x: 20, y: -40, z: -15 };
+                joints[9] = { x: 25, y: -70, z: 0 };
             }
             else if (params.motion === 'chun') {
-                const punchR = Math.sin(time * 8);
-                const punchL = Math.cos(time * 8);
+                const punchR = Math.sin(time * 9);
+                const punchL = Math.cos(time * 9);
 
-                joints[3] = { x: 0, y: 30, z: 0 };
-                joints[2] = { x: 0, y: -45, z: 0 };
-                joints[1] = { x: 0, y: -70, z: 0 };
-                joints[0] = { x: 0, y: -92, z: 0 };
+                joints[3] = { x: 0, y: 20, z: 0 };
+                joints[2] = { x: 0, y: -60, z: 0 };
+                joints[1] = { x: 0, y: -90, z: 0 };
+                joints[0] = { x: 0, y: -115, z: 0 };
 
-                joints[10] = { x: -25, y: 45, z: 0 };
-                joints[11] = { x: -18, y: 90, z: 15 };
-                joints[12] = { x: -28, y: 135, z: 0 };
+                joints[10] = { x: -30, y: 35, z: 0 };
+                joints[11] = { x: -22, y: 90, z: 20 };
+                joints[12] = { x: -32, y: 145, z: 0 };
 
-                joints[13] = { x: 25, y: 45, z: 0 };
-                joints[14] = { x: 18, y: 90, z: 15 };
-                joints[15] = { x: 28, y: 135, z: 0 };
+                joints[13] = { x: 30, y: 35, z: 0 };
+                joints[14] = { x: 22, y: 90, z: 20 };
+                joints[15] = { x: 32, y: 145, z: 0 };
 
-                joints[4] = { x: -25, y: -40, z: 0 };
-                joints[5] = { x: -15, y: -25, z: 20 + punchL * 20 };
-                joints[6] = { x: 0, y: -30, z: 40 + punchL * 60 };
+                joints[4] = { x: -30, y: -55, z: 0 };
+                joints[5] = { x: -18, y: -35, z: 25 + punchL * 25 };
+                joints[6] = { x: 0, y: -40, z: 50 + punchL * 75 };
 
-                joints[7] = { x: 25, y: -40, z: 0 };
-                joints[8] = { x: 15, y: -25, z: 20 + punchR * 20 };
-                joints[9] = { x: 0, y: -30, z: 40 + punchR * 60 };
+                joints[7] = { x: 30, y: -55, z: 0 };
+                joints[8] = { x: 18, y: -35, z: 25 + punchR * 25 };
+                joints[9] = { x: 0, y: -40, z: 50 + punchR * 75 };
             }
         }
 
@@ -341,14 +331,15 @@
             let y2 = y * cosX - z1 * sinX;
             let z2 = z1 * cosX + y * sinX;
 
-            const fov = 450;
-            const distance = 500;
-            const scale = fov / (fov + z2 + distance);
+            const fov = 400;
+            const distance = 480;
+            const perspectiveScale = fov / (fov + z2 + distance);
+            const totalScale = perspectiveScale * autoFitScale;
 
             return {
-                x: width / 2 + x1 * scale,
-                y: height / 2 + 30 + y2 * scale,
-                scale: scale,
+                x: width / 2 + x1 * totalScale,
+                y: height / 2 + 20 * autoFitScale + y2 * totalScale,
+                scale: totalScale,
                 z: z2
             };
         }
@@ -364,22 +355,26 @@
                 lastTime = now;
             }
 
-            ctx.fillStyle = '#030305';
+            // 清空畫布 (高對比黑底)
+            ctx.fillStyle = '#050505';
             ctx.fillRect(0, 0, width, height);
 
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
-            for (let gx = -600; gx <= 600; gx += 120) {
-                for (let gz = -600; gz <= 600; gz += 120) {
-                    let p = project3D(gx, 180, gz);
-                    ctx.fillRect(p.x, p.y, 1.5 * p.scale, 1.5 * p.scale);
+            // 繪製微弱背景點陣 (強化空間感)
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+            const step = 24;
+            for (let x = 0; x < width; x += step) {
+                for (let y = 0; y < height; y += step) {
+                    if ((x + y) % (step * 2) === 0) {
+                        ctx.fillRect(x, y, 1, 1);
+                    }
                 }
             }
 
             updateSkeleton(now * 0.001);
 
             if (shockwave.active) {
-                shockwave.radius += 12;
-                if (shockwave.radius > 600) shockwave.active = false;
+                shockwave.radius += 15;
+                if (shockwave.radius > 700) shockwave.active = false;
             }
 
             const renderList = [];
@@ -393,32 +388,35 @@
                     x: proj.x,
                     y: proj.y,
                     scale: proj.scale,
-                    z: proj.z,
-                    brightness: p.baseBrightness
+                    z: proj.z
                 });
             }
 
+            // 深度排序 Z-buffer
             renderList.sort((a, b) => b.z - a.z);
 
+            // 渲染 Halftone 網點效果
             for (let i = 0; i < renderList.length; i++) {
                 const p = renderList[i];
-                const depthAlpha = Math.min(1, Math.max(0.1, (p.z + 300) / 600));
-                const grayValue = Math.floor(p.brightness * depthAlpha * 255);
                 
-                const renderSize = params.pointSize * p.scale;
+                // 依景深計算網點圓圈大小 (Halftone 原理)
+                const depthFactor = Math.min(1.2, Math.max(0.1, (p.z + 280) / 500));
+                const radius = params.pointSize * p.scale * depthFactor * 1.8;
 
-                ctx.fillStyle = `rgb(${grayValue}, ${grayValue}, ${grayValue})`;
-                ctx.fillRect(p.x - renderSize / 2, p.y - renderSize / 2, renderSize, renderSize);
+                if (radius > 0.2) {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fill();
+                }
             }
 
             requestAnimationFrame(animate);
         }
 
-        window.addEventListener('resize', () => {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-        });
+        window.addEventListener('resize', updateScreenDimensions);
 
+        // 觸控與滑鼠互動
         canvas.addEventListener('mousedown', (e) => {
             isDragging = true;
             lastMouseX = e.clientX;
@@ -427,10 +425,8 @@
 
         window.addEventListener('mousemove', (e) => {
             if (isDragging) {
-                const deltaX = e.clientX - lastMouseX;
-                const deltaY = e.clientY - lastMouseY;
-                rotY += deltaX * 0.005;
-                rotX += deltaY * 0.005;
+                rotY += (e.clientX - lastMouseX) * 0.006;
+                rotX += (e.clientY - lastMouseY) * 0.006;
                 lastMouseX = e.clientX;
                 lastMouseY = e.clientY;
             }
@@ -448,10 +444,8 @@
 
         canvas.addEventListener('touchmove', (e) => {
             if (isDragging && e.touches.length === 1) {
-                const deltaX = e.touches[0].clientX - lastMouseX;
-                const deltaY = e.touches[0].clientY - lastMouseY;
-                rotY += deltaX * 0.005;
-                rotX += deltaY * 0.005;
+                rotY += (e.touches[0].clientX - lastMouseX) * 0.006;
+                rotX += (e.touches[0].clientY - lastMouseY) * 0.006;
                 lastMouseX = e.touches[0].clientX;
                 lastMouseY = e.touches[0].clientY;
             }
@@ -460,13 +454,12 @@
         canvas.addEventListener('touchend', () => isDragging = false);
 
         canvas.addEventListener('click', () => {
-            shockwave.x = 0;
-            shockwave.y = 0;
-            shockwave.z = 0;
+            shockwave.x = 0; shockwave.y = 0; shockwave.z = 0;
             shockwave.radius = 0;
             shockwave.active = true;
         });
 
+        // UI 控制控制項
         document.getElementById('input-density').addEventListener('input', (e) => {
             params.density = parseInt(e.target.value);
             document.getElementById('val-density').innerText = params.density;
@@ -481,11 +474,6 @@
         document.getElementById('input-speed').addEventListener('input', (e) => {
             params.speed = parseFloat(e.target.value);
             document.getElementById('val-speed').innerText = params.speed.toFixed(1);
-        });
-
-        document.getElementById('input-jitter').addEventListener('input', (e) => {
-            params.jitter = parseFloat(e.target.value);
-            document.getElementById('val-jitter').innerText = params.jitter.toFixed(1);
         });
 
         const buttons = {
