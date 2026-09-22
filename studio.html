@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D Studio - 階段 1：模組化架構與效能優化</title>
+    <title>3D Studio - 階段 2：多角色對決與物理碰撞</title>
     <style>
         * {
             box-sizing: border-box;
@@ -110,28 +110,28 @@
 
     <div class="studio-panel">
         <div class="studio-header">
-            <span>🎬 STUDIO - PHASE 1</span>
+            <span>🎬 STUDIO - PHASE 2</span>
             <span id="fps" style="color: #00ffcc;">60 FPS</span>
         </div>
 
-        <div class="section-title">角色生成管理 (Actor Manager)</div>
+        <div class="section-title">演武模式與對決 (Battle Mode)</div>
         <div class="btn-grid">
-            <button class="btn active" id="btn-actor-1" onclick="setActorCount(1)">單角色 (1 Actor)</button>
-            <button class="btn" id="btn-actor-2" onclick="setActorCount(2)">雙角色 (2 Actors)</button>
-            <button class="btn" id="btn-actor-3" onclick="setActorCount(3)" style="grid-column: span 2;">矩陣三角色 (3 Actors)</button>
+            <button class="btn active" id="btn-mode-1" onclick="setSceneMode('single')">單人單獨演武</button>
+            <button class="btn" id="btn-mode-2" onclick="setSceneMode('duel')">雙人近身攻防</button>
+            <button class="btn" id="btn-mode-3" onclick="setSceneMode('trio')" style="grid-column: span 2;">三方陣列對攻</button>
         </div>
 
-        <div class="section-title">單角粒子密度 (Particles / Actor)</div>
+        <div class="section-title">招式姿態切換 (Motion FSM)</div>
         <div class="btn-grid">
-            <button class="btn" onclick="setParticleDensity(1000)">1,000 Pts</button>
-            <button class="btn active" id="btn-p2000" onclick="setParticleDensity(2000)">2,000 Pts</button>
+            <button class="btn active" id="btn-style-boxing" onclick="setMotionStyle('boxing')">西洋拳擊</button>
+            <button class="btn" id="btn-style-wingchun" onclick="setMotionStyle('wingchun')">詠春守中線</button>
         </div>
 
-        <div class="section-title">效能監控 (Engine Performance)</div>
+        <div class="section-title">物理碰撞監控 (Physics & Hits)</div>
         <div class="stat-box">
             <div class="stat-line"><span>總渲染粒子數:</span> <span class="stat-val" id="stat-total-particles">2,000</span></div>
-            <div class="stat-line"><span>骨架計算開銷:</span> <span class="stat-val" id="stat-calc-time">0.0 ms</span></div>
-            <div class="stat-line"><span>架構狀態:</span> <span class="stat-val" style="color:#00f0ff;">Class Encapsulated</span></div>
+            <div class="stat-line"><span>碰撞計算時間:</span> <span class="stat-val" id="stat-calc-time">0.0 ms</span></div>
+            <div class="stat-line"><span>碰撞事件發送:</span> <span class="stat-val" id="stat-hits" style="color:#ff2a5f;">0 Hits</span></div>
         </div>
     </div>
 
@@ -149,7 +149,6 @@
         }
         updateScreenDimensions();
 
-        // 人體骨架連線結構表
         const BONES = [
             { from: 0, to: 1, radius: 18 }, { from: 1, to: 2, radius: 28 }, { from: 2, to: 3, radius: 24 },
             { from: 2, to: 4, radius: 14 }, { from: 4, to: 5, radius: 11 }, { from: 5, to: 6, radius: 9 },
@@ -159,16 +158,52 @@
         ];
 
         // -------------------------------------------------------------
-        // 核心模組 1：物件導向 Actor 類別 (Actor Class)
+        // 衝擊波特效粒子系統 (Hit Spark Shockwave)
+        // -------------------------------------------------------------
+        class SparkEffect {
+            constructor() {
+                this.sparks = [];
+            }
+            trigger(x, y, z, color = '#ffffff') {
+                for (let i = 0; i < 25; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = 3 + Math.random() * 6;
+                    this.sparks.push({
+                        x, y, z,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed,
+                        vz: (Math.random() - 0.5) * speed,
+                        life: 1.0,
+                        color
+                    });
+                }
+            }
+            update() {
+                for (let i = this.sparks.length - 1; i >= 0; i--) {
+                    const s = this.sparks[i];
+                    s.x += s.vx;
+                    s.y += s.vy;
+                    s.z += s.vz;
+                    s.life -= 0.04;
+                    if (s.life <= 0) this.sparks.splice(i, 1);
+                }
+            }
+        }
+        const globalSparks = new SparkEffect();
+
+        // -------------------------------------------------------------
+        // Actor 類別擴充（支援多招式 FSM）
         // -------------------------------------------------------------
         class Actor {
-            constructor(id, offsetX = 0, color = '#00f0ff', particleCount = 2000) {
+            constructor(id, offsetX = 0, color = '#00f0ff', style = 'boxing') {
                 this.id = id;
                 this.offsetX = offsetX;
                 this.color = color;
-                this.particleCount = particleCount;
+                this.style = style;
+                this.particleCount = 1800;
                 this.joints = Array.from({ length: 16 }, () => ({ x: 0, y: 0, z: 0 }));
                 this.particles = [];
+                this.hitCooldown = 0;
                 this.initParticles();
             }
 
@@ -185,28 +220,44 @@
                 }
             }
 
-            // 更新骨架關節與粒子座標 (內含快取算術)
-            update(timeOffset) {
-                const time = timeOffset;
+            update(time, phaseShift = 0) {
+                if (this.hitCooldown > 0) this.hitCooldown--;
+                const t = time + phaseShift;
                 const joints = this.joints;
                 const ox = this.offsetX;
-                const bob = Math.sin(time * 5) * 12;
-                const punch = Math.sin(time * 7) * 45;
+                const bob = Math.sin(t * 5) * 10;
 
-                // 骨架動態座標計算
-                joints[3] = { x: ox, y: 20 + bob, z: 0 };
-                joints[2] = { x: ox, y: -50 + bob, z: 0 };
-                joints[1] = { x: ox, y: -80 + bob, z: 0 };
-                joints[0] = { x: ox, y: -105 + bob, z: 0 };
+                if (this.style === 'boxing') {
+                    const punch = Math.sin(t * 7) * 55;
+                    joints[3] = { x: ox, y: 20 + bob, z: 0 };
+                    joints[2] = { x: ox, y: -50 + bob, z: 0 };
+                    joints[1] = { x: ox, y: -80 + bob, z: 0 };
+                    joints[0] = { x: ox, y: -105 + bob, z: 0 };
 
-                joints[4] = { x: ox - 25, y: -45, z: 15 };
-                joints[5] = { x: ox - 20, y: -25, z: 30 + punch };
-                joints[6] = { x: ox - 15, y: -35, z: 55 + punch * 1.2 };
+                    joints[4] = { x: ox - 25, y: -45, z: 15 };
+                    joints[5] = { x: ox - 20, y: -25, z: 30 + punch };
+                    joints[6] = { x: ox - 15, y: -35, z: 55 + punch * 1.2 }; // 左拳關鍵點
 
-                joints[7] = { x: ox + 25, y: -45, z: 15 };
-                joints[8] = { x: ox + 18, y: -20, z: 20 };
-                joints[9] = { x: ox + 10, y: -30, z: 35 };
+                    joints[7] = { x: ox + 25, y: -45, z: 15 };
+                    joints[8] = { x: ox + 18, y: -20, z: 20 };
+                    joints[9] = { x: ox + 10, y: -30, z: 35 }; // 右拳關鍵點
+                } else if (this.style === 'wingchun') {
+                    const chainPunch = Math.cos(t * 12) * 35;
+                    joints[3] = { x: ox, y: 15 + bob, z: 0 };
+                    joints[2] = { x: ox, y: -50 + bob, z: 0 };
+                    joints[1] = { x: ox, y: -80 + bob, z: 0 };
+                    joints[0] = { x: ox, y: -105 + bob, z: 0 };
 
+                    joints[4] = { x: ox - 18, y: -45, z: 20 };
+                    joints[5] = { x: ox - 10, y: -35, z: 40 + chainPunch };
+                    joints[6] = { x: ox - 5, y: -35, z: 65 + chainPunch };
+
+                    joints[7] = { x: ox + 18, y: -45, z: 20 };
+                    joints[8] = { x: ox + 10, y: -35, z: 40 - chainPunch };
+                    joints[9] = { x: ox + 5, y: -35, z: 65 - chainPunch };
+                }
+
+                // 腿部固定
                 joints[10] = { x: ox - 20, y: joints[3].y + 15, z: 0 };
                 joints[11] = { x: ox - 25, y: joints[10].y + 50, z: 20 };
                 joints[12] = { x: ox - 25, y: joints[11].y + 50, z: 0 };
@@ -215,7 +266,7 @@
                 joints[14] = { x: ox + 25, y: joints[13].y + 50, z: -20 };
                 joints[15] = { x: ox + 25, y: joints[14].y + 50, z: 0 };
 
-                // 粒子群座標相對插值更新
+                // 更新粒子
                 const len = this.particles.length;
                 for (let i = 0; i < len; i++) {
                     const p = this.particles[i];
@@ -236,26 +287,17 @@
         }
 
         // -------------------------------------------------------------
-        // 核心模組 2：3D 矩陣投影與快取系統 (Matrix Projection)
+        // 攝影機矩陣快取
         // -------------------------------------------------------------
-        let currentRotX = 0.1, currentRotY = 0;
-        let cachedCosX = Math.cos(0.1), cachedSinX = Math.sin(0.1);
-        let cachedCosY = Math.cos(0), cachedSinY = Math.sin(0);
-
+        let cachedCosX = 1, cachedSinX = 0, cachedCosY = 1, cachedSinY = 0;
         function updateCameraMatrix(rx, ry) {
-            currentRotX = rx;
-            currentRotY = ry;
-            // 快取三角函數結果，避免在粒子迴圈中重複計算
-            cachedCosX = Math.cos(rx);
-            cachedSinX = Math.sin(rx);
-            cachedCosY = Math.cos(ry);
-            cachedSinY = Math.sin(ry);
+            cachedCosX = Math.cos(rx); cachedSinX = Math.sin(rx);
+            cachedCosY = Math.cos(ry); cachedSinY = Math.sin(ry);
         }
 
         function project3DFast(x, y, z) {
             let x1 = x * cachedCosY - z * cachedSinY;
             let z1 = z * cachedCosY + x * cachedSinY;
-
             let y2 = y * cachedCosX - z1 * cachedSinX;
             let z2 = z1 * cachedCosX + y * cachedSinX;
 
@@ -270,35 +312,73 @@
         }
 
         // -------------------------------------------------------------
-        // 場景與角色實例化管理
+        // 輕量級空間打擊碰撞偵測 (Fast Joint Distance Collision)
+        // -------------------------------------------------------------
+        let totalHitsCount = 0;
+        function checkHits(actors) {
+            if (actors.length < 2) return;
+            const threshold = 40; // 打擊判定距離
+
+            for (let i = 0; i < actors.length; i++) {
+                for (let j = i + 1; j < actors.length; j++) {
+                    const a1 = actors[i], a2 = actors[j];
+                    if (a1.hitCooldown > 0 || a2.hitCooldown > 0) continue;
+
+                    // 檢測兩人的左拳(6)與右拳(9)距離
+                    const fists1 = [a1.joints[6], a1.joints[9]];
+                    const fists2 = [a2.joints[6], a2.joints[9]];
+
+                    for (let f1 of fists1) {
+                        for (let f2 of fists2) {
+                            const dx = f1.x - f2.x;
+                            const dy = f1.y - f2.y;
+                            const dz = f1.z - f2.z;
+                            const distSq = dx * dx + dy * dy + dz * dz;
+
+                            if (distSq < threshold * threshold) {
+                                // 觸發碰撞 Spark 特效
+                                const midX = (f1.x + f2.x) / 2;
+                                const midY = (f1.y + f2.y) / 2;
+                                const midZ = (f1.z + f2.z) / 2;
+                                globalSparks.trigger(midX, midY, midZ, '#ffffff');
+
+                                a1.hitCooldown = 12;
+                                a2.hitCooldown = 12;
+                                totalHitsCount++;
+                                document.getElementById('stat-hits').innerText = `${totalHitsCount} Hits`;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // -------------------------------------------------------------
+        // 場景實例化
         // -------------------------------------------------------------
         let activeActors = [];
-        let particlesPerActor = 2000;
+        let currentSceneMode = 'single';
+        let currentMotionStyle = 'boxing';
 
-        function rebuildScene(count) {
+        function rebuildScene() {
             activeActors = [];
-            if (count === 1) {
-                activeActors.push(new Actor(1, 0, '#00f0ff', particlesPerActor));
-            } else if (count === 2) {
-                activeActors.push(new Actor(1, -90, '#00f0ff', particlesPerActor));
-                activeActors.push(new Actor(2, 90, '#ff2a5f', particlesPerActor));
-            } else if (count === 3) {
-                activeActors.push(new Actor(1, -120, '#00f0ff', particlesPerActor));
-                activeActors.push(new Actor(2, 0, '#00ff66', particlesPerActor));
-                activeActors.push(new Actor(3, 120, '#ff2a5f', particlesPerActor));
+            if (currentSceneMode === 'single') {
+                activeActors.push(new Actor(1, 0, '#00f0ff', currentMotionStyle));
+            } else if (currentSceneMode === 'duel') {
+                activeActors.push(new Actor(1, -45, '#00f0ff', currentMotionStyle));
+                activeActors.push(new Actor(2, 45, '#ff2a5f', currentMotionStyle));
+            } else if (currentSceneMode === 'trio') {
+                activeActors.push(new Actor(1, -90, '#00f0ff', currentMotionStyle));
+                activeActors.push(new Actor(2, 0, '#00ff66', currentMotionStyle));
+                activeActors.push(new Actor(3, 90, '#ff2a5f', currentMotionStyle));
             }
-            updateStatsUI();
+            document.getElementById('stat-total-particles').innerText = (activeActors.length * 1800).toLocaleString();
         }
 
-        function updateStatsUI() {
-            const total = activeActors.length * particlesPerActor;
-            document.getElementById('stat-total-particles').innerText = total.toLocaleString();
-        }
-
-        rebuildScene(1);
+        rebuildScene();
 
         // -------------------------------------------------------------
-        // 繪圖主循環 (Main Render Loop)
+        // 主繪圖迴圈
         // -------------------------------------------------------------
         let lastTime = performance.now();
         let frameCount = 0;
@@ -312,7 +392,6 @@
                 lastTime = now;
             }
 
-            // 更新攝影機旋轉矩陣
             const rotY = Math.sin(now * 0.0005) * 0.4;
             const rotX = 0.1 + Math.cos(now * 0.0003) * 0.1;
             updateCameraMatrix(rotX, rotY);
@@ -322,32 +401,35 @@
 
             const timeSec = now * 0.001;
 
-            // 收集所有粒子的渲染串流，進行深度排序 (Z-Sorting)
+            // 更新角色與進行輕量碰撞計算
+            activeActors.forEach((actor, index) => {
+                actor.update(timeSec, index * 1.5); // 給予相位差讓打擊錯落有致
+            });
+            checkHits(activeActors);
+            globalSparks.update();
+
+            // 渲染隊列收集 (深度 Z-Sorting)
             const renderQueue = [];
 
-            activeActors.forEach((actor, index) => {
-                actor.update(timeSec + index * 0.8);
+            activeActors.forEach(actor => {
                 const particles = actor.particles;
                 const len = particles.length;
                 const color = actor.color;
-
                 for (let i = 0; i < len; i++) {
                     const p = particles[i];
                     const proj = project3DFast(p.x, p.y, p.z);
-                    renderQueue.push({
-                        x: proj.x,
-                        y: proj.y,
-                        scale: proj.scale,
-                        z: proj.z,
-                        color: color
-                    });
+                    renderQueue.push({ x: proj.x, y: proj.y, scale: proj.scale, z: proj.z, color });
                 }
             });
 
-            // 按 Z 軸排序，確保前後透視遮蔽正確
+            // 碰撞火花粒子加入渲染
+            globalSparks.sparks.forEach(s => {
+                const proj = project3DFast(s.x, s.y, s.z);
+                renderQueue.push({ x: proj.x, y: proj.y, scale: proj.scale * 1.5, z: proj.z, color: s.color });
+            });
+
             renderQueue.sort((a, b) => b.z - a.z);
 
-            // 批量渲染粒子
             const renderLen = renderQueue.length;
             for (let i = 0; i < renderLen; i++) {
                 const item = renderQueue[i];
@@ -362,20 +444,19 @@
             requestAnimationFrame(animate);
         }
 
-        // UI 指令綁定
-        window.setActorCount = function(count) {
-            document.querySelectorAll('#btn-actor-1, #btn-actor-2, #btn-actor-3').forEach(b => b.classList.remove('active'));
+        // UI 事件
+        window.setSceneMode = function(mode) {
+            currentSceneMode = mode;
+            document.querySelectorAll('#btn-mode-1, #btn-mode-2, #btn-mode-3').forEach(b => b.classList.remove('active'));
             if (event) event.target.classList.add('active');
-            rebuildScene(count);
+            rebuildScene();
         };
 
-        window.setParticleDensity = function(density) {
-            particlesPerActor = density;
-            activeActors.forEach(actor => {
-                actor.particleCount = density;
-                actor.initParticles();
-            });
-            updateStatsUI();
+        window.setMotionStyle = function(style) {
+            currentMotionStyle = style;
+            document.querySelectorAll('#btn-style-boxing, #btn-style-wingchun').forEach(b => b.classList.remove('active'));
+            if (event) event.target.classList.add('active');
+            activeActors.forEach(a => a.style = style);
         };
 
         window.addEventListener('resize', updateScreenDimensions);
