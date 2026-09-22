@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D Studio - 階段 2：多角色對決與物理碰撞</title>
+    <title>3D Studio - 階段 3：Prompt 指令與電影平滑鏡頭</title>
     <style>
         * {
             box-sizing: border-box;
@@ -36,8 +36,8 @@
             border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 12px;
             padding: 14px;
-            width: 300px;
-            max-height: calc(100vh - 120px);
+            width: 320px;
+            max-height: calc(100vh - 40px);
             overflow-y: auto;
             z-index: 10;
             box-shadow: 0 20px 40px rgba(0,0,0,0.8);
@@ -61,6 +61,25 @@
             text-transform: uppercase;
             letter-spacing: 1px;
             margin: 12px 0 6px 0;
+        }
+        .prompt-box {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+        .prompt-input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            padding: 8px;
+            color: #ffffff;
+            font-size: 11px;
+            outline: none;
+        }
+        .prompt-input:focus {
+            border-color: #00f0ff;
+            box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
         }
         .btn-grid {
             display: grid;
@@ -110,8 +129,22 @@
 
     <div class="studio-panel">
         <div class="studio-header">
-            <span>🎬 STUDIO - PHASE 2</span>
+            <span>🎬 STUDIO - PHASE 3</span>
             <span id="fps" style="color: #00ffcc;">60 FPS</span>
+        </div>
+
+        <div class="section-title">自然語言 Prompt 指令輸入</div>
+        <div class="prompt-box">
+            <input type="text" id="promptInput" class="prompt-input" placeholder="例如：切換雙人詠春對打、拉近鏡頭" onkeydown="if(event.key==='Enter') processPrompt()">
+            <button class="btn" style="width: 60px;" onclick="processPrompt()">解析</button>
+        </div>
+
+        <div class="section-title">電影級鏡頭位移 (LERP Camera)</div>
+        <div class="btn-grid">
+            <button class="btn active" id="btn-cam-front" onclick="setCameraPreset('front')">正面前景</button>
+            <button class="btn" id="btn-cam-side" onclick="setCameraPreset('side')">45度特寫</button>
+            <button class="btn" id="btn-cam-top" onclick="setCameraPreset('top')">俯瞰視角</button>
+            <button class="btn" id="btn-cam-orbit" onclick="toggleOrbit()">動態環繞: 關</button>
         </div>
 
         <div class="section-title">演武模式與對決 (Battle Mode)</div>
@@ -121,17 +154,11 @@
             <button class="btn" id="btn-mode-3" onclick="setSceneMode('trio')" style="grid-column: span 2;">三方陣列對攻</button>
         </div>
 
-        <div class="section-title">招式姿態切換 (Motion FSM)</div>
-        <div class="btn-grid">
-            <button class="btn active" id="btn-style-boxing" onclick="setMotionStyle('boxing')">西洋拳擊</button>
-            <button class="btn" id="btn-style-wingchun" onclick="setMotionStyle('wingchun')">詠春守中線</button>
-        </div>
-
-        <div class="section-title">物理碰撞監控 (Physics & Hits)</div>
+        <div class="section-title">效能與鏡頭監控 (System Status)</div>
         <div class="stat-box">
-            <div class="stat-line"><span>總渲染粒子數:</span> <span class="stat-val" id="stat-total-particles">2,000</span></div>
-            <div class="stat-line"><span>碰撞計算時間:</span> <span class="stat-val" id="stat-calc-time">0.0 ms</span></div>
-            <div class="stat-line"><span>碰撞事件發送:</span> <span class="stat-val" id="stat-hits" style="color:#ff2a5f;">0 Hits</span></div>
+            <div class="stat-line"><span>總渲染粒子數:</span> <span class="stat-val" id="stat-total-particles">1,800</span></div>
+            <div class="stat-line"><span>鏡頭縮放比例:</span> <span class="stat-val" id="stat-cam-zoom">1.00x</span></div>
+            <div class="stat-line"><span>Prompt 解析狀態:</span> <span class="stat-val" id="stat-prompt-status" style="color:#00f0ff;">Ready</span></div>
         </div>
     </div>
 
@@ -158,42 +185,84 @@
         ];
 
         // -------------------------------------------------------------
-        // 衝擊波特效粒子系統 (Hit Spark Shockwave)
+        // 電影級平滑鏡頭系統 (LERP Camera Controller)
         // -------------------------------------------------------------
-        class SparkEffect {
+        class CameraController {
             constructor() {
-                this.sparks = [];
+                this.rotX = 0.1;
+                this.rotY = 0;
+                this.zoom = 1.0;
+
+                this.targetRotX = 0.1;
+                this.targetRotY = 0;
+                this.targetZoom = 1.0;
+
+                this.isOrbiting = false;
+                this.orbitSpeed = 0.008;
             }
+
+            update(now) {
+                if (this.isOrbiting) {
+                    this.targetRotY += this.orbitSpeed;
+                }
+
+                // LERP 平滑插值演算法 (柔和逼近目標值)
+                this.rotX += (this.targetRotX - this.rotX) * 0.08;
+                this.rotY += (this.targetRotY - this.rotY) * 0.08;
+                this.zoom += (this.targetZoom - this.zoom) * 0.08;
+
+                updateCameraMatrix(this.rotX, this.rotY);
+                document.getElementById('stat-cam-zoom').innerText = `${this.zoom.toFixed(2)}x`;
+            }
+
+            setPreset(preset) {
+                this.isOrbiting = false;
+                document.getElementById('btn-cam-orbit').innerText = "動態環繞: 關";
+                document.getElementById('btn-cam-orbit').classList.remove('active');
+
+                if (preset === 'front') {
+                    this.targetRotX = 0.1;
+                    this.targetRotY = 0;
+                    this.targetZoom = 1.0;
+                } else if (preset === 'side') {
+                    this.targetRotX = 0.15;
+                    this.targetRotY = 0.75;
+                    this.targetZoom = 1.25;
+                } else if (preset === 'top') {
+                    this.targetRotX = 0.85;
+                    this.targetRotY = 0;
+                    this.targetZoom = 0.9;
+                }
+            }
+        }
+        const camera = new CameraController();
+
+        // Spark 火花系統
+        class SparkEffect {
+            constructor() { this.sparks = []; }
             trigger(x, y, z, color = '#ffffff') {
-                for (let i = 0; i < 25; i++) {
+                for (let i = 0; i < 20; i++) {
                     const angle = Math.random() * Math.PI * 2;
-                    const speed = 3 + Math.random() * 6;
+                    const speed = 3 + Math.random() * 5;
                     this.sparks.push({
                         x, y, z,
-                        vx: Math.cos(angle) * speed,
-                        vy: Math.sin(angle) * speed,
-                        vz: (Math.random() - 0.5) * speed,
-                        life: 1.0,
-                        color
+                        vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, vz: (Math.random() - 0.5) * speed,
+                        life: 1.0, color
                     });
                 }
             }
             update() {
                 for (let i = this.sparks.length - 1; i >= 0; i--) {
                     const s = this.sparks[i];
-                    s.x += s.vx;
-                    s.y += s.vy;
-                    s.z += s.vz;
-                    s.life -= 0.04;
+                    s.x += s.vx; s.y += s.vy; s.z += s.vz;
+                    s.life -= 0.05;
                     if (s.life <= 0) this.sparks.splice(i, 1);
                 }
             }
         }
         const globalSparks = new SparkEffect();
 
-        // -------------------------------------------------------------
-        // Actor 類別擴充（支援多招式 FSM）
-        // -------------------------------------------------------------
+        // Actor 類別
         class Actor {
             constructor(id, offsetX = 0, color = '#00f0ff', style = 'boxing') {
                 this.id = id;
@@ -236,11 +305,11 @@
 
                     joints[4] = { x: ox - 25, y: -45, z: 15 };
                     joints[5] = { x: ox - 20, y: -25, z: 30 + punch };
-                    joints[6] = { x: ox - 15, y: -35, z: 55 + punch * 1.2 }; // 左拳關鍵點
+                    joints[6] = { x: ox - 15, y: -35, z: 55 + punch * 1.2 };
 
                     joints[7] = { x: ox + 25, y: -45, z: 15 };
                     joints[8] = { x: ox + 18, y: -20, z: 20 };
-                    joints[9] = { x: ox + 10, y: -30, z: 35 }; // 右拳關鍵點
+                    joints[9] = { x: ox + 10, y: -30, z: 35 };
                 } else if (this.style === 'wingchun') {
                     const chainPunch = Math.cos(t * 12) * 35;
                     joints[3] = { x: ox, y: 15 + bob, z: 0 };
@@ -257,7 +326,6 @@
                     joints[9] = { x: ox + 5, y: -35, z: 65 - chainPunch };
                 }
 
-                // 腿部固定
                 joints[10] = { x: ox - 20, y: joints[3].y + 15, z: 0 };
                 joints[11] = { x: ox - 25, y: joints[10].y + 50, z: 20 };
                 joints[12] = { x: ox - 25, y: joints[11].y + 50, z: 0 };
@@ -266,7 +334,6 @@
                 joints[14] = { x: ox + 25, y: joints[13].y + 50, z: -20 };
                 joints[15] = { x: ox + 25, y: joints[14].y + 50, z: 0 };
 
-                // 更新粒子
                 const len = this.particles.length;
                 for (let i = 0; i < len; i++) {
                     const p = this.particles[i];
@@ -286,9 +353,7 @@
             }
         }
 
-        // -------------------------------------------------------------
-        // 攝影機矩陣快取
-        // -------------------------------------------------------------
+        // 矩陣快取與投影
         let cachedCosX = 1, cachedSinX = 0, cachedCosY = 1, cachedSinY = 0;
         function updateCameraMatrix(rx, ry) {
             cachedCosX = Math.cos(rx); cachedSinX = Math.sin(rx);
@@ -302,7 +367,7 @@
             let z2 = z1 * cachedCosX + y * cachedSinX;
 
             const fov = 400;
-            const scale = (fov / (fov + z2 + 480)) * autoFitScale;
+            const scale = (fov / (fov + z2 + 480)) * autoFitScale * camera.zoom;
             return {
                 x: width / 2 + x1 * scale,
                 y: height / 2 + y2 * scale,
@@ -311,41 +376,24 @@
             };
         }
 
-        // -------------------------------------------------------------
-        // 輕量級空間打擊碰撞偵測 (Fast Joint Distance Collision)
-        // -------------------------------------------------------------
-        let totalHitsCount = 0;
+        // 碰撞檢測
         function checkHits(actors) {
             if (actors.length < 2) return;
-            const threshold = 40; // 打擊判定距離
-
+            const threshold = 40;
             for (let i = 0; i < actors.length; i++) {
                 for (let j = i + 1; j < actors.length; j++) {
                     const a1 = actors[i], a2 = actors[j];
                     if (a1.hitCooldown > 0 || a2.hitCooldown > 0) continue;
 
-                    // 檢測兩人的左拳(6)與右拳(9)距離
                     const fists1 = [a1.joints[6], a1.joints[9]];
                     const fists2 = [a2.joints[6], a2.joints[9]];
 
                     for (let f1 of fists1) {
                         for (let f2 of fists2) {
-                            const dx = f1.x - f2.x;
-                            const dy = f1.y - f2.y;
-                            const dz = f1.z - f2.z;
-                            const distSq = dx * dx + dy * dy + dz * dz;
-
-                            if (distSq < threshold * threshold) {
-                                // 觸發碰撞 Spark 特效
-                                const midX = (f1.x + f2.x) / 2;
-                                const midY = (f1.y + f2.y) / 2;
-                                const midZ = (f1.z + f2.z) / 2;
-                                globalSparks.trigger(midX, midY, midZ, '#ffffff');
-
-                                a1.hitCooldown = 12;
-                                a2.hitCooldown = 12;
-                                totalHitsCount++;
-                                document.getElementById('stat-hits').innerText = `${totalHitsCount} Hits`;
+                            const dx = f1.x - f2.x; const dy = f1.y - f2.y; const dz = f1.z - f2.z;
+                            if (dx * dx + dy * dy + dz * dz < threshold * threshold) {
+                                globalSparks.trigger((f1.x + f2.x) / 2, (f1.y + f2.y) / 2, (f1.z + f2.z) / 2);
+                                a1.hitCooldown = 12; a2.hitCooldown = 12;
                             }
                         }
                     }
@@ -353,9 +401,7 @@
             }
         }
 
-        // -------------------------------------------------------------
-        // 場景實例化
-        // -------------------------------------------------------------
+        // 場景與模式
         let activeActors = [];
         let currentSceneMode = 'single';
         let currentMotionStyle = 'boxing';
@@ -374,17 +420,103 @@
             }
             document.getElementById('stat-total-particles').innerText = (activeActors.length * 1800).toLocaleString();
         }
-
         rebuildScene();
 
         // -------------------------------------------------------------
-        // 主繪圖迴圈
+        // 自然語言 Prompt 解析器 (Natural Language Prompt Engine)
         // -------------------------------------------------------------
+        window.processPrompt = function() {
+            const input = document.getElementById('promptInput').value.trim();
+            const statusEl = document.getElementById('stat-prompt-status');
+            if (!input) return;
+
+            let logs = [];
+
+            // 模式意圖提取
+            if (input.includes('雙人') || input.includes('對打') || input.includes('攻防')) {
+                setSceneMode('duel');
+                logs.push('切換雙人');
+            } else if (input.includes('三人') || input.includes('三角色') || input.includes('陣列')) {
+                setSceneMode('trio');
+                logs.push('切換三人');
+            } else if (input.includes('單人') || input.includes('獨演')) {
+                setSceneMode('single');
+                logs.push('切換單人');
+            }
+
+            // 招式意圖提取
+            if (input.includes('詠春')) {
+                setMotionStyle('wingchun');
+                logs.push('詠春拳');
+            } else if (input.includes('拳擊') || input.includes('西洋')) {
+                setMotionStyle('boxing');
+                logs.push('西洋拳擊');
+            }
+
+            // 鏡頭意圖提取
+            if (input.includes('放大') || input.includes('拉近') || input.includes('特寫')) {
+                camera.targetZoom = 1.4;
+                logs.push('鏡頭拉近');
+            } else if (input.includes('縮小') || input.includes('拉遠') || input.includes('全景')) {
+                camera.targetZoom = 0.8;
+                logs.push('鏡頭拉遠');
+            } else if (input.includes('旋轉') || input.includes('環繞')) {
+                if (!camera.isOrbiting) toggleOrbit();
+                logs.push('環繞鏡頭');
+            } else if (input.includes('正面')) {
+                setCameraPreset('front');
+                logs.push('正面視角');
+            } else if (input.includes('俯瞰')) {
+                setCameraPreset('top');
+                logs.push('俯瞰視角');
+            }
+
+            if (logs.length > 0) {
+                statusEl.innerText = `已執行: ${logs.join(' + ')}`;
+                statusEl.style.color = '#00ffcc';
+            } else {
+                statusEl.innerText = '未識別指令';
+                statusEl.style.color = '#ff2a5f';
+            }
+        };
+
+        // UI 鏡頭指令
+        window.setCameraPreset = function(preset) {
+            document.querySelectorAll('#btn-cam-front, #btn-cam-side, #btn-cam-top').forEach(b => b.classList.remove('active'));
+            if (event && event.target) event.target.classList.add('active');
+            camera.setPreset(preset);
+        };
+
+        window.toggleOrbit = function() {
+            camera.isOrbiting = !camera.isOrbiting;
+            const btn = document.getElementById('btn-cam-orbit');
+            if (camera.isOrbiting) {
+                btn.innerText = "動態環繞: 開";
+                btn.classList.add('active');
+            } else {
+                btn.innerText = "動態環繞: 關";
+                btn.classList.remove('active');
+            }
+        };
+
+        window.setSceneMode = function(mode) {
+            currentSceneMode = mode;
+            document.querySelectorAll('#btn-mode-1, #btn-mode-2, #btn-mode-3').forEach(b => b.classList.remove('active'));
+            const btnMap = { 'single': 'btn-mode-1', 'duel': 'btn-mode-2', 'trio': 'btn-mode-3' };
+            if (document.getElementById(btnMap[mode])) document.getElementById(btnMap[mode]).classList.add('active');
+            rebuildScene();
+        };
+
+        window.setMotionStyle = function(style) {
+            currentMotionStyle = style;
+            activeActors.forEach(a => a.style = style);
+        };
+
+        // 主繪圖迴圈
         let lastTime = performance.now();
         let frameCount = 0;
 
         function animate(now) {
-            const startTime = performance.now();
             frameCount++;
             if (now - lastTime >= 1000) {
                 document.getElementById('fps').innerText = `${frameCount} FPS`;
@@ -392,23 +524,17 @@
                 lastTime = now;
             }
 
-            const rotY = Math.sin(now * 0.0005) * 0.4;
-            const rotX = 0.1 + Math.cos(now * 0.0003) * 0.1;
-            updateCameraMatrix(rotX, rotY);
+            camera.update(now);
 
             ctx.fillStyle = '#050505';
             ctx.fillRect(0, 0, width, height);
 
             const timeSec = now * 0.001;
 
-            // 更新角色與進行輕量碰撞計算
-            activeActors.forEach((actor, index) => {
-                actor.update(timeSec, index * 1.5); // 給予相位差讓打擊錯落有致
-            });
+            activeActors.forEach((actor, index) => actor.update(timeSec, index * 1.5));
             checkHits(activeActors);
             globalSparks.update();
 
-            // 渲染隊列收集 (深度 Z-Sorting)
             const renderQueue = [];
 
             activeActors.forEach(actor => {
@@ -422,7 +548,6 @@
                 }
             });
 
-            // 碰撞火花粒子加入渲染
             globalSparks.sparks.forEach(s => {
                 const proj = project3DFast(s.x, s.y, s.z);
                 renderQueue.push({ x: proj.x, y: proj.y, scale: proj.scale * 1.5, z: proj.z, color: s.color });
@@ -438,26 +563,8 @@
                 ctx.fillRect(item.x - size / 2, item.y - size / 2, size, size);
             }
 
-            const calcEndTime = performance.now();
-            document.getElementById('stat-calc-time').innerText = `${(calcEndTime - startTime).toFixed(1)} ms`;
-
             requestAnimationFrame(animate);
         }
-
-        // UI 事件
-        window.setSceneMode = function(mode) {
-            currentSceneMode = mode;
-            document.querySelectorAll('#btn-mode-1, #btn-mode-2, #btn-mode-3').forEach(b => b.classList.remove('active'));
-            if (event) event.target.classList.add('active');
-            rebuildScene();
-        };
-
-        window.setMotionStyle = function(style) {
-            currentMotionStyle = style;
-            document.querySelectorAll('#btn-style-boxing, #btn-style-wingchun').forEach(b => b.classList.remove('active'));
-            if (event) event.target.classList.add('active');
-            activeActors.forEach(a => a.style = style);
-        };
 
         window.addEventListener('resize', updateScreenDimensions);
         requestAnimationFrame(animate);
