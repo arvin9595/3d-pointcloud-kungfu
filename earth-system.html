@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Earth System - 經緯度偵測與地標飛航系統</title>
+    <title>Earth System - 全精細地標導覽系統</title>
     <style>
         body {
             margin: 0;
@@ -16,14 +16,14 @@
             top: 20px;
             left: 20px;
             color: #fff;
-            background: rgba(10, 15, 30, 0.85);
-            backdrop-filter: blur(10px);
-            padding: 16px 22px;
-            border-radius: 12px;
+            background: rgba(10, 15, 30, 0.88);
+            backdrop-filter: blur(12px);
+            padding: 18px 22px;
+            border-radius: 14px;
             border: 1px solid rgba(255, 255, 255, 0.15);
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
             z-index: 10;
-            max-width: 320px;
+            width: 280px;
         }
         #ui-panel h2 {
             margin: 0 0 6px 0;
@@ -49,45 +49,63 @@
         .section-title {
             font-size: 12px;
             color: #81d4fa;
-            margin-top: 10px;
-            margin-bottom: 4px;
+            margin-top: 12px;
+            margin-bottom: 6px;
             font-weight: bold;
+            letter-spacing: 0.5px;
         }
-        #controls-bar, #fly-bar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
+        #landmark-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
             pointer-events: auto;
         }
-        .btn {
-            background: rgba(255, 255, 255, 0.12);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: #fff;
-            padding: 5px 10px;
-            border-radius: 6px;
+        .btn-landmark {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(79, 195, 247, 0.3);
+            color: #e0f7fa;
+            padding: 8px 10px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 12px;
-            transition: all 0.2s ease;
+            text-align: left;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
-        .btn:hover {
-            background: rgba(79, 195, 247, 0.4);
+        .btn-landmark:hover {
+            background: rgba(79, 195, 247, 0.3);
             border-color: #4fc3f7;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 191, 255, 0.3);
         }
-        .btn.active {
+        .btn-landmark.active {
             background: #0288d1;
-            border-color: #0288d1;
+            border-color: #81d4fa;
+            color: #fff;
+            font-weight: bold;
         }
-        .btn-fly {
-            background: rgba(46, 125, 50, 0.3);
-            border-color: rgba(76, 175, 80, 0.5);
+        #controls-bar {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+            pointer-events: auto;
         }
-        .btn-fly:hover {
-            background: #2e7d32;
-            border-color: #81c784;
+        .btn-sub {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        .btn-sub:hover {
+            background: rgba(255, 255, 255, 0.25);
         }
     </style>
 
-    <!-- 引入 GSAP 補間動畫庫與 Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script type="importmap">
         {
@@ -101,26 +119,24 @@
 <body>
     <div id="ui-panel">
         <h2>EARTH SYSTEM</h2>
-        <p>✦ 滾輪進行縮放（自動於太空與近地面切換）</p>
         <p id="altitude-readout">視角高度: 計算中...</p>
-        <p id="coords-readout">指向座標: 指向地表中...</p>
-        <div id="mode-indicator">渲染模式: 太空全域 (晝夜城市燈光開啟)</div>
-        
-        <div class="section-title">自轉控制</div>
-        <div id="controls-bar">
-            <button id="btn-pause" class="btn">⏸ 暫停自轉</button>
-            <button id="btn-1x" class="btn active">1x 速度</button>
-            <button id="btn-2x" class="btn">2x 速度</button>
-            <button id="btn-5x" class="btn">5x 速度</button>
+        <p id="coords-readout">目標區域: 全球檢視</p>
+        <div id="mode-indicator">模式: 太空全域 (Space)</div>
+
+        <div class="section-title">📍 精選高解析地標導覽</div>
+        <div id="landmark-grid">
+            <button class="btn-landmark" data-lat="23.47" data-lon="120.95" data-name="台灣 玉山">🏔 台灣玉山</button>
+            <button class="btn-landmark" data-lat="27.98" data-lon="86.92" data-name="珠穆朗瑪峰">🏔 聖母峰</button>
+            <button class="btn-landmark" data-lat="45.83" data-lon="6.86" data-name="阿爾卑斯山">🏔 白朗峰</button>
+            <button class="btn-landmark" data-lat="35.36" data-lon="138.72" data-name="日本 富士山">🗻 富士山</button>
+            <button class="btn-landmark" data-lat="36.10" data-lon="-112.11" data-name="美國 大峽谷">🏜 大峽谷</button>
+            <button class="btn-landmark" data-lat="-22.95" data-lon="-43.21" data-name="里約 耶穌像">🗿 耶穌山</button>
         </div>
 
-        <div class="section-title">快速飛往熱門地標</div>
-        <div id="fly-bar">
-            <button class="btn btn-fly" data-lat="23.47" data-lon="120.95">🏔 台灣玉山</button>
-            <button class="btn btn-fly" data-lat="27.98" data-lon="86.92">🏔 喜馬拉雅山</button>
-            <button class="btn btn-fly" data-lat="45.83" data-lon="6.86">🏔 阿爾卑斯山</button>
-            <button class="btn btn-fly" data-lat="35.67" data-lon="139.65">🗼 東京</button>
-            <button class="btn btn-fly" data-lat="40.71" data-lon="-74.00">🏙 紐約</button>
+        <div class="section-title">系統控制</div>
+        <div id="controls-bar">
+            <button id="btn-reset" class="btn-sub">🌐 返回太空視野</button>
+            <button id="btn-pause" class="btn-sub">⏸ 暫停/播放</button>
         </div>
     </div>
 
@@ -128,16 +144,16 @@
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-        // 1. 初始化場景、相機與渲染器
+        // 1. 初始化場景與渲染器
         const scene = new THREE.Scene();
 
         const camera = new THREE.PerspectiveCamera(
-            45,
+            40,
             window.innerWidth / window.innerHeight,
             0.001,
             2000
         );
-        camera.position.set(0, 0, 20);
+        camera.position.set(0, 0, 22);
 
         const renderer = new THREE.WebGLRenderer({ 
             antialias: true, 
@@ -152,24 +168,23 @@
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
-        controls.minDistance = 6.002; 
+        controls.minDistance = 6.0015; 
         controls.maxDistance = 150;
 
-        // 3. 太陽光源設定
-        const sunLight = new THREE.DirectionalLight(0xffffff, 2.5);
-        sunLight.position.set(100, 20, 50);
+        // 3. 光源系統
+        const sunLight = new THREE.DirectionalLight(0xffffff, 2.8);
+        sunLight.position.set(100, 30, 60);
         scene.add(sunLight);
 
-        const ambientLight = new THREE.AmbientLight(0x0a1020, 0.15);
+        const ambientLight = new THREE.AmbientLight(0x0a1020, 0.2);
         scene.add(ambientLight);
 
-        // 4. 群組設定
+        // 4. 群組與材質設定
         const spaceGroup = new THREE.Group();
         const groundGroup = new THREE.Group();
         scene.add(spaceGroup);
         scene.add(groundGroup);
 
-        // === 貼圖與 Shader ===
         const earthRadius = 6;
         const textureLoader = new THREE.TextureLoader();
 
@@ -178,6 +193,7 @@
         const earthNormalMap = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-topology.png');
         const cloudMap = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-clouds.png');
 
+        // 太空層材質
         const earthShaderMaterial = new THREE.ShaderMaterial({
             uniforms: {
                 dayTexture: { value: earthDayMap },
@@ -186,11 +202,9 @@
             },
             vertexShader: `
                 varying vec2 vUv;
-                varying vec3 vNormal;
                 varying vec3 vWorldNormal;
                 void main() {
                     vUv = uv;
-                    vNormal = normalize(normalMatrix * normal);
                     vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
                     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
                 }
@@ -201,7 +215,6 @@
                 uniform vec3 sunDirection;
 
                 varying vec2 vUv;
-                varying vec3 vNormal;
                 varying vec3 vWorldNormal;
 
                 void main() {
@@ -232,86 +245,25 @@
         const cloudMesh = new THREE.Mesh(cloudGeometry, cloudMaterial);
         spaceGroup.add(cloudMesh);
 
-        // 太空大氣光暈
-        const atmosphereGeometry = new THREE.SphereGeometry(earthRadius * 1.12, 64, 64);
-        const atmosphereMaterial = new THREE.ShaderMaterial({
-            vertexShader: `
-                varying vec3 vNormal;
-                void main() {
-                    vNormal = normalize(normalMatrix * normal);
-                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                }
-            `,
-            fragmentShader: `
-                varying vec3 vNormal;
-                void main() {
-                    float intensity = pow(0.65 - dot(vNormal, vec3(0, 0, 1.0)), 2.5);
-                    gl_FragColor = vec4(0.2, 0.55, 1.0, 1.0) * intensity;
-                }
-            `,
-            blending: THREE.AdditiveBlending,
-            side: THREE.BackSide,
-            transparent: true
-        });
-        const atmosphereMesh = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
-        spaceGroup.add(atmosphereMesh);
-
-        // === 近地面層：高解析實體山脈地形 ===
-        const highResGeometry = new THREE.SphereGeometry(earthRadius, 256, 256);
+        // === 近地面地標專用：極高密度 512x512 幾何體與深度立體感 ===
+        const highResGeometry = new THREE.SphereGeometry(earthRadius, 512, 512);
         const highResMaterial = new THREE.MeshStandardMaterial({
             map: earthDayMap,
             normalMap: earthNormalMap,
-            normalScale: new THREE.Vector2(1.8, 1.8),
+            normalScale: new THREE.Vector2(2.5, 2.5),
             displacementMap: earthNormalMap,
-            displacementScale: 0.35,
+            displacementScale: 0.45, // 顯著推高山脈高度
             displacementBias: -0.05,
-            roughness: 0.5
+            roughness: 0.45
         });
         const highResEarth = new THREE.Mesh(highResGeometry, highResMaterial);
         groundGroup.add(highResEarth);
         groundGroup.visible = false;
 
-
-        // 5. 控制狀態變數
-        let baseRotationSpeed = 0.0003;
-        let speedMultiplier = 1.0;
+        // 5. 狀態變數與邏輯
         let isPaused = false;
         let isFlying = false;
 
-        // 6. 經緯度座標轉換與 Raycaster 射線偵測
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-        const coordsReadout = document.getElementById('coords-readout');
-
-        window.addEventListener('pointermove', (event) => {
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-            raycaster.setFromCamera(mouse, camera);
-            const activeEarth = spaceGroup.visible ? earthMesh : highResEarth;
-            const intersects = raycaster.intersectObject(activeEarth);
-
-            if (intersects.length > 0) {
-                const point = intersects[0].point;
-                // 將 3D 世界座標轉回地塊本地座標
-                const localPoint = activeEarth.worldToLocal(point.clone());
-                
-                // 計算緯度與經度
-                const lat = 90 - (Math.acos(localPoint.y / earthRadius) * 180 / Math.PI);
-                let lon = ((Math.atan2(localPoint.z, localPoint.x) * 180 / Math.PI) + 180) % 360 - 180;
-                // 修正球面貼圖 UV 偏移角
-                lon = -lon - 90;
-                if (lon < -180) lon += 360;
-
-                const latStr = `${Math.abs(lat).toFixed(2)}° ${lat >= 0 ? 'N' : 'S'}`;
-                const lonStr = `${Math.abs(lon).toFixed(2)}° ${lon >= 0 ? 'E' : 'W'}`;
-                coordsReadout.innerText = `指向座標: ${latStr}, ${lonStr}`;
-            } else {
-                coordsReadout.innerText = `指向座標: 外太空`;
-            }
-        });
-
-        // 7. 經緯度轉 3D 空間座標（用於飛行目的地計算）
         function latLonToVector3(lat, lon, radius) {
             const phi = (90 - lat) * (Math.PI / 180);
             const theta = (lon + 180) * (Math.PI / 180);
@@ -323,49 +275,85 @@
             return new THREE.Vector3(x, y, z);
         }
 
-        // 8. 飛航動畫邏輯 (GSAP)
-        function flyToLocation(lat, lon) {
+        // 6. 核心：傾斜視角飛航演算法（帶出立體山脈感）
+        const coordsReadout = document.getElementById('coords-readout');
+
+        function flyToLandmark(lat, lon, name) {
             if (isFlying) return;
             isFlying = true;
-            isPaused = true; // 飛行期間自動暫停自轉
+            isPaused = true;
 
-            // 算目標點在地表與近地高度的 3D 向量
-            const targetSurfaceVec = latLonToVector3(lat, lon, earthRadius);
-            const targetCamVec = latLonToVector3(lat, lon, earthRadius + 0.3); // 降落高度 300km
+            coordsReadout.innerText = `目標區域: ${name}`;
 
-            // 飛行時間與拋物線高度
+            // 1. 計算地表目標座標點
+            const targetSurface = latLonToVector3(lat, lon, earthRadius);
+
+            // 2. 計算傾斜鏡頭位置（在目標上方 + 偏移量，形成斜俯視）
+            const tiltOffset = new THREE.Vector3(0, 0.15, 0.25); 
+            const targetCamPos = latLonToVector3(lat, lon, earthRadius + 0.12).add(tiltOffset);
+
+            // 3. GSAP 平滑飛行
             gsap.timeline({
                 onComplete: () => {
                     isFlying = false;
                 }
             })
             .to(camera.position, {
-                duration: 2.5,
-                x: targetCamVec.x,
-                y: targetCamVec.y,
-                z: targetCamVec.z,
-                ease: "power2.inOut",
-                onUpdate: () => {
-                    controls.target.lerp(targetSurfaceVec, 0.1);
-                }
-            });
+                duration: 2.8,
+                x: targetCamPos.x,
+                y: targetCamPos.y,
+                z: targetCamPos.z,
+                ease: "power3.inOut"
+            })
+            .to(controls.target, {
+                duration: 2.8,
+                x: targetSurface.x,
+                y: targetSurface.y,
+                z: targetSurface.z,
+                ease: "power3.inOut"
+            }, "<");
         }
 
-        // 地標按鈕事件綁定
-        document.querySelectorAll('.btn-fly').forEach(btn => {
+        // 按鈕點擊事件
+        document.querySelectorAll('.btn-landmark').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const lat = parseFloat(e.target.dataset.lat);
-                const lon = parseFloat(e.target.dataset.lon);
-                flyToLocation(lat, lon);
+                document.querySelectorAll('.btn-landmark').forEach(b => b.classList.remove('active'));
+                const targetBtn = e.currentTarget;
+                targetBtn.classList.add('active');
+
+                const lat = parseFloat(targetBtn.dataset.lat);
+                const lon = parseFloat(targetBtn.dataset.lon);
+                const name = targetBtn.dataset.name;
+                flyToLandmark(lat, lon, name);
             });
         });
 
-        // 9. 雙層無縫過渡邏輯
+        // 返回太空視野按鈕
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            document.querySelectorAll('.btn-landmark').forEach(b => b.classList.remove('active'));
+            coordsReadout.innerText = "目標區域: 全球檢視";
+            isFlying = true;
+            
+            gsap.timeline({
+                onComplete: () => {
+                    isFlying = false;
+                    isPaused = false;
+                }
+            })
+            .to(camera.position, { duration: 2.0, x: 0, y: 0, z: 22, ease: "power2.inOut" })
+            .to(controls.target, { duration: 2.0, x: 0, y: 0, z: 0, ease: "power2.inOut" }, "<");
+        });
+
+        document.getElementById('btn-pause').addEventListener('click', () => {
+            isPaused = !isPaused;
+        });
+
+        // 7. 雙層無縫過渡
         const altitudeReadout = document.getElementById('altitude-readout');
         const modeIndicator = document.getElementById('mode-indicator');
-        const transitionThreshold = earthRadius + 2.0; 
+        const transitionThreshold = earthRadius + 2.0;
 
-        function updateLayersVisibility(camDistance) {
+        function updateVisibility(camDistance) {
             const altitudeKM = Math.max(0, ((camDistance - earthRadius) * 1000)).toFixed(1);
             altitudeReadout.innerText = `視角高度: ${altitudeKM} km`;
 
@@ -373,57 +361,28 @@
                 spaceGroup.visible = true;
                 groundGroup.visible = false;
                 scene.fog = null;
-                
-                modeIndicator.innerText = "渲染模式: 太空全域 (晝夜城市燈光)";
+                modeIndicator.innerText = "模式: 太空全域 (Space)";
                 modeIndicator.style.background = "#0288d1";
             } else {
                 spaceGroup.visible = false;
                 groundGroup.visible = true;
-                
-                scene.fog = new THREE.FogExp2(0x87ceeb, 0.08); 
-
-                modeIndicator.innerText = "渲染模式: 近地面高解析地形 (High-Res LOD)";
+                scene.fog = new THREE.FogExp2(0x87ceeb, 0.12); // 近地面大氣霧感
+                modeIndicator.innerText = "模式: 精細地標近景 (LOD High)";
                 modeIndicator.style.background = "#2e7d32";
             }
         }
 
-        // 10. 自轉速度控制按鈕
-        const btnPause = document.getElementById('btn-pause');
-        const btn1x = document.getElementById('btn-1x');
-        const btn2x = document.getElementById('btn-2x');
-        const btn5x = document.getElementById('btn-5x');
-        const speedButtons = [btn1x, btn2x, btn5x];
-
-        btnPause.addEventListener('click', () => {
-            isPaused = !isPaused;
-            btnPause.innerText = isPaused ? "▶ 恢復自轉" : "⏸ 暫停自轉";
-            btnPause.classList.toggle('active', isPaused);
-        });
-
-        function setSpeed(multiplier, activeBtn) {
-            speedMultiplier = multiplier;
-            speedButtons.forEach(btn => btn.classList.remove('active'));
-            activeBtn.classList.add('active');
-        }
-
-        btn1x.addEventListener('click', () => setSpeed(1.0, btn1x));
-        btn2x.addEventListener('click', () => setSpeed(2.0, btn2x));
-        btn5x.addEventListener('click', () => setSpeed(5.0, btn5x));
-
-        // 11. 動畫迴圈
+        // 8. 算繪迴圈
         function animate() {
             requestAnimationFrame(animate);
 
             const camDistance = camera.position.distanceTo(scene.position);
-            updateLayersVisibility(camDistance);
+            updateVisibility(camDistance);
 
-            const shouldRotate = !isPaused && spaceGroup.visible && !isFlying;
-
-            if (shouldRotate) {
-                const currentSpeed = baseRotationSpeed * speedMultiplier;
-                earthMesh.rotation.y += currentSpeed;
-                cloudMesh.rotation.y += currentSpeed * 1.2;
-                highResEarth.rotation.y += currentSpeed;
+            if (!isPaused && spaceGroup.visible && !isFlying) {
+                earthMesh.rotation.y += 0.0003;
+                cloudMesh.rotation.y += 0.0004;
+                highResEarth.rotation.y += 0.0003;
             }
 
             earthShaderMaterial.uniforms.sunDirection.value.copy(sunLight.position).normalize();
@@ -434,7 +393,6 @@
 
         animate();
 
-        // RWD 視窗自動適應
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
