@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>全 3D 沉浸式身歷其境太陽系星際探索 - 深度高精完整版 (移除邊界)</title>
+    <title>全 3D 沉浸式太陽系星際探險 - 深度表面探勘版</title>
     <!-- Three.js and OrbitControls -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -35,7 +35,7 @@
 
         /* Glassmorphism UI Panel */
         .glass-panel {
-            background: rgba(10, 16, 28, 0.65);
+            background: rgba(10, 16, 28, 0.7);
             backdrop-filter: blur(18px);
             -webkit-backdrop-filter: blur(18px);
             border: 1px solid rgba(0, 240, 255, 0.25);
@@ -146,6 +146,20 @@
             font-weight: 500;
         }
 
+        .land-btn {
+            background: linear-gradient(135deg, rgba(255, 170, 0, 0.25), rgba(255, 0, 100, 0.25));
+            border: 1px solid rgba(255, 170, 0, 0.5);
+            color: #ffcc00;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .land-btn:hover {
+            border-color: #ffcc00;
+            box-shadow: 0 0 12px rgba(255, 204, 0, 0.4);
+            background: rgba(255, 170, 0, 0.35);
+        }
+
         /* Planet Info HUD */
         #info-panel {
             position: absolute;
@@ -204,18 +218,49 @@
             margin-right: 4px;
         }
 
+        /* Mode Status Overlay */
+        #mode-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 10;
+            padding: 8px 16px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            color: #00f0ff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00f0ff;
+            box-shadow: 0 0 8px #00f0ff;
+        }
+
         @media (max-width: 768px) {
             #ui-container { width: calc(100% - 40px); top: 10px; left: 20px; padding: 15px; }
             #info-panel { width: calc(100% - 40px); bottom: 10px; right: 20px; padding: 15px; }
+            #mode-indicator { display: none; }
         }
     </style>
 </head>
 <body>
     <div id="webgl-container"></div>
 
+    <!-- Mode Indicator -->
+    <div id="mode-indicator" class="glass-panel">
+        <div class="status-dot"></div>
+        <span id="mode-text">ORBITAL VIEW (軌道全景)</span>
+    </div>
+
     <!-- UI Panel -->
     <div id="ui-container" class="glass-panel">
-        <h1>SOLAR EXPLORER <span style="font-size: 0.6rem; color: #00f0ff; border: 1px solid #00f0ff; padding: 2px 6px; border-radius: 4px;">PRO</span></h1>
+        <h1>SOLAR EXPLORER <span style="font-size: 0.6rem; color: #00f0ff; border: 1px solid #00f0ff; padding: 2px 6px; border-radius: 4px;">SURFACE+</span></h1>
         
         <div class="section-title">聚焦目標 Focus Body</div>
         <select id="planet-select">
@@ -230,6 +275,9 @@
             <option value="Neptune">海王星 (Neptune)</option>
             <option value="Pluto">冥王星 (Pluto)</option>
         </select>
+
+        <!-- Surface Landing Toggle Button -->
+        <button id="btn-land" class="land-btn">🛬 進入地表 / 內部探勘 (Enter Surface)</button>
 
         <div class="section-title">公轉速度 Orbit Speed</div>
         <div class="btn-group">
@@ -258,7 +306,7 @@
     </div>
 
     <script>
-        // --- 1. Procedural Texture Generator (Ensures High Detail Textures) ---
+        // --- 1. Procedural Texture Generator ---
         const TextureGen = {
             sun() {
                 const canvas = document.createElement('canvas');
@@ -267,16 +315,12 @@
                 const grad = ctx.createLinearGradient(0, 0, 0, 512);
                 grad.addColorStop(0, '#ffcc00'); grad.addColorStop(0.5, '#ff3300'); grad.addColorStop(1, '#ff9900');
                 ctx.fillStyle = grad; ctx.fillRect(0, 0, 1024, 512);
-                
                 for (let i = 0; i < 4000; i++) {
                     ctx.fillStyle = `rgba(255, ${Math.random()*255}, 0, ${Math.random()*0.35})`;
-                    ctx.beginPath();
-                    ctx.arc(Math.random()*1024, Math.random()*512, Math.random()*18+4, 0, Math.PI*2);
-                    ctx.fill();
+                    ctx.beginPath(); ctx.arc(Math.random()*1024, Math.random()*512, Math.random()*18+4, 0, Math.PI*2); ctx.fill();
                 }
                 return new THREE.CanvasTexture(canvas);
             },
-
             planet(type) {
                 const w = 1024, h = 512;
                 const canvas = document.createElement('canvas');
@@ -294,35 +338,21 @@
                     grad.addColorStop(0, '#e3bb76'); grad.addColorStop(0.5, '#c29d5b'); grad.addColorStop(1, '#dfa851');
                     ctx.fillStyle = grad; ctx.fillRect(0,0,w,h);
                     ctx.fillStyle = 'rgba(255,255,255,0.15)';
-                    for(let i=0; i<30; i++) {
-                        ctx.fillRect(0, Math.random()*h, w, Math.random()*30);
-                    }
+                    for(let i=0; i<30; i++) ctx.fillRect(0, Math.random()*h, w, Math.random()*30);
                 } else if (type === 'earth') {
                     ctx.fillStyle = '#0f3875'; ctx.fillRect(0,0,w,h);
                     ctx.fillStyle = '#227b43';
-                    for(let i=0; i<50; i++) {
-                        ctx.beginPath();
-                        ctx.arc(Math.random()*w, Math.random()*h, Math.random()*90+20, 0, Math.PI*2);
-                        ctx.fill();
-                    }
+                    for(let i=0; i<50; i++) { ctx.beginPath(); ctx.arc(Math.random()*w, Math.random()*h, Math.random()*90+20, 0, Math.PI*2); ctx.fill(); }
                     ctx.fillStyle = 'rgba(255,255,255,0.65)';
-                    for(let i=0; i<80; i++) {
-                        ctx.beginPath();
-                        ctx.arc(Math.random()*w, Math.random()*h, Math.random()*45+15, 0, Math.PI*2);
-                        ctx.fill();
-                    }
+                    for(let i=0; i<80; i++) { ctx.beginPath(); ctx.arc(Math.random()*w, Math.random()*h, Math.random()*45+15, 0, Math.PI*2); ctx.fill(); }
                 } else if (type === 'moon') {
                     ctx.fillStyle = '#aaaaaa'; ctx.fillRect(0,0,w,h);
                     ctx.fillStyle = '#666666';
-                    for(let i=0; i<300; i++) {
-                        ctx.beginPath(); ctx.arc(Math.random()*w, Math.random()*h, Math.random()*8+2, 0, Math.PI*2); ctx.fill();
-                    }
+                    for(let i=0; i<300; i++) { ctx.beginPath(); ctx.arc(Math.random()*w, Math.random()*h, Math.random()*8+2, 0, Math.PI*2); ctx.fill(); }
                 } else if (type === 'mars') {
                     ctx.fillStyle = '#c1440e'; ctx.fillRect(0,0,w,h);
                     ctx.fillStyle = '#6b1d00';
-                    for(let i=0; i<600; i++) {
-                        ctx.beginPath(); ctx.arc(Math.random()*w, Math.random()*h, Math.random()*12, 0, Math.PI*2); ctx.fill();
-                    }
+                    for(let i=0; i<600; i++) { ctx.beginPath(); ctx.arc(Math.random()*w, Math.random()*h, Math.random()*12, 0, Math.PI*2); ctx.fill(); }
                 } else if (type === 'jupiter') {
                     for(let y=0; y<h; y++) {
                         const band = Math.sin(y/10) * 0.5 + 0.5;
@@ -344,57 +374,45 @@
                 } else if (type === 'neptune') {
                     ctx.fillStyle = '#274687'; ctx.fillRect(0,0,w,h);
                     ctx.fillStyle = 'rgba(255,255,255,0.25)';
-                    for(let i=0; i<20; i++) {
-                        ctx.beginPath(); ctx.arc(Math.random()*w, Math.random()*h, Math.random()*25, 0, Math.PI*2); ctx.fill();
-                    }
+                    for(let i=0; i<20; i++) { ctx.beginPath(); ctx.arc(Math.random()*w, Math.random()*h, Math.random()*25, 0, Math.PI*2); ctx.fill(); }
                 } else if (type === 'pluto') {
                     ctx.fillStyle = '#968570'; ctx.fillRect(0,0,w,h);
                     ctx.fillStyle = '#3d3226';
-                    for(let i=0; i<250; i++) {
-                        ctx.beginPath(); ctx.arc(Math.random()*w, Math.random()*h, Math.random()*8, 0, Math.PI*2); ctx.fill();
-                    }
+                    for(let i=0; i<250; i++) { ctx.beginPath(); ctx.arc(Math.random()*w, Math.random()*h, Math.random()*8, 0, Math.PI*2); ctx.fill(); }
                 }
                 return new THREE.CanvasTexture(canvas);
             },
-
             saturnRingDetailed() {
                 const canvas = document.createElement('canvas');
                 canvas.width = 1024; canvas.height = 1;
                 const ctx = canvas.getContext('2d');
-
                 for (let x = 0; x < 1024; x++) {
                     const r = x / 1024;
-                    let alpha = 0;
-                    let color = '#d2be98';
-
+                    let alpha = 0; let color = '#d2be98';
                     if (r >= 0.05 && r < 0.2) alpha = 0.15;
                     else if (r >= 0.2 && r < 0.4) alpha = 0.35 + Math.sin(r * 200) * 0.1;
                     else if (r >= 0.4 && r < 0.72) { alpha = 0.95 + Math.sin(r * 400) * 0.05; color = '#e2cca0'; }
                     else if (r >= 0.72 && r < 0.78) alpha = 0.03; 
                     else if (r >= 0.78 && r < 0.94) { alpha = 0.7 + Math.sin(r * 300) * 0.1; if (r > 0.88 && r < 0.90) alpha = 0.1; }
                     else if (r >= 0.96 && r < 0.98) alpha = 0.6;
-
-                    ctx.fillStyle = color;
-                    ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
-                    ctx.fillRect(x, 0, 1, 1);
+                    ctx.fillStyle = color; ctx.globalAlpha = Math.max(0, Math.min(1, alpha)); ctx.fillRect(x, 0, 1, 1);
                 }
-
                 return new THREE.CanvasTexture(canvas);
             }
         };
 
         // --- 2. Celestial Data ---
         const PLANET_DATA = {
-            Sun: { name: "太陽 (Sun)", diameter: "1,392,700 km", period: "N/A", distance: "0 AU", radius: 18, orbitDist: 0, speed: 0, desc: "太陽系的中心恆星，佔據整個太陽系質量的 99.86%。", tags: ["黃矮星", "核心能源"] },
-            Mercury: { name: "水星 (Mercury)", diameter: "4,879 km", period: "88 天", distance: "0.39 AU", radius: 1.2, orbitDist: 32, speed: 0.04, desc: "最靠近太陽的行星，表面溫差極大，佈滿撞擊坑。", tags: ["極端溫差", "隕石坑地貌"] },
-            Venus: { name: "金星 (Venus)", diameter: "12,104 km", period: "225 天", distance: "0.72 AU", radius: 2.2, orbitDist: 48, speed: 0.015, desc: "擁有極濃厚的二氧化碳大氣與強烈溫室效應，是太陽系最熱的行星。", tags: ["逆向自轉", "溫室效應"] },
-            Earth: { name: "地球 (Earth)", diameter: "12,742 km", period: "365.25 天", distance: "1.0 AU", radius: 2.5, orbitDist: 68, speed: 0.01, desc: "人類的家園。擁有自然衛星月球、近地人造衛星網與太空垃圾層。", tags: ["月球系統", "人造衛星網", "太空垃圾層"] },
-            Mars: { name: "火星 (Mars)", diameter: "6,779 km", period: "687 天", distance: "1.52 AU", radius: 1.6, orbitDist: 88, speed: 0.008, desc: "著名的「紅色星球」，擁有太陽系最高火山——奧林帕斯山。", tags: ["奧林帕斯山", "氧化鐵地表"] },
-            Jupiter: { name: "木星 (Jupiter)", diameter: "139,820 km", period: "11.86 年", distance: "5.2 AU", radius: 6.5, orbitDist: 125, speed: 0.004, desc: "太陽系最大的氣態巨行星，標誌性特徵為大紅斑與著名的四大伽利略衛星。", tags: ["氣態巨行星", "大紅斑風暴", "四大伽利略衛星"] },
-            Saturn: { name: "土星 (Saturn)", diameter: "116,460 km", period: "29.45 年", distance: "9.5 AU", radius: 5.5, orbitDist: 165, speed: 0.003, desc: "擁有華麗的土星環系統，清晰可見 A/B/C 環結構與卡西尼環縫（Cassini Division）。", tags: ["卡西尼環縫", "多層光環結構"], hasRings: true },
-            Uranus: { name: "天王星 (Uranus)", diameter: "50,724 km", period: "84 年", distance: "19.2 AU", radius: 3.8, orbitDist: 205, speed: 0.002, desc: "冰巨行星，以近乎 98 度的極端自轉傾角「躺著公轉」。", tags: ["98度自轉軸", "冰巨行星"] },
-            Neptune: { name: "海王星 (Neptune)", diameter: "49,244 km", period: "164.8 年", distance: "30.1 AU", radius: 3.6, orbitDist: 240, speed: 0.001, desc: "距離太陽最遠的大行星，大氣擁有極快風速與湛藍色澤。", tags: ["超高速氣流", "深藍氣體"] },
-            Pluto: { name: "冥王星 (Pluto)", diameter: "2,377 km", period: "248 年", distance: "39.5 AU", radius: 0.9, orbitDist: 270, speed: 0.0007, desc: "矮行星，位於柯伊伯帶，擁有心形氮冰平原（湯博區）。", tags: ["柯伊伯帶", "心形冰平原"] }
+            Sun: { name: "太陽 (Sun)", diameter: "1,392,700 km", period: "N/A", distance: "0 AU", radius: 18, orbitDist: 0, speed: 0, desc: "太陽系的中心恆星，佔據整個太陽系質量的 99.86%。內部為熾熱電漿核心。", tags: ["恆星電漿內部", "日冕風暴"] },
+            Mercury: { name: "水星 (Mercury)", diameter: "4,879 km", period: "88 天", distance: "0.39 AU", radius: 1.2, orbitDist: 32, speed: 0.04, desc: "最靠近太陽的行星，表面佈滿深邃隕石坑，極端溫差。", tags: ["隕石坑廢墟地表", "太陽強光"] },
+            Venus: { name: "金星 (Venus)", diameter: "12,104 km", period: "225 天", distance: "0.72 AU", radius: 2.2, orbitDist: 48, speed: 0.015, desc: "擁有濃厚的硫酸與二氧化碳大氣，內部呈現黃金色高溫雲霧世界。", tags: ["濃硫酸濃霧", "超高壓雲層"] },
+            Earth: { name: "地球 (Earth)", diameter: "12,742 km", period: "365.25 天", distance: "1.0 AU", radius: 2.5, orbitDist: 68, speed: 0.01, desc: "人類家園。進入後可觀察大氣層光暈與近地軌道俯瞰視角。", tags: ["近地低空軌道", "藍色大氣光暈"] },
+            Mars: { name: "火星 (Mars)", diameter: "6,779 km", period: "687 天", distance: "1.52 AU", radius: 1.6, orbitDist: 88, speed: 0.008, desc: "紅色荒漠行星，地表擁有豐富的氧化鐵沙塵與奧林帕斯火山地貌。", tags: ["氧化鐵沙塵暴", "峽谷火山地表"] },
+            Jupiter: { name: "木星 (Jupiter)", diameter: "139,820 km", period: "11.86 年", distance: "5.2 AU", radius: 6.5, orbitDist: 125, speed: 0.004, desc: "氣態巨行星。進入內部可觀察濃厚氣體雲帶流體與電閃雷鳴。", tags: ["氣態巨行星內部", "流體風暴粒子"] },
+            Saturn: { name: "土星 (Saturn)", diameter: "116,460 km", period: "29.45 年", distance: "9.5 AU", radius: 5.5, orbitDist: 165, speed: 0.003, desc: "擁有華麗光環。進入內部視角可近距離穿梭於土星環冰晶顆粒群中。", tags: ["土星環冰晶微粒", "琥珀色大氣"] },
+            Uranus: { name: "天王星 (Uranus)", diameter: "50,724 km", period: "84 年", distance: "19.2 AU", radius: 3.8, orbitDist: 205, speed: 0.002, desc: "冰巨行星，內部是大洋般的甲烷與冰水混合濃厚雲氣。", tags: ["冰巨行星大氣", "蔚藍甲烷霧"] },
+            Neptune: { name: "海王星 (Neptune)", diameter: "49,244 km", period: "164.8 年", distance: "30.1 AU", radius: 3.6, orbitDist: 240, speed: 0.001, desc: "風暴最猛烈的冰巨星，內部呈現湛藍色超高速強風氣流。", tags: ["極速風暴流體", "深藍氣體核心"] },
+            Pluto: { name: "冥王星 (Pluto)", diameter: "2,377 km", period: "248 年", distance: "39.5 AU", radius: 0.9, orbitDist: 270, speed: 0.0007, desc: "柯伊伯帶矮行星，地表覆蓋氮冰平原與永恆昏暗冰原。", tags: ["冰原凍土", "極遠微弱陽光"] }
         };
 
         // --- 3. Scene Setup ---
@@ -402,7 +420,7 @@
         const scene = new THREE.Scene();
         scene.fog = new THREE.FogExp2(0x02050a, 0.0005);
 
-        const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 4000);
+        const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.05, 4000);
         camera.position.set(0, 80, 160);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
@@ -416,9 +434,9 @@
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
         controls.maxDistance = 1500;
-        controls.minDistance = 0.15;
+        controls.minDistance = 0.08;
 
-        // --- 4. Lighting & Environment Boundaries ---
+        // Lighting
         const ambientLight = new THREE.AmbientLight(0x333344, 0.9);
         scene.add(ambientLight);
 
@@ -454,9 +472,7 @@
         }
         createStarfield();
 
-        // 太陽系邊界 (日球層頂與歐特雲) 已移除
-
-        // --- 5. Planets & Moons Creation ---
+        // --- 4. Planets & Moons Creation ---
         const planets = {};
         const planetMeshes = [];
 
@@ -502,21 +518,15 @@
 
             // SPECIAL 1: Earth (Moon System + Debris + Satellites)
             if (key === 'Earth') {
-                // Moon Mesh & Orbit
                 const moonGeo = new THREE.SphereGeometry(0.55, 32, 32);
                 const moonMat = new THREE.MeshStandardMaterial({ map: TextureGen.planet('moon'), roughness: 0.8 });
                 const moonMesh = new THREE.Mesh(moonGeo, moonMat);
                 pMesh.add(moonMesh);
 
-                pMesh.userData.moon = {
-                    mesh: moonMesh,
-                    distance: 5.2,
-                    speed: 0.02,
-                    angle: 0
-                };
+                pMesh.userData.moon = { mesh: moonMesh, distance: 5.2, speed: 0.02, angle: 0 };
 
-                // Space Debris
-                const debrisCount = 1200;
+                // Debris & Satellites
+                const debrisCount = 1000;
                 const debrisGeo = new THREE.BufferGeometry();
                 const debrisPos = new Float32Array(debrisCount * 3);
                 for (let i = 0; i < debrisCount; i++) {
@@ -531,27 +541,10 @@
                 const debrisPoints = new THREE.Points(debrisGeo, new THREE.PointsMaterial({ color: 0x88aaff, size: 0.1, transparent: true, opacity: 0.8 }));
                 pMesh.add(debrisPoints);
 
-                // Starlink Swarm
-                const satCount = 800;
-                const satGeo = new THREE.BufferGeometry();
-                const satPos = new Float32Array(satCount * 3);
-                for (let i = 0; i < satCount; i++) {
-                    const r = data.radius * (1.2 + Math.random() * 0.15);
-                    const theta = Math.random() * Math.PI * 2;
-                    const phi = (Math.random() - 0.5) * Math.PI * 0.8;
-                    satPos[i*3] = r * Math.cos(phi) * Math.cos(theta);
-                    satPos[i*3+1] = r * Math.sin(phi);
-                    satPos[i*3+2] = r * Math.cos(phi) * Math.sin(theta);
-                }
-                satGeo.setAttribute('position', new THREE.BufferAttribute(satPos, 3));
-                const satPoints = new THREE.Points(satGeo, new THREE.PointsMaterial({ color: 0x00ffff, size: 0.15, transparent: true, opacity: 0.9 }));
-                pMesh.add(satPoints);
-
                 pMesh.userData.debris = debrisPoints;
-                pMesh.userData.satellites = satPoints;
             }
 
-            // SPECIAL 2: Jupiter Galilean Moons System
+            // SPECIAL 2: Jupiter Galilean Moons
             if (key === 'Jupiter') {
                 const galileanMoons = [
                     { name: 'Io', size: 0.4, distance: 9.5, speed: 0.045, color: 0xfda50f },
@@ -559,47 +552,27 @@
                     { name: 'Ganymede', size: 0.6, distance: 15.5, speed: 0.025, color: 0xa9a9a9 },
                     { name: 'Callisto', size: 0.52, distance: 19.0, speed: 0.015, color: 0x696969 }
                 ];
-
                 pMesh.userData.galileanMoons = [];
-
                 galileanMoons.forEach(m => {
-                    const mGeo = new THREE.SphereGeometry(m.size, 24, 24);
-                    const mMat = new THREE.MeshStandardMaterial({ color: m.color, roughness: 0.7 });
-                    const mMesh = new THREE.Mesh(mGeo, mMat);
+                    const mMesh = new THREE.Mesh(new THREE.SphereGeometry(m.size, 24, 24), new THREE.MeshStandardMaterial({ color: m.color, roughness: 0.7 }));
                     pMesh.add(mMesh);
-
-                    pMesh.userData.galileanMoons.push({
-                        mesh: mMesh,
-                        distance: m.distance,
-                        speed: m.speed,
-                        angle: Math.random() * Math.PI * 2
-                    });
+                    pMesh.userData.galileanMoons.push({ mesh: mMesh, distance: m.distance, speed: m.speed, angle: Math.random() * Math.PI * 2 });
                 });
             }
 
-            // SPECIAL 3: Saturn Rings with Cassini Division
+            // SPECIAL 3: Saturn Rings
             if (data.hasRings) {
                 const innerR = data.radius * 1.25;
                 const outerR = data.radius * 2.8;
                 const ringGeo = new THREE.RingGeometry(innerR, outerR, 96);
-                
                 const pos = ringGeo.attributes.position;
                 const uv = ringGeo.attributes.uv;
                 for (let i = 0; i < pos.count; i++) {
-                    const vx = pos.getX(i);
-                    const vy = pos.getY(i);
+                    const vx = pos.getX(i); const vy = pos.getY(i);
                     const dist = Math.sqrt(vx * vx + vy * vy);
-                    const normDist = (dist - innerR) / (outerR - innerR);
-                    uv.setXY(i, normDist, 0.5);
+                    uv.setXY(i, (dist - innerR) / (outerR - innerR), 0.5);
                 }
-
-                const ringMat = new THREE.MeshBasicMaterial({
-                    map: TextureGen.saturnRingDetailed(),
-                    side: THREE.DoubleSide,
-                    transparent: true,
-                    opacity: 0.95
-                });
-                const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+                const ringMesh = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ map: TextureGen.saturnRingDetailed(), side: THREE.DoubleSide, transparent: true, opacity: 0.95 }));
                 ringMesh.rotation.x = Math.PI / 2.25;
                 pMesh.add(ringMesh);
             }
@@ -609,11 +582,85 @@
             planetMeshes.push(pMesh);
         });
 
-        // --- 6. Camera Interaction & Tracking ---
+        // --- 5. Surface & Interior Feature Generator (Dynamic Localized Scenes) ---
+        let surfaceGroup = null;
+
+        function createPlanetSurfaceDetails(key, targetMesh) {
+            if (surfaceGroup) {
+                targetMesh.remove(surfaceGroup);
+                surfaceGroup.traverse(child => {
+                    if (child.geometry) child.geometry.dispose();
+                    if (child.material) child.material.dispose();
+                });
+                surfaceGroup = null;
+            }
+
+            surfaceGroup = new THREE.Group();
+            const radius = PLANET_DATA[key].radius;
+
+            if (key === 'Earth') {
+                // Earth Atmosphere Glow Layer
+                const atmoGeo = new THREE.SphereGeometry(radius * 1.08, 32, 32);
+                const atmoMat = new THREE.MeshBasicMaterial({ color: 0x00bfff, transparent: true, opacity: 0.25, side: THREE.BackSide });
+                surfaceGroup.add(new THREE.Mesh(atmoGeo, atmoMat));
+            } else if (key === 'Jupiter' || key === 'Saturn' || key === 'Venus' || key === 'Uranus' || key === 'Neptune') {
+                // Gas Giants / Thick Atmosphere Interior Mist & Storm Particles
+                const pCount = 2000;
+                const pGeo = new THREE.BufferGeometry();
+                const pPos = new Float32Array(pCount * 3);
+                const pCol = new Float32Array(pCount * 3);
+                const colorBase = key === 'Jupiter' ? new THREE.Color(0xff8833) : (key === 'Venus' ? new THREE.Color(0xffaa22) : new THREE.Color(0x33aaff));
+
+                for (let i = 0; i < pCount; i++) {
+                    const r = radius * (0.85 + Math.random() * 0.28);
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.acos((Math.random() * 2) - 1);
+                    pPos[i*3] = r * Math.sin(phi) * Math.cos(theta);
+                    pPos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+                    pPos[i*3+2] = r * Math.cos(phi);
+
+                    pCol[i*3] = colorBase.r + (Math.random()-0.5)*0.2;
+                    pCol[i*3+1] = colorBase.g + (Math.random()-0.5)*0.2;
+                    pCol[i*3+2] = colorBase.b + (Math.random()-0.5)*0.2;
+                }
+                pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+                pGeo.setAttribute('color', new THREE.BufferAttribute(pCol, 3));
+                const pMat = new THREE.PointsMaterial({ size: 0.12, vertexColors: true, transparent: true, opacity: 0.85 });
+                surfaceGroup.add(new THREE.Points(pGeo, pMat));
+            } else if (key === 'Mars' || key === 'Mercury' || key === 'Pluto') {
+                // Rocky Surface Dust / Crater Details
+                const dustCount = 800;
+                const dustGeo = new THREE.BufferGeometry();
+                const dustPos = new Float32Array(dustCount * 3);
+                for (let i = 0; i < dustCount; i++) {
+                    const r = radius * (1.01 + Math.random() * 0.08);
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.acos((Math.random() * 2) - 1);
+                    dustPos[i*3] = r * Math.sin(phi) * Math.cos(theta);
+                    dustPos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+                    dustPos[i*3+2] = r * Math.cos(phi);
+                }
+                dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+                const dustMat = new THREE.PointsMaterial({ color: key === 'Mars' ? 0xff5500 : 0xaaaaaa, size: 0.08, transparent: true, opacity: 0.6 });
+                surfaceGroup.add(new THREE.Points(dustGeo, dustMat));
+            } else if (key === 'Sun') {
+                // Solar Flare Plasma Rings
+                const flareGeo = new THREE.TorusGeometry(radius * 1.05, 0.4, 16, 64);
+                const flareMat = new THREE.MeshBasicMaterial({ color: 0xffaa00, wireframe: true, transparent: true, opacity: 0.4 });
+                const flareMesh = new THREE.Mesh(flareGeo, flareMat);
+                flareMesh.rotation.x = Math.PI / 3;
+                surfaceGroup.add(flareMesh);
+            }
+
+            targetMesh.add(surfaceGroup);
+        }
+
+        // --- 6. Camera States & Landing Interaction ---
         let currentTargetKey = 'Earth';
         let targetCamPos = new THREE.Vector3();
         let targetLookAt = new THREE.Vector3();
         let isTransitioning = false;
+        let isSurfaceMode = false;
         let speedFactor = 1.0;
         let userDistanceScale = 1.0;
         let isAutoFlyby = false;
@@ -645,7 +692,7 @@
             document.getElementById('planet-select').value = key;
 
             const meshPos = target.mesh.position;
-            const offsetDist = data.radius * 4.2 * userDistanceScale + 2;
+            const offsetDist = data.radius * (isSurfaceMode ? 1.08 : 4.2) * userDistanceScale + (isSurfaceMode ? 0.2 : 2);
             
             targetLookAt.copy(meshPos);
             targetCamPos.copy(meshPos).add(new THREE.Vector3(offsetDist * 0.7, offsetDist * 0.35, offsetDist));
@@ -658,12 +705,40 @@
             }
         }
 
+        // Toggle Surface Mode
+        const landBtn = document.getElementById('btn-land');
+        landBtn.addEventListener('click', () => {
+            isSurfaceMode = !isSurfaceMode;
+            const modeText = document.getElementById('mode-text');
+
+            if (isSurfaceMode) {
+                landBtn.innerText = "🚀 離開地表 / 重返軌道 (Return to Orbit)";
+                landBtn.style.background = "linear-gradient(135deg, rgba(0, 240, 255, 0.25), rgba(0, 100, 255, 0.25))";
+                landBtn.style.color = "#00f0ff";
+                modeText.innerText = `SURFACE/INTERIOR MODE (${PLANET_DATA[currentTargetKey].name} 表面/內部探勘)`;
+                
+                // Add Dynamic Surface Effects
+                createPlanetSurfaceDetails(currentTargetKey, planets[currentTargetKey].mesh);
+            } else {
+                landBtn.innerText = "🛬 進入地表 / 內部探勘 (Enter Surface)";
+                landBtn.style.background = "linear-gradient(135deg, rgba(255, 170, 0, 0.25), rgba(255, 0, 100, 0.25))";
+                landBtn.style.color = "#ffcc00";
+                modeText.innerText = "ORBITAL VIEW (軌道全景)";
+            }
+
+            focusOnTarget(currentTargetKey, true);
+        });
+
         // Init Focus
         focusOnTarget('Earth', false);
 
-        // UI Event Handlers
+        // UI Handlers
         document.getElementById('planet-select').addEventListener('change', (e) => {
             stopAutoFlyby();
+            if (isSurfaceMode) {
+                createPlanetSurfaceDetails(e.target.value, planets[e.target.value].mesh);
+                document.getElementById('mode-text').innerText = `SURFACE/INTERIOR MODE (${PLANET_DATA[e.target.value].name} 表面/內部探勘)`;
+            }
             focusOnTarget(e.target.value);
         });
 
@@ -685,6 +760,7 @@
 
         document.getElementById('btn-reset').addEventListener('click', () => {
             stopAutoFlyby();
+            if (isSurfaceMode) landBtn.click();
             currentTargetKey = 'Sun';
             targetLookAt.set(0, 0, 0);
             targetCamPos.set(0, 180, 380);
@@ -723,12 +799,12 @@
             flybyBtn.style.background = "linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(100, 0, 255, 0.2))";
         }
 
-        // Raycaster Planet Clicking
+        // Raycaster Selection
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
 
         window.addEventListener('click', (e) => {
-            if (e.target.closest('#ui-container') || e.target.closest('#info-panel')) return;
+            if (e.target.closest('#ui-container') || e.target.closest('#info-panel') || e.target.closest('#mode-indicator')) return;
 
             mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
@@ -741,6 +817,10 @@
                 Object.keys(planets).forEach(k => {
                     if (planets[k].mesh === hitMesh) {
                         stopAutoFlyby();
+                        if (isSurfaceMode && k !== currentTargetKey) {
+                            createPlanetSurfaceDetails(k, planets[k].mesh);
+                            document.getElementById('mode-text').innerText = `SURFACE/INTERIOR MODE (${PLANET_DATA[k].name} 表面/內部探勘)`;
+                        }
                         focusOnTarget(k);
                     }
                 });
@@ -766,13 +846,16 @@
                 const p = planets[key];
                 
                 // Self Rotation
-                p.mesh.rotation.y += 0.005;
+                p.mesh.rotation.y += 0.004;
 
-                // Earth Satellite/Debris & Moon Motion
+                // Rotate Surface Custom Group if Active
+                if (surfaceGroup && p.mesh.children.includes(surfaceGroup)) {
+                    surfaceGroup.rotation.y += 0.002;
+                }
+
+                // Earth Orbiting Objects
                 if (key === 'Earth') {
-                    if (p.mesh.userData.debris) p.mesh.userData.debris.rotation.y += 0.012;
-                    if (p.mesh.userData.satellites) p.mesh.userData.satellites.rotation.y += 0.008;
-
+                    if (p.mesh.userData.debris) p.mesh.userData.debris.rotation.y += 0.01;
                     if (p.mesh.userData.moon && speedFactor > 0) {
                         const m = p.mesh.userData.moon;
                         m.angle += m.speed * speedFactor * delta * 15;
@@ -781,7 +864,7 @@
                     }
                 }
 
-                // Jupiter Galilean Moons Motion
+                // Jupiter Moons
                 if (key === 'Jupiter' && p.mesh.userData.galileanMoons && speedFactor > 0) {
                     p.mesh.userData.galileanMoons.forEach(m => {
                         m.angle += m.speed * speedFactor * delta * 15;
@@ -790,7 +873,7 @@
                     });
                 }
 
-                // Planet Orbit Around Sun
+                // Orbit Around Sun
                 if (key !== 'Sun' && speedFactor > 0) {
                     p.angle += p.data.speed * speedFactor * delta * 15;
                     p.mesh.position.x = Math.cos(p.angle) * p.data.orbitDist;
@@ -798,19 +881,19 @@
                 }
             });
 
-            // Camera Target Following & Transition Lerp
+            // Camera Motion Lerp
             const activePlanet = planets[currentTargetKey];
             if (activePlanet) {
                 const currentPos = activePlanet.mesh.position;
 
                 if (isTransitioning) {
-                    const offsetDist = activePlanet.data.radius * 4.2 * userDistanceScale + 2;
+                    const offsetDist = activePlanet.data.radius * (isSurfaceMode ? 1.08 : 4.2) * userDistanceScale + (isSurfaceMode ? 0.2 : 2);
                     const desiredCamPos = currentPos.clone().add(new THREE.Vector3(offsetDist * 0.7, offsetDist * 0.35, offsetDist));
                     
-                    camera.position.lerp(desiredCamPos, 0.05);
-                    controls.target.lerp(currentPos, 0.05);
+                    camera.position.lerp(desiredCamPos, 0.06);
+                    controls.target.lerp(currentPos, 0.06);
 
-                    if (camera.position.distanceTo(desiredCamPos) < 0.4) {
+                    if (camera.position.distanceTo(desiredCamPos) < 0.2) {
                         isTransitioning = false;
                     }
                 } else {
