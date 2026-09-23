@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>3D 太陽系 - 完整版（含衛星與邊界）</title>
+  <title>3D 太陽系 - 完整穩定版</title>
   <style>
     body {
       margin: 0;
@@ -23,11 +23,13 @@
       border-radius: 8px;
       pointer-events: none;
       border: 1px solid rgba(255, 255, 255, 0.2);
+      z-index: 10;
     }
   </style>
-  <!-- 引入 Three.js 與 OrbitControls -->
+  <!-- 引入 Three.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- 引入穩定的 OrbitControls -->
+  <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
   <div id="info">
@@ -44,23 +46,26 @@
     // -----------------------------------------------------------------
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 45, 110);
+    camera.position.set(0, 50, 120);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
     document.body.appendChild(renderer.domElement);
 
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
+    let controls;
+    if (typeof THREE.OrbitControls !== 'undefined') {
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+    }
 
     // -----------------------------------------------------------------
     // 2. 光源設定
     // -----------------------------------------------------------------
-    const ambientLight = new THREE.AmbientLight(0x333333);
+    const ambientLight = new THREE.AmbientLight(0x404040, 1.5);
     scene.add(ambientLight);
 
-    const sunLight = new THREE.PointLight(0xffffff, 2, 400);
+    const sunLight = new THREE.PointLight(0xffffff, 2, 500);
     scene.add(sunLight);
 
     // -----------------------------------------------------------------
@@ -71,9 +76,9 @@
     const sunMesh = new THREE.Mesh(sunGeo, sunMat);
     scene.add(sunMesh);
 
-    // 輔助函式：繪製軌道虛線
+    // 繪製軌道線函式
     function createOrbitLine(radius) {
-      const segmentCount = 64;
+      const segmentCount = 128;
       const geometry = new THREE.BufferGeometry();
       const positions = new Float32Array((segmentCount + 1) * 3);
 
@@ -85,51 +90,51 @@
       }
 
       geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      const material = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.15 });
+      const material = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.35 });
       return new THREE.Line(geometry, material);
     }
 
     // -----------------------------------------------------------------
     // 4. 地球系統（地球 + 月球）
     // -----------------------------------------------------------------
-    const earthOrbitRadius = 20;
+    const earthOrbitRadius = 25;
     scene.add(createOrbitLine(earthOrbitRadius));
 
     const earthSystem = new THREE.Group();
     scene.add(earthSystem);
 
-    const earthGeo = new THREE.SphereGeometry(1.2, 32, 32);
-    const earthMat = new THREE.MeshStandardMaterial({ color: 0x2266ff, roughness: 0.6 });
+    const earthGeo = new THREE.SphereGeometry(1.5, 32, 32);
+    const earthMat = new THREE.MeshStandardMaterial({ color: 0x2266ff, roughness: 0.5 });
     const earthMesh = new THREE.Mesh(earthGeo, earthMat);
     earthMesh.position.x = earthOrbitRadius;
     earthSystem.add(earthMesh);
 
-    const moonGeo = new THREE.SphereGeometry(0.35, 16, 16);
-    const moonMat = new THREE.MeshStandardMaterial({ color: 0xd3d3d3, roughness: 0.8 });
+    const moonGeo = new THREE.SphereGeometry(0.4, 16, 16);
+    const moonMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.8 });
     const moonMesh = new THREE.Mesh(moonGeo, moonMat);
-    const moonDistance = 2.8;
+    const moonDistance = 3.2;
     earthMesh.add(moonMesh);
 
     // -----------------------------------------------------------------
     // 5. 木星系統（木星 + 四大伽利略衛星）
     // -----------------------------------------------------------------
-    const jupiterOrbitRadius = 45;
+    const jupiterOrbitRadius = 55;
     scene.add(createOrbitLine(jupiterOrbitRadius));
 
     const jupiterSystem = new THREE.Group();
     scene.add(jupiterSystem);
 
-    const jupiterGeo = new THREE.SphereGeometry(3.2, 32, 32);
+    const jupiterGeo = new THREE.SphereGeometry(3.8, 32, 32);
     const jupiterMat = new THREE.MeshStandardMaterial({ color: 0xd8ca9d, roughness: 0.5 });
     const jupiterMesh = new THREE.Mesh(jupiterGeo, jupiterMat);
     jupiterMesh.position.x = jupiterOrbitRadius;
     jupiterSystem.add(jupiterMesh);
 
     const galileanMoonsData = [
-      { name: 'Io (木衛一)', size: 0.3, distance: 5.0, speed: 0.04, color: 0xfda50f },
-      { name: 'Europa (木衛二)', size: 0.25, distance: 6.8, speed: 0.03, color: 0xb0e0e6 },
-      { name: 'Ganymede (木衛三)', size: 0.45, distance: 9.0, speed: 0.02, color: 0xa9a9a9 },
-      { name: 'Callisto (木衛四)', size: 0.4, distance: 11.5, speed: 0.012, color: 0x696969 }
+      { name: 'Io (木衛一)', size: 0.35, distance: 5.8, speed: 0.04, color: 0xfda50f },
+      { name: 'Europa (木衛二)', size: 0.3, distance: 7.8, speed: 0.03, color: 0xb0e0e6 },
+      { name: 'Ganymede (木衛三)', size: 0.5, distance: 10.2, speed: 0.02, color: 0xa9a9a9 },
+      { name: 'Callisto (木衛四)', size: 0.45, distance: 13.0, speed: 0.012, color: 0x696969 }
     ];
 
     const jupiterSatellites = [];
@@ -150,25 +155,25 @@
     // -----------------------------------------------------------------
     // 6. 太陽系邊界 (日球層頂網格 + 歐特雲微粒雲)
     // -----------------------------------------------------------------
-    // A. 日球層頂 (Heliopause) - 半透明網格氣泡
-    const heliopauseRadius = 75;
+    // A. 日球層頂 (Heliopause)
+    const heliopauseRadius = 85;
     const heliopauseGeo = new THREE.SphereGeometry(heliopauseRadius, 32, 32);
     const heliopauseMat = new THREE.MeshBasicMaterial({
       color: 0x4488ff,
       wireframe: true,
       transparent: true,
-      opacity: 0.12,
+      opacity: 0.18,
       side: THREE.DoubleSide
     });
     const heliopauseMesh = new THREE.Mesh(heliopauseGeo, heliopauseMat);
     scene.add(heliopauseMesh);
 
-    // B. 歐特雲 (Oort Cloud) - 外圍球殼粒子系統
-    const oortParticleCount = 1500;
+    // B. 歐特雲 (Oort Cloud)
+    const oortParticleCount = 2000;
     const oortGeo = new THREE.BufferGeometry();
     const oortPositions = new Float32Array(oortParticleCount * 3);
-    const innerRadius = 85;
-    const outerRadius = 100;
+    const innerRadius = 95;
+    const outerRadius = 115;
 
     for (let i = 0; i < oortParticleCount; i++) {
       const u = Math.random();
@@ -184,23 +189,23 @@
 
     oortGeo.setAttribute('position', new THREE.BufferAttribute(oortPositions, 3));
     const oortMat = new THREE.PointsMaterial({
-      color: 0xaaaaee,
-      size: 0.4,
+      color: 0x88bbff,
+      size: 0.5,
       transparent: true,
-      opacity: 0.35
+      opacity: 0.4
     });
     const oortCloud = new THREE.Points(oortGeo, oortMat);
     scene.add(oortCloud);
 
     // -----------------------------------------------------------------
-    // 7. 動畫繪製迴圈 (Animation Loop)
+    // 7. 動畫迴圈
     // -----------------------------------------------------------------
     let moonAngle = 0;
 
     function animate() {
       requestAnimationFrame(animate);
 
-      // 行星繞太陽公轉
+      // 行星公轉
       earthSystem.rotation.y += 0.008;
       jupiterSystem.rotation.y += 0.003;
 
@@ -221,18 +226,18 @@
         sat.mesh.position.z = Math.sin(sat.angle) * sat.distance;
       });
 
-      // 太陽系邊界緩慢旋轉
+      // 邊界旋轉
       heliopauseMesh.rotation.y += 0.0002;
       oortCloud.rotation.y += 0.0001;
 
-      controls.update();
+      if (controls) controls.update();
       renderer.render(scene, camera);
     }
 
     animate();
 
     // -----------------------------------------------------------------
-    // 8. 視窗大小適應
+    // 8. 視窗適應
     // -----------------------------------------------------------------
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
