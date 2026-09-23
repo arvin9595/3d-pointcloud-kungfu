@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Earth System - 雙層 LOD 與模擬系統</title>
+    <title>Earth System - 雙層 LOD 與 控制系統</title>
     <style>
         body {
             margin: 0;
@@ -21,7 +21,6 @@
             padding: 16px 22px;
             border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.15);
-            pointer-events: none;
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
             z-index: 10;
         }
@@ -46,9 +45,33 @@
             background: #0288d1;
             color: #fff;
         }
+        /* 按鈕控制區樣式 */
+        #controls-bar {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+            pointer-events: auto;
+        }
+        .btn {
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+        .btn:hover {
+            background: rgba(79, 195, 247, 0.4);
+            border-color: #4fc3f7;
+        }
+        .btn.active {
+            background: #0288d1;
+            border-color: #0288d1;
+        }
     </style>
 
-    <!-- 使用最標準穩定的 Three.js CDN -->
     <script type="importmap">
         {
             "imports": {
@@ -61,9 +84,17 @@
 <body>
     <div id="ui-panel">
         <h2>EARTH SYSTEM</h2>
-        <p>✦ 滾輪縮放（自動於太空與近地面切換）</p>
+        <p>✦ 滾輪進行縮放（自動於太空與近地面切換）</p>
         <p id="altitude-readout">視角高度: 計算中...</p>
         <div id="mode-indicator">渲染模式: 太空全域 (Space Shell)</div>
+        
+        <!-- 自轉控制按鈕列 -->
+        <div id="controls-bar">
+            <button id="btn-pause" class="btn">⏸ 暫停自轉</button>
+            <button id="btn-1x" class="btn active">1x 速度</button>
+            <button id="btn-2x" class="btn">2x 速度</button>
+            <button id="btn-5x" class="btn">5x 速度</button>
+        </div>
     </div>
 
     <script type="module">
@@ -90,11 +121,11 @@
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         document.body.appendChild(renderer.domElement);
 
-        // 2. 控制器設定
+        // 2. 控制器設定 (相機允許貼近至地面 6.002)
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
-        controls.minDistance = 6.01;
+        controls.minDistance = 6.002; 
         controls.maxDistance = 150;
 
         // 3. 光源系統
@@ -105,7 +136,7 @@
         const ambientLight = new THREE.AmbientLight(0x0a1020, 0.2);
         scene.add(ambientLight);
 
-        // 4. 雙層架構群組：Space Group (太空層) vs Ground Group (近地面高解析層)
+        // 4. 雙層架構群組
         const spaceGroup = new THREE.Group();
         const groundGroup = new THREE.Group();
         scene.add(spaceGroup);
@@ -164,27 +195,33 @@
         spaceGroup.add(atmosphereMesh);
 
 
-        // === 近地面層：高密度實體地形與高程細節網格 ===
-        // 使用 256x256 高密度幾何體配合高程圖，近距離觀看會有實體山脈起伏
+        // === 近地面層：優化立體起伏強度 (displacementScale: 0.35) ===
         const highResGeometry = new THREE.SphereGeometry(earthRadius, 256, 256);
         const highResMaterial = new THREE.MeshStandardMaterial({
             map: earthDayMap,
             normalMap: earthNormalMap,
-            normalScale: new THREE.Vector2(1.5, 1.5),
+            normalScale: new THREE.Vector2(1.8, 1.8),
             displacementMap: earthNormalMap,
-            displacementScale: 0.15, // 真實高程推擠山脈
+            displacementScale: 0.35, // 顯著提昇山脈立體感
             displacementBias: -0.05,
             roughness: 0.5
         });
         const highResEarth = new THREE.Mesh(highResGeometry, highResMaterial);
         groundGroup.add(highResEarth);
-        groundGroup.visible = false; // 初始預設隱藏
+        groundGroup.visible = false;
 
 
-        // 5. 雙層無縫過渡機制
+        // 5. 控制狀態變數 (自轉速度與暫停狀態)
+        let baseRotationSpeed = 0.0003;
+        let speedMultiplier = 1.0;
+        let isPaused = false;
+
+        // 6. 雙層無縫過渡與地表霧氣邏輯
         const altitudeReadout = document.getElementById('altitude-readout');
         const modeIndicator = document.getElementById('mode-indicator');
-        const transitionThreshold = earthRadius + 0.8; // 切換高度點
+        
+        // 提早切換點至 2000 km 高度處 (earthRadius + 2.0)
+        const transitionThreshold = earthRadius + 2.0; 
 
         function updateLayersVisibility(camDistance) {
             const altitudeKM = Math.max(0, ((camDistance - earthRadius) * 1000)).toFixed(1);
@@ -193,30 +230,62 @@
             if (camDistance > transitionThreshold) {
                 spaceGroup.visible = true;
                 groundGroup.visible = false;
+                scene.fog = null; // 太空模式無地表霧氣
+                
                 modeIndicator.innerText = "渲染模式: 太空全域 (Space Shell)";
                 modeIndicator.style.background = "#0288d1";
             } else {
                 spaceGroup.visible = false;
                 groundGroup.visible = true;
+                
+                // 進入近地面模式：加入大氣白霧效果 (Blue/White Fog)
+                scene.fog = new THREE.FogExp2(0x87ceeb, 0.08); 
+
                 modeIndicator.innerText = "渲染模式: 近地面高解析地形 (High-Res LOD)";
                 modeIndicator.style.background = "#2e7d32";
             }
         }
 
-        // 6. 渲染與動畫迴圈
+        // 7. 按鈕事件綁定
+        const btnPause = document.getElementById('btn-pause');
+        const btn1x = document.getElementById('btn-1x');
+        const btn2x = document.getElementById('btn-2x');
+        const btn5x = document.getElementById('btn-5x');
+        const speedButtons = [btn1x, btn2x, btn5x];
+
+        btnPause.addEventListener('click', () => {
+            isPaused = !isPaused;
+            btnPause.innerText = isPaused ? "▶ 恢復自轉" : "⏸ 暫停自轉";
+            btnPause.classList.toggle('active', isPaused);
+        });
+
+        function setSpeed(multiplier, activeBtn) {
+            speedMultiplier = multiplier;
+            speedButtons.forEach(btn => btn.classList.remove('active'));
+            activeBtn.classList.add('active');
+        }
+
+        btn1x.addEventListener('click', () => setSpeed(1.0, btn1x));
+        btn2x.addEventListener('click', () => setSpeed(2.0, btn2x));
+        btn5x.addEventListener('click', () => setSpeed(5.0, btn5x));
+
+
+        // 8. 渲染與動畫迴圈
         function animate() {
             requestAnimationFrame(animate);
 
-            // 太空自轉
-            if (spaceGroup.visible) {
-                earthMesh.rotation.y += 0.0003;
-                cloudMesh.rotation.y += 0.00045;
-            } else {
-                highResEarth.rotation.y += 0.0003;
-            }
-
             const camDistance = camera.position.distanceTo(scene.position);
             updateLayersVisibility(camDistance);
+
+            // 進入近地面模式 (groundGroup 可見) 時自動停止自轉，或是手動按下暫停按鈕
+            const shouldRotate = !isPaused && spaceGroup.visible;
+
+            if (shouldRotate) {
+                const currentSpeed = baseRotationSpeed * speedMultiplier;
+                earthMesh.rotation.y += currentSpeed;
+                cloudMesh.rotation.y += currentSpeed * 1.2;
+                highResEarth.rotation.y += currentSpeed;
+            }
 
             controls.update();
             renderer.render(scene, camera);
