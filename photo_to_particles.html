@@ -3,59 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D Photo Particle Cloud - Cinematic Camera</title>
+    <title>3D Artistic Photo Relief Cloud</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #020205; font-family: -apple-system, sans-serif; color: #fff; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #050508; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #fff; }
         canvas { display: block; width: 100vw; height: 100vh; touch-action: none; }
         .panel {
             position: absolute; top: 12px; left: 12px;
-            background: rgba(10, 10, 18, 0.9); backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px;
+            background: rgba(12, 12, 20, 0.88); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 12px;
             padding: 14px; width: 310px; z-index: 10; font-size: 11px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
         }
-        .header { color: #00f0ff; font-weight: bold; margin-bottom: 10px; font-size: 12px; display: flex; justify-content: space-between; }
-        .upload-btn { display: block; width: 100%; padding: 8px; background: #00f0ff; color: #000; text-align: center; font-weight: bold; border-radius: 6px; cursor: pointer; margin-bottom: 10px; }
+        .header { color: #00f0ff; font-weight: bold; margin-bottom: 12px; font-size: 12px; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px; }
+        .upload-btn { display: block; width: 100%; padding: 8px; background: linear-gradient(135deg, #00f0ff, #0088ff); color: #000; text-align: center; font-weight: bold; border-radius: 6px; cursor: pointer; margin-bottom: 12px; box-shadow: 0 0 10px rgba(0,240,255,0.3); }
         input[type="file"] { display: none; }
-        .row { margin-bottom: 8px; }
-        .row label { display: flex; justify-content: space-between; color: #aaa; margin-bottom: 3px; }
+        .row { margin-bottom: 10px; }
+        .row label { display: flex; justify-content: space-between; color: #aaa; margin-bottom: 4px; }
         input[type="range"] { width: 100%; accent-color: #00f0ff; }
         .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
-        .btn { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 6px; border-radius: 6px; cursor: pointer; text-align: center; }
-        .btn.active { background: #00f0ff; color: #000; font-weight: bold; }
+        .btn { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #fff; padding: 7px; border-radius: 6px; cursor: pointer; text-align: center; transition: all 0.2s; }
+        .btn.active { background: #00f0ff; color: #000; font-weight: bold; border-color: #00f0ff; }
     </style>
 </head>
 <body>
 
     <div class="panel">
         <div class="header">
-            <span>🎥 CINEMATIC CAMERA 3D</span>
+            <span>✨ ARTISTIC RELIEF 3D</span>
             <span id="fps">60 FPS</span>
         </div>
 
         <label class="upload-btn">
-            選擇照片載入粒子
+            選擇照片載入
             <input type="file" id="imgInput" accept="image/*" onchange="loadFile(event)">
         </label>
 
         <div class="row">
-            <label><span>鏡頭運鏡距離 (Zoom)</span><span id="txt-zoom">100%</span></label>
-            <input type="range" id="zoomVal" min="50" max="600" value="300" oninput="updateCam()">
+            <label><span>側面深度落差 (Depth Relief)</span><span id="txt-depth">1.0x</span></label>
+            <input type="range" id="depthVal" min="0" max="2.5" step="0.05" value="1.0" oninput="updateDepth()">
         </div>
 
         <div class="row">
-            <label><span>近看粒子大小 (Particle Size)</span><span id="txt-size">2.5px</span></label>
-            <input type="range" id="sizeVal" min="1" max="8" step="0.5" value="2.5" oninput="draw()">
+            <label><span>鏡頭縮放 (Zoom)</span><span id="txt-zoom">100%</span></label>
+            <input type="range" id="zoomVal" min="100" max="600" value="300" oninput="updateCam()">
         </div>
 
         <div class="row">
-            <label><span>3D 立體深度 (Depth)</span><span id="txt-depth">1.0x</span></label>
-            <input type="range" id="depthVal" min="0" max="3" step="0.1" value="1.0" oninput="updateDepth()">
+            <label><span>粒子精細度 (Grid Density)</span><span id="txt-density">工整高畫質</span></label>
+            <input type="range" id="densityVal" min="2" max="5" step="1" value="2" onchange="buildParticles()">
         </div>
 
         <div class="btn-grid">
-            <button class="btn active" id="btn-shape" onclick="toggleShape()">粒子形狀: 圓形</button>
-            <button class="btn" id="btn-orbit" onclick="toggleOrbit()">自動電影運鏡: 關</button>
+            <button class="btn active" id="btn-snap" onclick="snapToFront()">正面精確平整</button>
+            <button class="btn" id="btn-orbit" onclick="toggleOrbit()">自動旋轉運鏡: 關</button>
         </div>
     </div>
 
@@ -74,13 +75,10 @@
         let particles = [];
         let rotX = 0, rotY = 0;
         let targetRotX = 0, targetRotY = 0;
-        let camZ = 300;
-        let targetCamZ = 300;
+        let camZ = 300, targetCamZ = 300;
         let isOrbiting = false;
-        let useCircle = true;
         let depthScale = 1.0;
 
-        // 手勢與滑鼠操作
         let isDrag = false, lx = 0, ly = 0, pinchDist = 0;
 
         window.addEventListener('mousedown', e => { if (!e.target.closest('.panel')) { isDrag = true; lx = e.clientX; ly = e.clientY; } });
@@ -94,12 +92,11 @@
 
         window.addEventListener('wheel', e => {
             if (e.target.closest('.panel')) return;
-            targetCamZ = Math.max(30, Math.min(800, targetCamZ + e.deltaY * 0.4));
+            targetCamZ = Math.max(100, Math.min(800, targetCamZ + e.deltaY * 0.4));
             document.getElementById('zoomVal').value = targetCamZ;
             updateCam();
         });
 
-        // Touch 支持
         window.addEventListener('touchstart', e => {
             if (e.target.closest('.panel')) return;
             if (e.touches.length === 1) { isDrag = true; lx = e.touches[0].clientX; ly = e.touches[0].clientY; }
@@ -116,7 +113,7 @@
                 lx = e.touches[0].clientX; ly = e.touches[0].clientY;
             } else if (e.touches.length === 2 && pinchDist) {
                 let d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                targetCamZ = Math.max(30, Math.min(800, targetCamZ + (pinchDist - d) * 1.2));
+                targetCamZ = Math.max(100, Math.min(800, targetCamZ + (pinchDist - d) * 1.2));
                 pinchDist = d;
                 document.getElementById('zoomVal').value = targetCamZ;
                 updateCam();
@@ -136,9 +133,17 @@
             reader.readAsDataURL(file);
         }
 
+        // 平滑的 S 曲線函數（使深度變化流暢不刺眼）
+        function smoothstep(min, max, value) {
+            let x = Math.max(0, Math.min(1, (value - min) / (max - min)));
+            return x * x * (3 - 2 * x);
+        }
+
         function buildParticles() {
-            if (!img) return;
-            const maxDim = 220; // 粒子採樣精度
+            if (!img) { initDefault(); return; }
+
+            const step = parseInt(document.getElementById('densityVal').value);
+            const maxDim = 260; // 提升採樣解析度
             let iw = img.width, ih = img.height;
             if (iw > maxDim || ih > maxDim) {
                 if (iw > ih) { ih = Math.round((ih * maxDim) / iw); iw = maxDim; }
@@ -154,18 +159,21 @@
             particles = [];
             const cx = iw / 2, cy = ih / 2;
 
-            for (let y = 0; y < ih; y += 2) {
-                for (let x = 0; x < iw; x += 2) {
+            for (let y = 0; y < ih; y += step) {
+                for (let x = 0; x < iw; x += step) {
                     const idx = (y * iw + x) * 4;
                     const r = data[idx], g = data[idx+1], b = data[idx+2], a = data[idx+3];
-                    if (a > 40) {
-                        const bright = (r + g + b) / 3;
-                        const z = (bright - 128) * 0.8;
+                    if (a > 30) {
+                        const brightness = (r * 0.299 + g * 0.587 + b * 0.114) / 255;
+                        
+                        // 工整的深度映射：利用 smoothstep 產生流暢的層次落差
+                        const baseZ = (smoothstep(0.1, 0.9, brightness) - 0.5) * 80;
+
                         particles.push({
-                            x: (x - cx) * 2.2,
-                            y: (y - cy) * 2.2,
-                            z: z,
-                            baseZ: z,
+                            x: (x - cx) * 1.8,
+                            y: (y - cy) * 1.8,
+                            z: baseZ * depthScale,
+                            baseZ: baseZ,
                             color: `rgb(${r},${g},${b})`
                         });
                     }
@@ -180,31 +188,32 @@
 
         function updateDepth() {
             depthScale = parseFloat(document.getElementById('depthVal').value);
-            document.getElementById('txt-depth').innerText = `${depthScale.toFixed(1)}x`;
+            document.getElementById('txt-depth').innerText = `${depthScale.toFixed(2)}x`;
             particles.forEach(p => p.z = p.baseZ * depthScale);
         }
 
-        function toggleShape() {
-            useCircle = !useCircle;
-            const btn = document.getElementById('btn-shape');
-            btn.innerText = `粒子形狀: ${useCircle ? '圓形' : '方形'}`;
+        function snapToFront() {
+            targetRotX = 0;
+            targetRotY = 0;
+            targetCamZ = 300;
+            document.getElementById('zoomVal').value = 300;
+            updateCam();
         }
 
         function toggleOrbit() {
             isOrbiting = !isOrbiting;
             document.getElementById('btn-orbit').classList.toggle('active', isOrbiting);
-            document.getElementById('btn-orbit').innerText = `自動電影運鏡: ${isOrbiting ? '開' : '關'}`;
+            document.getElementById('btn-orbit').innerText = `自動旋轉運鏡: ${isOrbiting ? '開' : '關'}`;
         }
 
-        // 初始化預設文字粒子
         function initDefault() {
             const tmp = document.createElement('canvas');
             const tctx = tmp.getContext('2d');
             tmp.width = 200; tmp.height = 100;
             tctx.fillStyle = '#fff';
-            tctx.font = 'bold 22px sans-serif';
+            tctx.font = 'bold 20px sans-serif';
             tctx.textAlign = 'center';
-            tctx.fillText('載入照片試試看', 100, 55);
+            tctx.fillText('載入照片呈現工整藝術感', 100, 55);
             const data = tctx.getImageData(0, 0, 200, 100).data;
             particles = [];
             for(let y=0; y<100; y+=2) {
@@ -230,62 +239,55 @@
                 frames = 0; lastT = now;
             }
 
-            if (isOrbiting) targetRotY += 0.006;
+            if (isOrbiting) targetRotY += 0.005;
 
             rotX += (targetRotX - rotX) * 0.08;
             rotY += (targetRotY - rotY) * 0.08;
             camZ += (targetCamZ - camZ) * 0.08;
 
-            ctx.fillStyle = '#020205';
+            ctx.fillStyle = '#050508';
             ctx.fillRect(0, 0, w, h);
 
             const cosX = Math.cos(rotX), sinX = Math.sin(rotX);
             const cosY = Math.cos(rotY), sinY = Math.sin(rotY);
 
-            const fov = 350; // Blender 透視焦距
-            const baseSize = parseFloat(document.getElementById('sizeVal').value);
-            document.getElementById('txt-size').innerText = `${baseSize}px`;
-
+            const fov = 380;
             const renderList = [];
+
+            // 判斷是否接近正面視角（越接近正面，越還原工整度）
+            const angleFromFront = Math.hypot(rotX, rotY);
+            const isNearFront = angleFromFront < 0.15;
 
             for (let i = 0; i < particles.length; i++) {
                 const p = particles[i];
 
-                // 3D 旋轉變換
                 let x1 = p.x * cosY - p.z * sinY;
                 let z1 = p.z * cosY + p.x * sinY;
                 let y2 = p.y * cosX - z1 * sinX;
                 let z2 = z1 * cosX + p.y * sinX;
 
-                // 鏡頭運鏡距離計算
                 const dist = fov + z2 + camZ;
-                if (dist > 10) { // 避免剪裁平面問題
+                if (dist > 10) {
                     const scale = fov / dist;
                     renderList.push({
                         px: w / 2 + x1 * scale,
                         py: h / 2 + y2 * scale,
-                        // 關鍵：根據透視比例放大粒子，近看時會變得很巨大清晰
-                        size: Math.max(0.5, baseSize * scale * 1.8),
+                        // 旋轉到側面時粒子保持點陣藝術感，正視時無縫密合
+                        size: isNearFront ? 1.9 * scale : Math.max(0.8, 1.6 * scale),
                         z: z2,
                         color: p.color
                     });
                 }
             }
 
-            // 排序 (Z-buffer) 確保近處粒子遮擋遠處粒子
+            // 側面時依 Z 軸排序遮擋，保證立體感與清晰度
             renderList.sort((a, b) => b.z - a.z);
 
             for (let i = 0; i < renderList.length; i++) {
                 const item = renderList[i];
                 ctx.fillStyle = item.color;
-
-                if (useCircle) {
-                    ctx.beginPath();
-                    ctx.arc(item.px, item.py, item.size, 0, Math.PI * 2);
-                    ctx.fill();
-                } else {
-                    ctx.fillRect(item.px - item.size / 2, item.py - item.size / 2, item.size * 2, item.size * 2);
-                }
+                // 正方形微點陣，創造極高工整度的浮雕質感
+                ctx.fillRect(item.px - item.size / 2, item.py - item.size / 2, item.size, item.size);
             }
 
             requestAnimationFrame(render);
