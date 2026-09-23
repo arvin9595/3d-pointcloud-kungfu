@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D Photo to Particle Cloud</title>
+    <title>3D Photo to Particle Cloud (Space XYZ Edition)</title>
     <style>
         * {
             box-sizing: border-box;
@@ -16,7 +16,7 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: #030305;
+            background-color: #020204;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             color: #ffffff;
         }
@@ -30,7 +30,7 @@
             position: absolute;
             top: 12px;
             left: 12px;
-            background: rgba(10, 10, 14, 0.88);
+            background: rgba(10, 10, 16, 0.88);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.15);
@@ -81,12 +81,8 @@
         .file-upload-btn:active {
             transform: scale(0.98);
         }
-        input[type="file"] {
-            display: none;
-        }
-        .control-group {
-            margin-bottom: 8px;
-        }
+        input[type="file"] { display: none; }
+        .control-group { margin-bottom: 8px; }
         .control-label {
             font-size: 10px;
             color: #aaa;
@@ -136,10 +132,7 @@
             justify-content: space-between;
             margin-bottom: 4px;
         }
-        .stat-val {
-            color: #00ffcc;
-            font-weight: bold;
-        }
+        .stat-val { color: #00ffcc; font-weight: bold; }
         .nav-link {
             display: block;
             text-align: center;
@@ -155,7 +148,7 @@
 
     <div class="studio-panel" id="studioPanel">
         <div class="studio-header">
-            <span>📷 PHOTO 3D CLOUD</span>
+            <span>🌌 SPACE 3D CLOUD</span>
             <span id="fps" style="color: #00ffcc;">60 FPS</span>
         </div>
 
@@ -164,8 +157,13 @@
             <input type="file" id="imageLoader" accept="image/*" onchange="handleImage(event)">
         </label>
 
+        <div class="section-title">空間視覺控制 (Space & Axis)</div>
+        <div class="btn-grid">
+            <button class="btn active" id="btn-axis" onclick="toggleAxis()">XYZ 座標軸: 開</button>
+            <button class="btn active" id="btn-grid" onclick="toggleDust()">太空星塵網格: 開</button>
+        </div>
+
         <div class="section-title">3D 粒子調整 (Controls)</div>
-        
         <div class="control-group">
             <div class="control-label"><span>立體深度強度 (Depth)</span><span id="val-depth">1.0x</span></div>
             <input type="range" id="sliderDepth" min="0" max="3" step="0.1" value="1.0" oninput="updateDepth()">
@@ -186,7 +184,7 @@
 
         <div class="stat-box">
             <div class="stat-line"><span>總粒子數量:</span> <span class="stat-val" id="stat-count">0</span></div>
-            <div class="stat-line"><span>圖片解析度:</span> <span class="stat-val" id="stat-res">無</span></div>
+            <div class="stat-line"><span>空間座標系:</span> <span class="stat-val">3D Cartesian</span></div>
         </div>
 
         <a href="studio.html" class="nav-link">➔ 切換回 3D 武術點雲模式 (studio.html)</a>
@@ -208,11 +206,29 @@
 
         let loadedImage = null;
         let particles = [];
+        let spaceDust = [];
         let rotX = 0, rotY = 0;
         let targetRotX = 0, targetRotY = 0;
         let isOrbiting = false;
         let depthScale = 1.0;
         let isExploded = false;
+        let showAxis = true;
+        let showDust = true;
+
+        // 生成太空背景星塵與立方網格
+        function initSpaceDust() {
+            spaceDust = [];
+            const size = 500;
+            for (let i = 0; i < 200; i++) {
+                spaceDust.push({
+                    x: (Math.random() - 0.5) * size * 2,
+                    y: (Math.random() - 0.5) * size * 2,
+                    z: (Math.random() - 0.5) * size * 2,
+                    size: Math.random() * 1.5 + 0.5
+                });
+            }
+        }
+        initSpaceDust();
 
         // 觸控與滑鼠拖拽鏡頭旋轉
         let isDragging = false;
@@ -237,7 +253,6 @@
 
         window.addEventListener('pointerup', () => isDragging = false);
 
-        // 預設建立文字預覽粒子
         function createDefaultTextParticles() {
             const tempCanvas = document.createElement('canvas');
             const tCtx = tempCanvas.getContext('2d');
@@ -283,12 +298,10 @@
 
             const tempCanvas = document.createElement('canvas');
             const tCtx = tempCanvas.getContext('2d');
-            tempCanvas.width = w;
-            tempCanvas.height = h;
+            tempCanvas.width = w; tempCanvas.height = h;
             tCtx.drawImage(loadedImage, 0, 0, w, h);
 
             const imgData = tCtx.getImageData(0, 0, w, h);
-            document.getElementById('stat-res').innerText = `${w} x ${h}`;
             processImageData(imgData, w, h, step);
         }
 
@@ -301,14 +314,11 @@
             for (let y = 0; y < h; y += step) {
                 for (let x = 0; x < w; x += step) {
                     const idx = (y * w + x) * 4;
-                    const r = data[idx];
-                    const g = data[idx + 1];
-                    const b = data[idx + 2];
-                    const a = data[idx + 3];
+                    const r = data[idx], g = data[idx + 1], b = data[idx + 2], a = data[idx + 3];
 
                     if (a > 50) {
                         const brightness = (r + g + b) / 3;
-                        const baseZ = (brightness - 128) * 0.8; // 亮度決定深淺
+                        const baseZ = (brightness - 128) * 0.8;
 
                         const originX = (x - cx) * 2;
                         const originY = (y - cy) * 2;
@@ -348,9 +358,7 @@
 
         function resetParticles() {
             isExploded = false;
-            particles.forEach(p => {
-                p.vx = 0; p.vy = 0; p.vz = 0;
-            });
+            particles.forEach(p => { p.vx = 0; p.vy = 0; p.vz = 0; });
         }
 
         function toggleOrbit() {
@@ -360,16 +368,76 @@
             btn.classList.toggle('active', isOrbiting);
         }
 
+        function toggleAxis() {
+            showAxis = !showAxis;
+            const btn = document.getElementById('btn-axis');
+            btn.innerText = `XYZ 座標軸: ${showAxis ? '開' : '關'}`;
+            btn.classList.toggle('active', showAxis);
+        }
+
+        function toggleDust() {
+            showDust = !showDust;
+            const btn = document.getElementById('btn-grid');
+            btn.innerText = `太空星塵網格: ${showDust ? '開' : '關'}`;
+            btn.classList.toggle('active', showDust);
+        }
+
         function takeScreenshot() {
             const link = document.createElement('a');
-            link.download = `3D_Photo_Particles_${Date.now()}.png`;
+            link.download = `3D_Space_Particles_${Date.now()}.png`;
             link.href = canvas.toDataURL();
             link.click();
         }
 
         createDefaultTextParticles();
 
-        // 繪製與動畫迴圈
+        // 3D 投影轉換函式
+        function project3D(x, y, z, cosX, sinX, cosY, sinY) {
+            let x1 = x * cosY - z * sinY;
+            let z1 = z * cosY + x * sinY;
+            let y2 = y * cosX - z1 * sinX;
+            let z2 = z1 * cosX + y * sinX;
+
+            const fov = 400;
+            const scale = fov / (fov + z2 + 400);
+            return {
+                px: width / 2 + x1 * scale,
+                py: height / 2 + y2 * scale,
+                scale: scale,
+                z: z2
+            };
+        }
+
+        // 繪製 XYZ 三軸座標系
+        function drawXYZAxis(cosX, sinX, cosY, sinY) {
+            const len = 120;
+            const origin = project3D(0, 0, 0, cosX, sinX, cosY, sinY);
+            const xAxis = project3D(len, 0, 0, cosX, sinX, cosY, sinY);
+            const yAxis = project3D(0, -len, 0, cosX, sinX, cosY, sinY); // Canvas Y 軸朝下，故給負值向上
+            const zAxis = project3D(0, 0, len, cosX, sinX, cosY, sinY);
+
+            ctx.lineWidth = 2;
+
+            // X 軸 (紅色)
+            ctx.strokeStyle = '#ff3366';
+            ctx.beginPath(); ctx.moveTo(origin.px, origin.py); ctx.lineTo(xAxis.px, xAxis.py); ctx.stroke();
+            ctx.fillStyle = '#ff3366'; ctx.font = 'bold 12px monospace'; ctx.fillText('X', xAxis.px + 5, xAxis.py + 5);
+
+            // Y 軸 (綠色)
+            ctx.strokeStyle = '#00ff66';
+            ctx.beginPath(); ctx.moveTo(origin.px, origin.py); ctx.lineTo(yAxis.px, yAxis.py); ctx.stroke();
+            ctx.fillStyle = '#00ff66'; ctx.fillText('Y', yAxis.px + 5, yAxis.py - 5);
+
+            // Z 軸 (藍色 - 前後深度)
+            ctx.strokeStyle = '#00aaff';
+            ctx.beginPath(); ctx.moveTo(origin.px, origin.py); ctx.lineTo(zAxis.px, zAxis.py); ctx.stroke();
+            ctx.fillStyle = '#00aaff'; ctx.fillText('Z', zAxis.px + 5, zAxis.py + 5);
+
+            // 原點發光核心
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath(); ctx.arc(origin.px, origin.py, 3, 0, Math.PI * 2); ctx.fill();
+        }
+
         let lastTime = performance.now();
         let frameCount = 0;
 
@@ -386,12 +454,29 @@
             rotX += (targetRotX - rotX) * 0.1;
             rotY += (targetRotY - rotY) * 0.1;
 
-            ctx.fillStyle = '#030305';
+            ctx.fillStyle = '#020204';
             ctx.fillRect(0, 0, width, height);
 
             const cosX = Math.cos(rotX), sinX = Math.sin(rotX);
             const cosY = Math.cos(rotY), sinY = Math.sin(rotY);
 
+            // 1. 繪製太空星塵網格
+            if (showDust) {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                spaceDust.forEach(d => {
+                    const p = project3D(d.x, d.y, d.z, cosX, sinX, cosY, sinY);
+                    if (p.scale > 0) {
+                        ctx.fillRect(p.px, p.py, d.size * p.scale, d.size * p.scale);
+                    }
+                });
+            }
+
+            // 2. 繪製 XYZ 三軸
+            if (showAxis) {
+                drawXYZAxis(cosX, sinX, cosY, sinY);
+            }
+
+            // 3. 處理照片粒子
             const renderList = [];
             const len = particles.length;
 
@@ -407,30 +492,23 @@
                     p.z += (p.oz - p.z) * 0.1;
                 }
 
-                // 3D 旋轉矩陣計算
-                let x1 = p.x * cosY - p.z * sinY;
-                let z1 = p.z * cosY + p.x * sinY;
-                let y2 = p.y * cosX - z1 * sinX;
-                let z2 = z1 * cosX + p.y * sinX;
+                const proj = project3D(p.x, p.y, p.z, cosX, sinX, cosY, sinY);
 
-                const fov = 400;
-                const scale = fov / (fov + z2 + 400);
-
-                if (scale > 0) {
+                if (proj.scale > 0) {
                     renderList.push({
-                        px: width / 2 + x1 * scale,
-                        py: height / 2 + y2 * scale,
-                        size: Math.max(0.8, 2.5 * scale),
-                        z: z2,
+                        px: proj.px,
+                        py: proj.py,
+                        size: Math.max(0.8, 2.5 * proj.scale),
+                        z: proj.z,
                         color: p.color
                     });
                 }
             }
 
-            // 深度排序
+            // 深度排序 (Z-Sorting)
             renderList.sort((a, b) => b.z - a.z);
 
-            // 渲染粒子
+            // 繪製照片點雲
             const rLen = renderList.length;
             for (let i = 0; i < rLen; i++) {
                 const item = renderList[i];
