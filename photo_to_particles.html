@@ -3,523 +3,295 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D Photo to Particle Cloud (Space XYZ Edition)</title>
+    <title>3D Photo Particle Cloud - Cinematic Camera</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-            -webkit-user-select: none;
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #020205; font-family: -apple-system, sans-serif; color: #fff; }
+        canvas { display: block; width: 100vw; height: 100vh; touch-action: none; }
+        .panel {
+            position: absolute; top: 12px; left: 12px;
+            background: rgba(10, 10, 18, 0.9); backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px;
+            padding: 14px; width: 310px; z-index: 10; font-size: 11px;
         }
-        body, html {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #020204;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            color: #ffffff;
-        }
-        canvas {
-            display: block;
-            width: 100vw;
-            height: 100vh;
-            touch-action: none;
-        }
-        .studio-panel {
-            position: absolute;
-            top: 12px;
-            left: 12px;
-            background: rgba(10, 10, 16, 0.88);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 12px;
-            padding: 14px;
-            width: 320px;
-            max-height: calc(100vh - 30px);
-            overflow-y: auto;
-            z-index: 10;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.9);
-            transition: opacity 0.3s;
-        }
-        .studio-header {
-            font-size: 12px;
-            font-weight: 800;
-            letter-spacing: 1.5px;
-            color: #00f0ff;
-            margin-bottom: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            padding-bottom: 8px;
-        }
-        .section-title {
-            font-size: 10px;
-            font-weight: bold;
-            color: #888888;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin: 10px 0 5px 0;
-        }
-        .file-upload-btn {
-            display: block;
-            width: 100%;
-            padding: 10px;
-            background: linear-gradient(135deg, #00f0ff, #0077ff);
-            color: #000;
-            font-weight: bold;
-            font-size: 12px;
-            text-align: center;
-            border-radius: 8px;
-            cursor: pointer;
-            box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
-            transition: all 0.2s;
-            margin-bottom: 10px;
-        }
-        .file-upload-btn:active {
-            transform: scale(0.98);
-        }
+        .header { color: #00f0ff; font-weight: bold; margin-bottom: 10px; font-size: 12px; display: flex; justify-content: space-between; }
+        .upload-btn { display: block; width: 100%; padding: 8px; background: #00f0ff; color: #000; text-align: center; font-weight: bold; border-radius: 6px; cursor: pointer; margin-bottom: 10px; }
         input[type="file"] { display: none; }
-        .control-group { margin-bottom: 8px; }
-        .control-label {
-            font-size: 10px;
-            color: #aaa;
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 3px;
-        }
-        input[type="range"] {
-            width: 100%;
-            accent-color: #00f0ff;
-        }
-        .btn-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 6px;
-            margin-top: 8px;
-        }
-        .btn {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            color: #ffffff;
-            padding: 8px 5px;
-            font-size: 11px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-align: center;
-        }
-        .btn:hover, .btn.active {
-            background: #00f0ff;
-            color: #000000;
-            font-weight: bold;
-            border-color: #00f0ff;
-            box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
-        }
-        .stat-box {
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 6px;
-            padding: 8px;
-            margin-top: 10px;
-            font-size: 10px;
-            color: #aaa;
-            font-family: monospace;
-        }
-        .stat-line {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 4px;
-        }
-        .stat-val { color: #00ffcc; font-weight: bold; }
-        .nav-link {
-            display: block;
-            text-align: center;
-            color: #00f0ff;
-            font-size: 10px;
-            margin-top: 10px;
-            text-decoration: none;
-            opacity: 0.8;
-        }
+        .row { margin-bottom: 8px; }
+        .row label { display: flex; justify-content: space-between; color: #aaa; margin-bottom: 3px; }
+        input[type="range"] { width: 100%; accent-color: #00f0ff; }
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+        .btn { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 6px; border-radius: 6px; cursor: pointer; text-align: center; }
+        .btn.active { background: #00f0ff; color: #000; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div class="studio-panel" id="studioPanel">
-        <div class="studio-header">
-            <span>🌌 SPACE 3D CLOUD</span>
-            <span id="fps" style="color: #00ffcc;">60 FPS</span>
+    <div class="panel">
+        <div class="header">
+            <span>🎥 CINEMATIC CAMERA 3D</span>
+            <span id="fps">60 FPS</span>
         </div>
 
-        <label class="file-upload-btn">
-            選擇/拍攝照片轉換 3D 粒子
-            <input type="file" id="imageLoader" accept="image/*" onchange="handleImage(event)">
+        <label class="upload-btn">
+            選擇照片載入粒子
+            <input type="file" id="imgInput" accept="image/*" onchange="loadFile(event)">
         </label>
 
-        <div class="section-title">空間視覺控制 (Space & Axis)</div>
+        <div class="row">
+            <label><span>鏡頭運鏡距離 (Zoom)</span><span id="txt-zoom">100%</span></label>
+            <input type="range" id="zoomVal" min="50" max="600" value="300" oninput="updateCam()">
+        </div>
+
+        <div class="row">
+            <label><span>近看粒子大小 (Particle Size)</span><span id="txt-size">2.5px</span></label>
+            <input type="range" id="sizeVal" min="1" max="8" step="0.5" value="2.5" oninput="draw()">
+        </div>
+
+        <div class="row">
+            <label><span>3D 立體深度 (Depth)</span><span id="txt-depth">1.0x</span></label>
+            <input type="range" id="depthVal" min="0" max="3" step="0.1" value="1.0" oninput="updateDepth()">
+        </div>
+
         <div class="btn-grid">
-            <button class="btn active" id="btn-axis" onclick="toggleAxis()">XYZ 座標軸: 開</button>
-            <button class="btn active" id="btn-grid" onclick="toggleDust()">太空星塵網格: 開</button>
+            <button class="btn active" id="btn-shape" onclick="toggleShape()">粒子形狀: 圓形</button>
+            <button class="btn" id="btn-orbit" onclick="toggleOrbit()">自動電影運鏡: 關</button>
         </div>
-
-        <div class="section-title">3D 粒子調整 (Controls)</div>
-        <div class="control-group">
-            <div class="control-label"><span>立體深度強度 (Depth)</span><span id="val-depth">1.0x</span></div>
-            <input type="range" id="sliderDepth" min="0" max="3" step="0.1" value="1.0" oninput="updateDepth()">
-        </div>
-
-        <div class="control-group">
-            <div class="control-label"><span>粒子採樣密度 (Density)</span><span id="val-density">中等</span></div>
-            <input type="range" id="sliderDensity" min="2" max="6" step="1" value="3" onchange="reloadParticles()">
-        </div>
-
-        <div class="section-title">動態特效 (Effects)</div>
-        <div class="btn-grid">
-            <button class="btn" onclick="triggerExplode()">粒子爆發</button>
-            <button class="btn" onclick="resetParticles()">重組原圖</button>
-            <button class="btn" id="btn-orbit" onclick="toggleOrbit()">自動旋轉: 關</button>
-            <button class="btn" onclick="takeScreenshot()">快照下載</button>
-        </div>
-
-        <div class="stat-box">
-            <div class="stat-line"><span>總粒子數量:</span> <span class="stat-val" id="stat-count">0</span></div>
-            <div class="stat-line"><span>空間座標系:</span> <span class="stat-val">3D Cartesian</span></div>
-        </div>
-
-        <a href="studio.html" class="nav-link">➔ 切換回 3D 武術點雲模式 (studio.html)</a>
     </div>
 
-    <canvas id="canvas"></canvas>
+    <canvas id="cvs"></canvas>
 
     <script>
-        const canvas = document.getElementById('canvas');
+        const canvas = document.getElementById('cvs');
         const ctx = canvas.getContext('2d');
 
-        let width, height;
-        function resize() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-        }
+        let w, h;
+        function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
         resize();
         window.addEventListener('resize', resize);
 
-        let loadedImage = null;
+        let img = null;
         let particles = [];
-        let spaceDust = [];
         let rotX = 0, rotY = 0;
         let targetRotX = 0, targetRotY = 0;
+        let camZ = 300;
+        let targetCamZ = 300;
         let isOrbiting = false;
+        let useCircle = true;
         let depthScale = 1.0;
-        let isExploded = false;
-        let showAxis = true;
-        let showDust = true;
 
-        // 生成太空背景星塵與立方網格
-        function initSpaceDust() {
-            spaceDust = [];
-            const size = 500;
-            for (let i = 0; i < 200; i++) {
-                spaceDust.push({
-                    x: (Math.random() - 0.5) * size * 2,
-                    y: (Math.random() - 0.5) * size * 2,
-                    z: (Math.random() - 0.5) * size * 2,
-                    size: Math.random() * 1.5 + 0.5
-                });
+        // 手勢與滑鼠操作
+        let isDrag = false, lx = 0, ly = 0, pinchDist = 0;
+
+        window.addEventListener('mousedown', e => { if (!e.target.closest('.panel')) { isDrag = true; lx = e.clientX; ly = e.clientY; } });
+        window.addEventListener('mousemove', e => {
+            if (!isDrag) return;
+            targetRotY += (e.clientX - lx) * 0.005;
+            targetRotX += (e.clientY - ly) * 0.005;
+            lx = e.clientX; ly = e.clientY;
+        });
+        window.addEventListener('mouseup', () => isDrag = false);
+
+        window.addEventListener('wheel', e => {
+            if (e.target.closest('.panel')) return;
+            targetCamZ = Math.max(30, Math.min(800, targetCamZ + e.deltaY * 0.4));
+            document.getElementById('zoomVal').value = targetCamZ;
+            updateCam();
+        });
+
+        // Touch 支持
+        window.addEventListener('touchstart', e => {
+            if (e.target.closest('.panel')) return;
+            if (e.touches.length === 1) { isDrag = true; lx = e.touches[0].clientX; ly = e.touches[0].clientY; }
+            else if (e.touches.length === 2) {
+                pinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
             }
-        }
-        initSpaceDust();
-
-        // 觸控與滑鼠拖拽鏡頭旋轉
-        let isDragging = false;
-        let lastTouchX = 0, lastTouchY = 0;
-
-        window.addEventListener('pointerdown', (e) => {
-            if (e.target.closest('#studioPanel')) return;
-            isDragging = true;
-            lastTouchX = e.clientX;
-            lastTouchY = e.clientY;
         });
 
-        window.addEventListener('pointermove', (e) => {
-            if (!isDragging) return;
-            const dx = e.clientX - lastTouchX;
-            const dy = e.clientY - lastTouchY;
-            targetRotY += dx * 0.005;
-            targetRotX += dy * 0.005;
-            lastTouchX = e.clientX;
-            lastTouchY = e.clientY;
+        window.addEventListener('touchmove', e => {
+            if (e.target.closest('.panel')) return;
+            if (e.touches.length === 1 && isDrag) {
+                targetRotY += (e.touches[0].clientX - lx) * 0.005;
+                targetRotX += (e.touches[0].clientY - ly) * 0.005;
+                lx = e.touches[0].clientX; ly = e.touches[0].clientY;
+            } else if (e.touches.length === 2 && pinchDist) {
+                let d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                targetCamZ = Math.max(30, Math.min(800, targetCamZ + (pinchDist - d) * 1.2));
+                pinchDist = d;
+                document.getElementById('zoomVal').value = targetCamZ;
+                updateCam();
+            }
         });
+        window.addEventListener('touchend', () => isDrag = false);
 
-        window.addEventListener('pointerup', () => isDragging = false);
-
-        function createDefaultTextParticles() {
-            const tempCanvas = document.createElement('canvas');
-            const tCtx = tempCanvas.getContext('2d');
-            tempCanvas.width = 200; tempCanvas.height = 100;
-            tCtx.fillStyle = '#ffffff';
-            tCtx.font = 'bold 24px sans-serif';
-            tCtx.textAlign = 'center';
-            tCtx.fillText('請選擇照片', 100, 55);
-
-            const imgData = tCtx.getImageData(0, 0, 200, 100);
-            processImageData(imgData, 200, 100, 2);
-        }
-
-        function handleImage(e) {
+        function loadFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
             const reader = new FileReader();
-            reader.onload = function(event) {
-                const img = new Image();
-                img.onload = function() {
-                    loadedImage = img;
-                    reloadParticles();
-                }
+            reader.onload = event => {
+                img = new Image();
+                img.onload = () => buildParticles();
                 img.src = event.target.result;
-            }
-            if (e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
+            };
+            reader.readAsDataURL(file);
         }
 
-        function reloadParticles() {
-            if (!loadedImage) {
-                createDefaultTextParticles();
-                return;
-            }
-            const step = parseInt(document.getElementById('sliderDensity').value);
-            const stepNames = {2: '超高', 3: '高', 4: '中等', 5: '低', 6: '極低'};
-            document.getElementById('val-density').innerText = stepNames[step] || '中等';
-
-            const maxDim = 300;
-            let w = loadedImage.width;
-            let h = loadedImage.height;
-            if (w > maxDim || h > maxDim) {
-                if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
-                else { w = Math.round((w * maxDim) / h); h = maxDim; }
+        function buildParticles() {
+            if (!img) return;
+            const maxDim = 220; // 粒子採樣精度
+            let iw = img.width, ih = img.height;
+            if (iw > maxDim || ih > maxDim) {
+                if (iw > ih) { ih = Math.round((ih * maxDim) / iw); iw = maxDim; }
+                else { iw = Math.round((iw * maxDim) / ih); ih = maxDim; }
             }
 
-            const tempCanvas = document.createElement('canvas');
-            const tCtx = tempCanvas.getContext('2d');
-            tempCanvas.width = w; tempCanvas.height = h;
-            tCtx.drawImage(loadedImage, 0, 0, w, h);
+            const tmp = document.createElement('canvas');
+            const tctx = tmp.getContext('2d');
+            tmp.width = iw; tmp.height = ih;
+            tctx.drawImage(img, 0, 0, iw, ih);
 
-            const imgData = tCtx.getImageData(0, 0, w, h);
-            processImageData(imgData, w, h, step);
-        }
-
-        function processImageData(imgData, w, h, step) {
+            const data = tctx.getImageData(0, 0, iw, ih).data;
             particles = [];
-            const data = imgData.data;
-            const cx = w / 2;
-            const cy = h / 2;
+            const cx = iw / 2, cy = ih / 2;
 
-            for (let y = 0; y < h; y += step) {
-                for (let x = 0; x < w; x += step) {
-                    const idx = (y * w + x) * 4;
-                    const r = data[idx], g = data[idx + 1], b = data[idx + 2], a = data[idx + 3];
-
-                    if (a > 50) {
-                        const brightness = (r + g + b) / 3;
-                        const baseZ = (brightness - 128) * 0.8;
-
-                        const originX = (x - cx) * 2;
-                        const originY = (y - cy) * 2;
-                        const originZ = baseZ;
-
+            for (let y = 0; y < ih; y += 2) {
+                for (let x = 0; x < iw; x += 2) {
+                    const idx = (y * iw + x) * 4;
+                    const r = data[idx], g = data[idx+1], b = data[idx+2], a = data[idx+3];
+                    if (a > 40) {
+                        const bright = (r + g + b) / 3;
+                        const z = (bright - 128) * 0.8;
                         particles.push({
-                            x: originX, y: originY, z: originZ,
-                            ox: originX, oy: originY, oz: originZ,
-                            vx: 0, vy: 0, vz: 0,
-                            baseZ: baseZ,
+                            x: (x - cx) * 2.2,
+                            y: (y - cy) * 2.2,
+                            z: z,
+                            baseZ: z,
                             color: `rgb(${r},${g},${b})`
                         });
                     }
                 }
             }
-            document.getElementById('stat-count').innerText = particles.length.toLocaleString();
-            isExploded = false;
+        }
+
+        function updateCam() {
+            targetCamZ = parseFloat(document.getElementById('zoomVal').value);
+            document.getElementById('txt-zoom').innerText = `${Math.round((300 / targetCamZ) * 100)}%`;
         }
 
         function updateDepth() {
-            depthScale = parseFloat(document.getElementById('sliderDepth').value);
-            document.getElementById('val-depth').innerText = `${depthScale.toFixed(1)}x`;
-            particles.forEach(p => {
-                p.oz = p.baseZ * depthScale;
-                if (!isExploded) p.z = p.oz;
-            });
+            depthScale = parseFloat(document.getElementById('depthVal').value);
+            document.getElementById('txt-depth').innerText = `${depthScale.toFixed(1)}x`;
+            particles.forEach(p => p.z = p.baseZ * depthScale);
         }
 
-        function triggerExplode() {
-            isExploded = true;
-            particles.forEach(p => {
-                p.vx = (Math.random() - 0.5) * 25;
-                p.vy = (Math.random() - 0.5) * 25;
-                p.vz = (Math.random() - 0.5) * 25;
-            });
-        }
-
-        function resetParticles() {
-            isExploded = false;
-            particles.forEach(p => { p.vx = 0; p.vy = 0; p.vz = 0; });
+        function toggleShape() {
+            useCircle = !useCircle;
+            const btn = document.getElementById('btn-shape');
+            btn.innerText = `粒子形狀: ${useCircle ? '圓形' : '方形'}`;
         }
 
         function toggleOrbit() {
             isOrbiting = !isOrbiting;
-            const btn = document.getElementById('btn-orbit');
-            btn.innerText = `自動旋轉: ${isOrbiting ? '開' : '關'}`;
-            btn.classList.toggle('active', isOrbiting);
+            document.getElementById('btn-orbit').classList.toggle('active', isOrbiting);
+            document.getElementById('btn-orbit').innerText = `自動電影運鏡: ${isOrbiting ? '開' : '關'}`;
         }
 
-        function toggleAxis() {
-            showAxis = !showAxis;
-            const btn = document.getElementById('btn-axis');
-            btn.innerText = `XYZ 座標軸: ${showAxis ? '開' : '關'}`;
-            btn.classList.toggle('active', showAxis);
+        // 初始化預設文字粒子
+        function initDefault() {
+            const tmp = document.createElement('canvas');
+            const tctx = tmp.getContext('2d');
+            tmp.width = 200; tmp.height = 100;
+            tctx.fillStyle = '#fff';
+            tctx.font = 'bold 22px sans-serif';
+            tctx.textAlign = 'center';
+            tctx.fillText('載入照片試試看', 100, 55);
+            const data = tctx.getImageData(0, 0, 200, 100).data;
+            particles = [];
+            for(let y=0; y<100; y+=2) {
+                for(let x=0; x<200; x+=2) {
+                    let i = (y*200+x)*4;
+                    if(data[i+3]>100) {
+                        particles.push({
+                            x: (x-100)*2, y: (y-50)*2, z: 0, baseZ: 0,
+                            color: '#00f0ff'
+                        });
+                    }
+                }
+            }
         }
+        initDefault();
 
-        function toggleDust() {
-            showDust = !showDust;
-            const btn = document.getElementById('btn-grid');
-            btn.innerText = `太空星塵網格: ${showDust ? '開' : '關'}`;
-            btn.classList.toggle('active', showDust);
-        }
+        let lastT = performance.now(), frames = 0;
 
-        function takeScreenshot() {
-            const link = document.createElement('a');
-            link.download = `3D_Space_Particles_${Date.now()}.png`;
-            link.href = canvas.toDataURL();
-            link.click();
-        }
-
-        createDefaultTextParticles();
-
-        // 3D 投影轉換函式
-        function project3D(x, y, z, cosX, sinX, cosY, sinY) {
-            let x1 = x * cosY - z * sinY;
-            let z1 = z * cosY + x * sinY;
-            let y2 = y * cosX - z1 * sinX;
-            let z2 = z1 * cosX + y * sinX;
-
-            const fov = 400;
-            const scale = fov / (fov + z2 + 400);
-            return {
-                px: width / 2 + x1 * scale,
-                py: height / 2 + y2 * scale,
-                scale: scale,
-                z: z2
-            };
-        }
-
-        // 繪製 XYZ 三軸座標系
-        function drawXYZAxis(cosX, sinX, cosY, sinY) {
-            const len = 120;
-            const origin = project3D(0, 0, 0, cosX, sinX, cosY, sinY);
-            const xAxis = project3D(len, 0, 0, cosX, sinX, cosY, sinY);
-            const yAxis = project3D(0, -len, 0, cosX, sinX, cosY, sinY); // Canvas Y 軸朝下，故給負值向上
-            const zAxis = project3D(0, 0, len, cosX, sinX, cosY, sinY);
-
-            ctx.lineWidth = 2;
-
-            // X 軸 (紅色)
-            ctx.strokeStyle = '#ff3366';
-            ctx.beginPath(); ctx.moveTo(origin.px, origin.py); ctx.lineTo(xAxis.px, xAxis.py); ctx.stroke();
-            ctx.fillStyle = '#ff3366'; ctx.font = 'bold 12px monospace'; ctx.fillText('X', xAxis.px + 5, xAxis.py + 5);
-
-            // Y 軸 (綠色)
-            ctx.strokeStyle = '#00ff66';
-            ctx.beginPath(); ctx.moveTo(origin.px, origin.py); ctx.lineTo(yAxis.px, yAxis.py); ctx.stroke();
-            ctx.fillStyle = '#00ff66'; ctx.fillText('Y', yAxis.px + 5, yAxis.py - 5);
-
-            // Z 軸 (藍色 - 前後深度)
-            ctx.strokeStyle = '#00aaff';
-            ctx.beginPath(); ctx.moveTo(origin.px, origin.py); ctx.lineTo(zAxis.px, zAxis.py); ctx.stroke();
-            ctx.fillStyle = '#00aaff'; ctx.fillText('Z', zAxis.px + 5, zAxis.py + 5);
-
-            // 原點發光核心
-            ctx.fillStyle = '#ffffff';
-            ctx.beginPath(); ctx.arc(origin.px, origin.py, 3, 0, Math.PI * 2); ctx.fill();
-        }
-
-        let lastTime = performance.now();
-        let frameCount = 0;
-
-        function animate(now) {
-            frameCount++;
-            if (now - lastTime >= 1000) {
-                document.getElementById('fps').innerText = `${frameCount} FPS`;
-                frameCount = 0;
-                lastTime = now;
+        function render(now) {
+            frames++;
+            if (now - lastT >= 1000) {
+                document.getElementById('fps').innerText = `${frames} FPS`;
+                frames = 0; lastT = now;
             }
 
-            if (isOrbiting) targetRotY += 0.008;
+            if (isOrbiting) targetRotY += 0.006;
 
-            rotX += (targetRotX - rotX) * 0.1;
-            rotY += (targetRotY - rotY) * 0.1;
+            rotX += (targetRotX - rotX) * 0.08;
+            rotY += (targetRotY - rotY) * 0.08;
+            camZ += (targetCamZ - camZ) * 0.08;
 
-            ctx.fillStyle = '#020204';
-            ctx.fillRect(0, 0, width, height);
+            ctx.fillStyle = '#020205';
+            ctx.fillRect(0, 0, w, h);
 
             const cosX = Math.cos(rotX), sinX = Math.sin(rotX);
             const cosY = Math.cos(rotY), sinY = Math.sin(rotY);
 
-            // 1. 繪製太空星塵網格
-            if (showDust) {
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-                spaceDust.forEach(d => {
-                    const p = project3D(d.x, d.y, d.z, cosX, sinX, cosY, sinY);
-                    if (p.scale > 0) {
-                        ctx.fillRect(p.px, p.py, d.size * p.scale, d.size * p.scale);
-                    }
-                });
-            }
+            const fov = 350; // Blender 透視焦距
+            const baseSize = parseFloat(document.getElementById('sizeVal').value);
+            document.getElementById('txt-size').innerText = `${baseSize}px`;
 
-            // 2. 繪製 XYZ 三軸
-            if (showAxis) {
-                drawXYZAxis(cosX, sinX, cosY, sinY);
-            }
-
-            // 3. 處理照片粒子
             const renderList = [];
-            const len = particles.length;
 
-            for (let i = 0; i < len; i++) {
+            for (let i = 0; i < particles.length; i++) {
                 const p = particles[i];
 
-                if (isExploded) {
-                    p.x += p.vx; p.y += p.vy; p.z += p.vz;
-                    p.vx *= 0.95; p.vy *= 0.95; p.vz *= 0.95;
-                } else {
-                    p.x += (p.ox - p.x) * 0.1;
-                    p.y += (p.oy - p.y) * 0.1;
-                    p.z += (p.oz - p.z) * 0.1;
-                }
+                // 3D 旋轉變換
+                let x1 = p.x * cosY - p.z * sinY;
+                let z1 = p.z * cosY + p.x * sinY;
+                let y2 = p.y * cosX - z1 * sinX;
+                let z2 = z1 * cosX + p.y * sinX;
 
-                const proj = project3D(p.x, p.y, p.z, cosX, sinX, cosY, sinY);
-
-                if (proj.scale > 0) {
+                // 鏡頭運鏡距離計算
+                const dist = fov + z2 + camZ;
+                if (dist > 10) { // 避免剪裁平面問題
+                    const scale = fov / dist;
                     renderList.push({
-                        px: proj.px,
-                        py: proj.py,
-                        size: Math.max(0.8, 2.5 * proj.scale),
-                        z: proj.z,
+                        px: w / 2 + x1 * scale,
+                        py: h / 2 + y2 * scale,
+                        // 關鍵：根據透視比例放大粒子，近看時會變得很巨大清晰
+                        size: Math.max(0.5, baseSize * scale * 1.8),
+                        z: z2,
                         color: p.color
                     });
                 }
             }
 
-            // 深度排序 (Z-Sorting)
+            // 排序 (Z-buffer) 確保近處粒子遮擋遠處粒子
             renderList.sort((a, b) => b.z - a.z);
 
-            // 繪製照片點雲
-            const rLen = renderList.length;
-            for (let i = 0; i < rLen; i++) {
+            for (let i = 0; i < renderList.length; i++) {
                 const item = renderList[i];
                 ctx.fillStyle = item.color;
-                ctx.fillRect(item.px - item.size / 2, item.py - item.size / 2, item.size, item.size);
+
+                if (useCircle) {
+                    ctx.beginPath();
+                    ctx.arc(item.px, item.py, item.size, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    ctx.fillRect(item.px - item.size / 2, item.py - item.size / 2, item.size * 2, item.size * 2);
+                }
             }
 
-            requestAnimationFrame(animate);
+            requestAnimationFrame(render);
         }
 
-        requestAnimationFrame(animate);
+        requestAnimationFrame(render);
     </script>
 </body>
 </html>
