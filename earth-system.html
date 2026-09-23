@@ -16,13 +16,14 @@
             top: 20px;
             left: 20px;
             color: #fff;
-            background: rgba(10, 15, 30, 0.8);
+            background: rgba(10, 15, 30, 0.85);
             backdrop-filter: blur(10px);
             padding: 16px 22px;
             border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.15);
             pointer-events: none;
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+            z-index: 10;
         }
         #ui-panel h2 {
             margin: 0 0 6px 0;
@@ -47,13 +48,13 @@
         }
     </style>
 
-    <!-- 引入 Three.js 與 3D Tiles Renderer -->
+    <!-- 修正版 importmap：確保所有套件路徑指向完整打包好的 bundle -->
     <script type="importmap">
         {
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
                 "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
-                "3d-tiles-renderer": "https://unpkg.com/3d-tiles-renderer@0.2.22/src/index.js"
+                "3d-tiles-renderer": "https://unpkg.com/3d-tiles-renderer@0.2.22/build/index.module.js"
             }
         }
     </script>
@@ -62,7 +63,7 @@
     <div id="ui-panel">
         <h2>EARTH SYSTEM</h2>
         <p>✦ 滾輪進行縮放（自動於太空與近地面切換）</p>
-        <p id="altitude-readout">視角高度: -- km</p>
+        <p id="altitude-readout">視角高度: 計算中...</p>
         <div id="mode-indicator">渲染模式: 太空全域 (Space Shell)</div>
     </div>
 
@@ -71,20 +72,20 @@
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         import { TilesRenderer } from '3d-tiles-renderer';
 
-        // 1. 場景、相機與渲染器
+        // 1. 初始化場景、相機與渲染器
         const scene = new THREE.Scene();
 
         const camera = new THREE.PerspectiveCamera(
             45,
             window.innerWidth / window.innerHeight,
-            0.001, // 支援近距離細節觀察
+            0.001,
             2000
         );
         camera.position.set(0, 0, 20);
 
         const renderer = new THREE.WebGLRenderer({ 
             antialias: true, 
-            logarithmicDepthBuffer: true // 關鍵：防止大尺度縮放時的深度閃爍 (Z-fighting)
+            logarithmicDepthBuffer: true
         });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -95,7 +96,7 @@
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
-        controls.minDistance = 6.005; // 貼近地表保護限制
+        controls.minDistance = 6.005;
         controls.maxDistance = 150;
 
         // 3. 光源系統
@@ -106,9 +107,7 @@
         const ambientLight = new THREE.AmbientLight(0x0a1020, 0.2);
         scene.add(ambientLight);
 
-        // -------------------------------------------------------------
         // 4. 群組分層：Space Group (太空層) vs Ground Group (近地面層)
-        // -------------------------------------------------------------
         const spaceGroup = new THREE.Group();
         const groundGroup = new THREE.Group();
         scene.add(spaceGroup);
@@ -166,70 +165,52 @@
         const atmosphereMesh = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
         spaceGroup.add(atmosphereMesh);
 
-
-        // === 近地面層：3D Tiles Renderer (開放式 3D 高清地形瓦片) ===
-        // 使用開放地圖數據源 (Cesium Ion / Open 3D Tiles 格式範例)
+        // === 近地面層：3D Tiles Renderer (開放式地形) ===
         const tilesRenderer = new TilesRenderer('https://raw.githubusercontent.com/CesiumGS/cesium/main/Apps/SampleData/Cesium3DTiles/Terrain/tileset.json');
         
-        // 將相機與渲染器連結至 3D Tiles 系統
         tilesRenderer.setCamera(camera);
         tilesRenderer.setResolutionFromRenderer(camera, renderer);
         
-        // 效能最佳化參數設定
-        tilesRenderer.errorTarget = 6;      // 螢幕誤差閾值 (數字越小畫質越高、負擔越大；6 為效能與品質最佳平衡點)
-        tilesRenderer.maxDepth = 15;        // 限制瓦片最大層級，防止無限下載
-        tilesRenderer.lruCache.minSize = 100; // LRU 快取機制，自動清除沒看到的遠處瓦片
+        tilesRenderer.errorTarget = 6;
+        tilesRenderer.maxDepth = 15;
+        tilesRenderer.lruCache.minSize = 100;
         tilesRenderer.lruCache.maxSize = 300;
 
-        // 設定 Tiles 的縮放與位置對齊地球半徑
-        tilesRenderer.group.scale.setScalar(earthRadius / 6371); // 將 WGS84 真實單位 (km) 縮放到專案地球尺度
+        tilesRenderer.group.scale.setScalar(earthRadius / 6371);
         groundGroup.add(tilesRenderer.group);
 
-
-        // -------------------------------------------------------------
-        // 5. 雙層無縫過渡邏輯 (Cross-Fade System)
-        // -------------------------------------------------------------
+        // 5. 雙層過渡邏輯
         const altitudeReadout = document.getElementById('altitude-readout');
         const modeIndicator = document.getElementById('mode-indicator');
-        
-        const transitionThreshold = earthRadius + 0.5; // 切換高度閾值 (約 500 km)
+        const transitionThreshold = earthRadius + 0.5;
 
         function updateLayersVisibility(camDistance) {
             const altitudeKM = Math.max(0, ((camDistance - earthRadius) * 1000)).toFixed(1);
             altitudeReadout.innerText = `視角高度: ${altitudeKM} km`;
 
             if (camDistance > transitionThreshold) {
-                // [ 太空模式 ]：啟動太空全域球體，暫停地表 Tiles 更新以節省 CPU/GPU 算力
                 spaceGroup.visible = true;
                 groundGroup.visible = false;
                 modeIndicator.innerText = "渲染模式: 太空全域 (Space Shell)";
                 modeIndicator.style.background = "#0288d1";
             } else {
-                // [ 近地面模式 ]：隱藏太空球體，開啟 3D Tiles 動態下載與渲染
                 spaceGroup.visible = false;
                 groundGroup.visible = true;
-                
-                // 動態更新 3D Tiles 幾何網格與視野視錐
                 tilesRenderer.update();
-
                 modeIndicator.innerText = "渲染模式: 近地面 3D Tiles 地形 (LOD Active)";
                 modeIndicator.style.background = "#2e7d32";
             }
         }
 
-        // -------------------------------------------------------------
-        // 6. 渲染與動畫迴圈
-        // -------------------------------------------------------------
+        // 6. 動畫迴圈
         function animate() {
             requestAnimationFrame(animate);
 
-            // 太空模式下自轉
             if (spaceGroup.visible) {
                 earthMesh.rotation.y += 0.0003;
                 cloudMesh.rotation.y += 0.00045;
             }
 
-            // 監測相機距離並進行雙層切換
             const camDistance = camera.position.distanceTo(scene.position);
             updateLayersVisibility(camDistance);
 
@@ -239,7 +220,7 @@
 
         animate();
 
-        // 視窗變更適應
+        // RWD 視窗自動適應
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
