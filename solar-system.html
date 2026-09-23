@@ -3,307 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>全 3D 沉浸式太陽系星際探險 - NASA 高精貼圖與地標導航版</title>
+    <title>全 3D 沉浸式太陽系 - 內部剖面解剖與地表漫遊版</title>
     <!-- Three.js and OrbitControls -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+    <script src="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet"></script>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-        }
-        body, html {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #000;
-            font-family: 'Noto Sans TC', sans-serif;
-            color: #fff;
-        }
-        #webgl-container {
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 1;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #000; font-family: 'Noto Sans TC', sans-serif; color: #fff; }
+        #webgl-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
 
-        /* Glassmorphism UI Panel */
         .glass-panel {
-            background: rgba(10, 16, 28, 0.75);
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
-            border: 1px solid rgba(0, 240, 255, 0.25);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.7), inset 0 0 15px rgba(0, 240, 255, 0.08);
+            background: rgba(10, 16, 28, 0.82);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
             border-radius: 12px;
         }
 
         #ui-container {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 10;
-            width: 320px;
-            padding: 20px;
-            transition: all 0.3s ease;
+            position: absolute; top: 20px; left: 20px; z-index: 10; width: 330px; padding: 18px; max-height: calc(100vh - 40px); overflow-y: auto;
         }
 
-        h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.1rem;
-            font-weight: 800;
-            letter-spacing: 2px;
-            color: #00f0ff;
-            text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .section-title {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #8a9ba8;
-            margin: 12px 0 6px 0;
-        }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 1.05rem; font-weight: 800; letter-spacing: 1.5px; color: #00f0ff; margin-bottom: 12px; }
+        .section-title { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; color: #8a9ba8; margin: 10px 0 5px 0; }
 
         select, button {
-            width: 100%;
-            padding: 10px;
-            background: rgba(10, 25, 47, 0.75);
-            border: 1px solid rgba(0, 240, 255, 0.3);
-            border-radius: 6px;
-            color: #e6f1ff;
-            font-family: inherit;
-            font-size: 0.85rem;
-            outline: none;
-            cursor: pointer;
-            transition: all 0.2s ease;
+            width: 100%; padding: 9px; background: rgba(10, 25, 47, 0.8); border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 6px;
+            color: #e6f1ff; font-family: inherit; font-size: 0.82rem; outline: none; cursor: pointer; transition: all 0.2s ease; margin-bottom: 6px;
         }
 
-        select:hover, button:hover {
-            border-color: #00f0ff;
-            box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
-            background: rgba(0, 240, 255, 0.15);
-        }
+        select:hover, button:hover { border-color: #00f0ff; box-shadow: 0 0 10px rgba(0, 240, 255, 0.3); background: rgba(0, 240, 255, 0.15); }
 
-        .btn-group {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            margin-bottom: 10px;
-        }
+        .btn-group { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px; }
+        .btn-group button.active { background: rgba(0, 240, 255, 0.25); border-color: #00f0ff; color: #00f0ff; font-weight: bold; }
 
-        .btn-group button.active {
-            background: rgba(0, 240, 255, 0.25);
-            border-color: #00f0ff;
-            color: #00f0ff;
-            font-weight: bold;
-        }
+        .slider-container { margin: 8px 0; }
+        .slider-label { display: flex; justify-content: space-between; font-size: 0.78rem; color: #a8b2d1; margin-bottom: 4px; }
+        input[type=range] { -webkit-appearance: none; width: 100%; background: rgba(255, 255, 255, 0.15); height: 4px; border-radius: 2px; outline: none; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #00f0ff; cursor: pointer; box-shadow: 0 0 8px #00f0ff; }
 
-        .slider-container {
-            margin: 10px 0;
-        }
+        /* Multi-Option Buttons */
+        .mode-btn { background: linear-gradient(135deg, rgba(0, 240, 255, 0.15), rgba(0, 100, 255, 0.2)); border: 1px solid rgba(0, 240, 255, 0.4); }
+        .mode-btn.active { background: linear-gradient(135deg, rgba(0, 240, 255, 0.4), rgba(0, 150, 255, 0.5)); border-color: #00f0ff; color: #fff; font-weight: bold; }
+        .xray-btn { background: linear-gradient(135deg, rgba(255, 0, 150, 0.2), rgba(150, 0, 255, 0.2)); border: 1px solid rgba(255, 0, 150, 0.4); color: #ff66cc; }
+        .fpv-btn { background: linear-gradient(135deg, rgba(0, 255, 150, 0.2), rgba(0, 180, 100, 0.2)); border: 1px solid rgba(0, 255, 150, 0.4); color: #00ffaa; }
 
-        .slider-label {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.8rem;
-            color: #a8b2d1;
-            margin-bottom: 4px;
-        }
-
-        input[type=range] {
-            -webkit-appearance: none;
-            width: 100%;
-            background: rgba(255, 255, 255, 0.1);
-            height: 4px;
-            border-radius: 2px;
-            outline: none;
-        }
-
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            background: #00f0ff;
-            cursor: pointer;
-            box-shadow: 0 0 8px #00f0ff;
-        }
-
-        .action-btn {
-            margin-top: 8px;
-            background: linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(100, 0, 255, 0.2));
-            border: 1px solid rgba(0, 240, 255, 0.4);
-            font-weight: 500;
-        }
-
-        .land-btn {
-            background: linear-gradient(135deg, rgba(255, 170, 0, 0.25), rgba(255, 0, 100, 0.25));
-            border: 1px solid rgba(255, 170, 0, 0.5);
-            color: #ffcc00;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-
-        .land-btn:hover {
-            border-color: #ffcc00;
-            box-shadow: 0 0 12px rgba(255, 204, 0, 0.4);
-            background: rgba(255, 170, 0, 0.35);
-        }
-
-        /* Planet Info HUD */
-        #info-panel {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            z-index: 10;
-            width: 330px;
-            padding: 20px;
-            pointer-events: none;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.4s ease;
-        }
-
-        #info-panel.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        #info-name {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.4rem;
-            font-weight: 800;
-            color: #00f0ff;
-            margin-bottom: 8px;
-            text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
-        }
-
-        #info-desc {
-            font-size: 0.83rem;
-            line-height: 1.5;
-            color: #c5d1ec;
-            margin-bottom: 12px;
-        }
-
-        .stat-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.78rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 4px 0;
-        }
-
+        /* Info HUD */
+        #info-panel { position: absolute; bottom: 20px; right: 20px; z-index: 10; width: 320px; padding: 18px; pointer-events: none; opacity: 0; transform: translateY(15px); transition: all 0.3s ease; }
+        #info-panel.visible { opacity: 1; transform: translateY(0); }
+        #info-name { font-family: 'Orbitron', sans-serif; font-size: 1.3rem; font-weight: 800; color: #00f0ff; margin-bottom: 6px; }
+        #info-desc { font-size: 0.8rem; line-height: 1.4; color: #c5d1ec; margin-bottom: 10px; }
+        .stat-row { display: flex; justify-content: space-between; font-size: 0.75rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding: 3px 0; }
         .stat-label { color: #8a9ba8; }
         .stat-value { color: #00f0ff; font-family: 'Orbitron', sans-serif; }
 
-        .feature-tag {
-            display: inline-block;
-            font-size: 0.65rem;
-            background: rgba(0, 240, 255, 0.15);
-            color: #00f0ff;
-            border: 1px solid rgba(0, 240, 255, 0.3);
-            border-radius: 4px;
-            padding: 2px 6px;
-            margin-top: 8px;
-            margin-right: 4px;
+        /* Mode Indicator */
+        #mode-indicator { position: absolute; top: 20px; right: 20px; z-index: 10; padding: 8px 16px; font-family: 'Orbitron', sans-serif; font-size: 0.75rem; color: #00f0ff; display: flex; align-items: center; gap: 8px; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #00f0ff; box-shadow: 0 0 8px #00f0ff; }
+
+        /* FPV Controls Prompt Overlay */
+        #fpv-instructions {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 20; padding: 10px 20px;
+            font-size: 0.8rem; color: #00ffaa; display: none; text-align: center; border: 1px solid #00ffaa;
         }
 
-        /* Mode Status Overlay */
-        #mode-indicator {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            z-index: 10;
-            padding: 8px 16px;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.75rem;
-            letter-spacing: 1px;
-            color: #00f0ff;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #00f0ff;
-            box-shadow: 0 0 8px #00f0ff;
-        }
-
-        /* 3D POI Marker Label */
-        .poi-label {
-            position: absolute;
-            z-index: 15;
-            background: rgba(10, 20, 35, 0.85);
-            border: 1px solid #00f0ff;
-            border-radius: 4px;
-            padding: 3px 8px;
-            font-size: 0.72rem;
-            color: #00f0ff;
-            font-family: 'Orbitron', 'Noto Sans TC', sans-serif;
-            pointer-events: auto;
-            cursor: pointer;
-            transform: translate(-50%, -100%);
-            white-space: nowrap;
-            box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
-            transition: opacity 0.3s;
-        }
-
-        .poi-label:hover {
-            background: #00f0ff;
-            color: #000;
-            font-weight: bold;
-        }
-
-        @media (max-width: 768px) {
-            #ui-container { width: calc(100% - 40px); top: 10px; left: 20px; padding: 15px; }
-            #info-panel { width: calc(100% - 40px); bottom: 10px; right: 20px; padding: 15px; }
-            #mode-indicator { display: none; }
-        }
+        /* 3D POI Label */
+        .poi-label { position: absolute; z-index: 15; background: rgba(10, 20, 35, 0.85); border: 1px solid #00f0ff; border-radius: 4px; padding: 2px 6px; font-size: 0.7rem; color: #00f0ff; pointer-events: auto; cursor: pointer; transform: translate(-50%, -100%); white-space: nowrap; transition: opacity 0.3s; }
+        .poi-label:hover { background: #00f0ff; color: #000; font-weight: bold; }
     </style>
 </head>
 <body>
     <div id="webgl-container"></div>
     <div id="poi-container"></div>
 
-    <!-- Mode Indicator -->
     <div id="mode-indicator" class="glass-panel">
         <div class="status-dot"></div>
         <span id="mode-text">ORBITAL VIEW (軌道全景)</span>
     </div>
 
+    <div id="fpv-instructions" class="glass-panel">
+        🎮 <b>第一人稱地表漫遊模式</b><br>按住滑鼠左鍵拖曳旋轉視角 | [W][A][S][D] 或 方向鍵 移動
+    </div>
+
     <!-- UI Panel -->
     <div id="ui-container" class="glass-panel">
-        <h1>SOLAR EXPLORER <span style="font-size: 0.6rem; color: #00f0ff; border: 1px solid #00f0ff; padding: 2px 6px; border-radius: 4px;">NASA HD</span></h1>
+        <h1>SOLAR EXPLORER <span style="font-size: 0.55rem; color: #00f0ff; border: 1px solid #00f0ff; padding: 1px 4px; border-radius: 3px;">3-IN-1 FULL</span></h1>
         
-        <div class="section-title">聚焦目標 Focus Body</div>
+        <div class="section-title">聚焦目標 Focus Target</div>
         <select id="planet-select">
             <option value="Sun">太陽 (Sun)</option>
             <option value="Mercury">水星 (Mercury)</option>
             <option value="Venus">金星 (Venus)</option>
-            <option value="Earth" selected>地球 [月球/衛星網] (Earth)</option>
-            <option value="Moon">月球 [地標探勘] (Moon)</option>
-            <option value="Mars">火星 [地貌標記] (Mars)</option>
-            <option value="Jupiter">木星 [大紅斑] (Jupiter)</option>
-            <option value="Saturn">土星 [卡西尼環縫] (Saturn)</option>
+            <option value="Earth" selected>地球 [剖面/月球/地標] (Earth)</option>
+            <option value="Moon">月球 [地表漫遊] (Moon)</option>
+            <option value="Mars">火星 [剖面/地表漫遊] (Mars)</option>
+            <option value="Jupiter">木星 [氣態剖面] (Jupiter)</option>
+            <option value="Saturn">土星 (Saturn)</option>
             <option value="Uranus">天王星 (Uranus)</option>
             <option value="Neptune">海王星 (Neptune)</option>
             <option value="Pluto">冥王星 (Pluto)</option>
         </select>
 
-        <button id="btn-land" class="land-btn">🛬 進入地表 / 地標導航 (Enter Surface)</button>
+        <div class="section-title">探索方案模式 (Explore Modes)</div>
+        <button id="btn-xray" class="xray-btn">🔬 方案 1：開啟內部剖面 (X-Ray Core)</button>
+        <button id="btn-fpv" class="fpv-btn">🚶 方案 3：降落地表 (FPV 漫遊)</button>
+
+        <div id="xray-controls" style="display: none; background: rgba(255,0,150,0.08); padding: 8px; border-radius: 6px; border: 1px solid rgba(255,0,150,0.2); margin-bottom: 8px;">
+            <div class="slider-label"><span>方案 2：剖面角度 Cutaway</span><span id="cut-val">90°</span></div>
+            <input type="range" id="cutaway-slider" min="10" max="180" value="90">
+        </div>
 
         <div class="section-title">公轉速度 Orbit Speed</div>
         <div class="btn-group">
@@ -317,8 +127,8 @@
             <input type="range" id="distance-slider" min="0.15" max="3" step="0.05" value="1">
         </div>
 
-        <button id="btn-flyby" class="action-btn">🚀 啟動全星系巡航漫遊</button>
-        <button id="btn-reset" class="action-btn" style="background: rgba(255,255,255,0.05); margin-top: 5px;">↺ 重置全景視角</button>
+        <button id="btn-flyby" style="margin-top: 5px;">🚀 啟動全星系巡航漫遊</button>
+        <button id="btn-reset" style="background: rgba(255,255,255,0.05);">↺ 重置全景視角</button>
     </div>
 
     <!-- Info Panel -->
@@ -327,15 +137,12 @@
         <div id="info-desc">我們的家園，太陽系中唯一已知孕育生命的天體。</div>
         <div class="stat-row"><span class="stat-label">赤道直徑</span><span class="stat-value" id="stat-diameter">12,742 km</span></div>
         <div class="stat-row"><span class="stat-label">日公轉週期</span><span class="stat-value" id="stat-period">365.25 天</span></div>
-        <div class="stat-row"><span class="stat-label">日距</span><span class="stat-value" id="stat-distance">1.0 AU</span></div>
-        <div id="info-tags"></div>
+        <div class="stat-row"><span class="stat-label">內部核心構造</span><span class="stat-value" id="stat-core" style="color: #ff66cc;">地殼/地幔/內外核</span></div>
     </div>
 
     <script>
-        // --- 1. Texture Loader with Fallback Canvas Generator ---
         const textureLoader = new THREE.TextureLoader();
 
-        // NASA / USGS High-Res Public Assets
         const TEXTURE_URLS = {
             sun: 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/lava/lavatile.jpg',
             mercury: 'https://upload.wikimedia.org/wikipedia/commons/3/30/Mercury_in_color_-_Prockter07_centered.jpg',
@@ -350,309 +157,221 @@
             pluto: 'https://upload.wikimedia.org/wikipedia/commons/a/a7/Pluto-map-hs-2010-06-c-390x200.jpg'
         };
 
-        // --- 2. Planet Data & POI Landmark Coordinates ---
         const PLANET_DATA = {
-            Sun: { name: "太陽 (Sun)", diameter: "1,392,700 km", period: "N/A", distance: "0 AU", radius: 18, orbitDist: 0, speed: 0, desc: "太陽系中心恆星，強烈核融合反應產生熾熱電漿氣體。", tags: ["太陽耀斑", "日冕風暴"] },
-            Mercury: { name: "水星 (Mercury)", diameter: "4,879 km", period: "88 天", distance: "0.39 AU", radius: 1.2, orbitDist: 32, speed: 0.04, desc: "最靠近太陽的撞擊坑行星。", tags: ["卡洛里盆地", "極端溫差"] },
-            Venus: { name: "金星 (Venus)", diameter: "12,104 km", period: "225 天", distance: "0.72 AU", radius: 2.2, orbitDist: 48, speed: 0.015, desc: "濃厚酸雲遮蔽，表面極度高壓高溫。", tags: ["溫室效應", "金星火山"] },
+            Sun: { name: "太陽 (Sun)", diameter: "1,392,700 km", period: "N/A", radius: 18, orbitDist: 0, speed: 0, desc: "太陽系中心恆星，極高溫電漿球體。", core: "輻射層/對流層/太陽核心" },
             Earth: { 
-                name: "地球 (Earth)", diameter: "12,742 km", period: "365.25 天", distance: "1.0 AU", radius: 2.5, orbitDist: 68, speed: 0.01, desc: "充滿生命與蔚藍海洋的天體。", tags: ["蔚藍海洋", "大氣光暈"],
-                pois: [
-                    { name: "📍 台北 101 (Taipei)", lat: 25.03, lon: 121.56, desc: "亞洲著名地標" },
-                    { name: "📍 倫敦 (London)", lat: 51.5, lon: -0.12, desc: "格林威治零度經線" },
-                    { name: "📍 紐約 (New York)", lat: 40.7, lon: -74.0, desc: "北美大都市" }
-                ]
+                name: "地球 (Earth)", diameter: "12,742 km", period: "365.25 天", radius: 2.5, orbitDist: 68, speed: 0.01, desc: "充滿生命與水的岩石行星，擁有清晰的四層內部構造。", core: "地殼/地幔/外核/鐵鎳內核",
+                pois: [{ name: "📍 台北 101", lat: 25.03, lon: 121.56 }, { name: "📍 倫敦", lat: 51.5, lon: -0.12 }]
             },
             Moon: {
-                name: "月球 (Moon)", diameter: "3,474 km", period: "27.3 天", distance: "地表軌道", radius: 0.8, orbitDist: 0, speed: 0, desc: "地球唯一的天然衛星，表面覆蓋玄武岩月海與隕石坑。", tags: ["阿波羅降落點", "月海隕石坑"],
-                pois: [
-                    { name: "🚀 阿波羅 11 號 (Apollo 11)", lat: 0.67, lon: 23.47, desc: "人類首次登月地點（靜海）" },
-                    { name: "🌕 哥白尼撞擊坑 (Copernicus)", lat: 9.6, lon: -20.08, desc: "著名放射狀亮環坑" },
-                    { name: "🌊 風暴洋 (Oceanus Procellarum)", lat: 18.4, lon: -57.4, desc: "月球最大月海" }
-                ]
+                name: "月球 (Moon)", diameter: "3,474 km", period: "27.3 天", radius: 0.8, orbitDist: 0, speed: 0, desc: "地球天然衛星，內部包含小型金屬核心與地幔。", core: "月殼/月幔/金屬月核",
+                pois: [{ name: "🚀 阿波羅 11 號降落點", lat: 0.67, lon: 23.47 }]
             },
             Mars: { 
-                name: "火星 (Mars)", diameter: "6,779 km", period: "687 天", distance: "1.52 AU", radius: 1.6, orbitDist: 88, speed: 0.008, desc: "紅色荒漠行星，富含氧化鐵沙塵。", tags: ["奧林帕斯山", "水手號峽谷"],
-                pois: [
-                    { name: "🌋 奧林帕斯山 (Olympus Mons)", lat: 18.65, lon: -133.8, desc: "太陽系最大火山 (高21km)" },
-                    { name: "🏜️ 水手號峽谷 (Valles Marineris)", lat: -13.9, lon: -59.2, desc: "巨大地表裂谷" },
-                    { name: "🤖 毅力號降落點 (Jezero Crater)", lat: 18.38, lon: 77.58, desc: "NASA 探測器採樣區" }
-                ]
+                name: "火星 (Mars)", diameter: "6,779 km", period: "687 天", radius: 1.6, orbitDist: 88, speed: 0.008, desc: "紅色荒漠行星，內部為固態矽酸鹽地幔與緻密鐵核。", core: "火星殼/地幔/液態硫化鐵核",
+                pois: [{ name: "🌋 奧林帕斯山", lat: 18.65, lon: -133.8 }]
             },
-            Jupiter: { 
-                name: "木星 (Jupiter)", diameter: "139,820 km", period: "11.86 年", distance: "5.2 AU", radius: 6.5, orbitDist: 125, speed: 0.004, desc: "巨型氣態行星，具有巨大的反氣旋氣旋斑。", tags: ["大紅斑", "伽利略衛星"],
-                pois: [
-                    { name: "🌀 大紅斑 (Great Red Spot)", lat: -22.0, lon: 0.0, desc: "持續數百年的巨型風暴" }
-                ]
-            },
-            Saturn: { name: "土星 (Saturn)", diameter: "116,460 km", period: "29.45 年", distance: "9.5 AU", radius: 5.5, orbitDist: 165, speed: 0.003, desc: "擁有華麗光環與卡西尼環縫結構。", tags: ["土星光環", "冰晶顆粒"] },
-            Uranus: { name: "天王星 (Uranus)", diameter: "50,724 km", period: "84 年", distance: "19.2 AU", radius: 3.8, orbitDist: 205, speed: 0.002, desc: "藍綠色甲烷冰巨星。", tags: ["傾斜自轉軸", "冰巨星"] },
-            Neptune: { name: "海王星 (Neptune)", diameter: "49,244 km", period: "164.8 年", distance: "30.1 AU", radius: 3.6, orbitDist: 240, speed: 0.001, desc: "深藍色強風暴行星。", tags: ["極速風暴", "甲烷大氣"] },
-            Pluto: { name: "冥王星 (Pluto)", diameter: "2,377 km", period: "248 年", distance: "39.5 AU", radius: 0.9, orbitDist: 270, speed: 0.0007, desc: "柯伊伯帶著名的氮冰平原矮行星。", tags: ["愛心冰原", "柯伊伯帶"] }
+            Jupiter: { name: "木星 (Jupiter)", diameter: "139,820 km", period: "11.86 年", radius: 6.5, orbitDist: 125, speed: 0.004, desc: "巨型氣態行星，內部高壓形成液態金屬氫層。", core: "大氣層/液態金屬氫/岩石重金屬核" },
+            Saturn: { name: "土星 (Saturn)", diameter: "116,460 km", period: "29.45 年", radius: 5.5, orbitDist: 165, speed: 0.003, desc: "擁有華麗環縫的氣態巨星。", core: "液態氫/金屬氫/濃縮冰核" }
         };
 
-        // --- 3. Three.js Scene Setup ---
+        // Scene
         const container = document.getElementById('webgl-container');
-        const poiContainer = document.getElementById('poi-container');
         const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x02050a, 0.0005);
+        scene.fog = new THREE.FogExp2(0x02050a, 0.0004);
 
-        const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.05, 4000);
+        const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.05, 3000);
         camera.position.set(0, 80, 160);
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.2;
         container.appendChild(renderer.domElement);
 
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
-        controls.maxDistance = 1500;
-        controls.minDistance = 0.08;
 
-        // Lighting
-        scene.add(new THREE.AmbientLight(0x444455, 0.9));
-        const sunLight = new THREE.PointLight(0xffffff, 2.2, 2000, 0.5);
+        scene.add(new THREE.AmbientLight(0x555566, 1.0));
+        const sunLight = new THREE.PointLight(0xffffff, 2.0, 2000);
         scene.add(sunLight);
 
         // Starfield
-        function createStarfield() {
-            const count = 8000;
-            const geometry = new THREE.BufferGeometry();
-            const positions = new Float32Array(count * 3);
-            for (let i = 0; i < count; i++) {
-                const r = 600 + Math.random() * 800;
-                const theta = Math.random() * Math.PI * 2;
-                const phi = Math.acos((Math.random() * 2) - 1);
-                positions[i*3] = r * Math.sin(phi) * Math.cos(theta);
-                positions[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
-                positions[i*3+2] = r * Math.cos(phi);
-            }
-            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            scene.add(new THREE.Points(geometry, new THREE.PointsMaterial({ size: 1.2, color: 0xffffff, transparent: true, opacity: 0.8 })));
-        }
-        createStarfield();
+        const starGeo = new THREE.BufferGeometry();
+        const starPos = new Float32Array(5000 * 3);
+        for(let i=0; i<15000; i++) starPos[i] = (Math.random()-0.5)*1500;
+        starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+        scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ size: 1.2, color: 0xffffff })));
 
-        // --- 4. Planet & Moon Meshes Creation ---
+        // --- Core Dissection Model Generator ---
+        function createCutawayPlanetMesh(radius, mapUrl, thetaLength = Math.PI * 1.5) {
+            const group = new THREE.Group();
+
+            // 1. Outer Crust Mesh (Cutaway Sphere)
+            const outerGeo = new THREE.SphereGeometry(radius, 64, 64, 0, thetaLength, 0, Math.PI);
+            const outerMat = new THREE.MeshStandardMaterial({ map: textureLoader.load(mapUrl), side: THREE.DoubleSide, roughness: 0.6 });
+            const outerMesh = new THREE.Mesh(outerGeo, outerMat);
+            group.add(outerMesh);
+
+            // 2. Inner Layer 1: Mantle (地幔/中間層)
+            const mantleGeo = new THREE.SphereGeometry(radius * 0.7, 32, 32);
+            const mantleMat = new THREE.MeshStandardMaterial({ color: 0xff5500, roughness: 0.3, emissive: 0xaa2200, emissiveIntensity: 0.3 });
+            const mantleMesh = new THREE.Mesh(mantleGeo, mantleMat);
+            group.add(mantleMesh);
+
+            // 3. Inner Layer 2: Core (地核)
+            const coreGeo = new THREE.SphereGeometry(radius * 0.35, 32, 32);
+            const coreMat = new THREE.MeshBasicMaterial({ color: 0xffffaa });
+            const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+            group.add(coreMesh);
+
+            group.userData = { outerMesh, mantleMesh, coreMesh, radius };
+            return group;
+        }
+
+        // Build Planets
         const planets = {};
         const planetMeshes = [];
 
         // Sun
-        const sunMesh = new THREE.Mesh(
-            new THREE.SphereGeometry(PLANET_DATA.Sun.radius, 64, 64),
-            new THREE.MeshBasicMaterial({ map: textureLoader.load(TEXTURE_URLS.sun) })
-        );
+        const sunMesh = new THREE.Mesh(new THREE.SphereGeometry(PLANET_DATA.Sun.radius, 32, 32), new THREE.MeshBasicMaterial({ map: textureLoader.load(TEXTURE_URLS.sun) }));
         scene.add(sunMesh);
         planets['Sun'] = { mesh: sunMesh, data: PLANET_DATA.Sun, angle: 0 };
 
-        // Planets
-        Object.keys(PLANET_DATA).forEach(key => {
-            if (key === 'Sun' || key === 'Moon') return;
+        // Generate Planets
+        ['Earth', 'Mars', 'Jupiter', 'Saturn', 'Moon'].forEach(key => {
             const data = PLANET_DATA[key];
+            if(!data) return;
 
-            // Orbit line
-            const orbitGeo = new THREE.BufferGeometry();
-            const points = [];
-            for (let i = 0; i <= 128; i++) {
-                const theta = (i / 128) * Math.PI * 2;
-                points.push(new THREE.Vector3(Math.cos(theta) * data.orbitDist, 0, Math.sin(theta) * data.orbitDist));
-            }
-            orbitGeo.setFromPoints(points);
-            scene.add(new THREE.Line(orbitGeo, new THREE.LineBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.15 })));
-
-            // Mesh
-            const pMesh = new THREE.Mesh(
-                new THREE.SphereGeometry(data.radius, 48, 48),
-                new THREE.MeshStandardMaterial({
-                    map: textureLoader.load(TEXTURE_URLS[key.toLowerCase()]),
-                    roughness: 0.7,
-                    metalness: 0.1
-                })
-            );
-            scene.add(pMesh);
-
-            // Special: Earth Moon
-            if (key === 'Earth') {
-                const moonMesh = new THREE.Mesh(
-                    new THREE.SphereGeometry(PLANET_DATA.Moon.radius, 32, 32),
-                    new THREE.MeshStandardMaterial({ map: textureLoader.load(TEXTURE_URLS.moon), roughness: 0.8 })
-                );
-                pMesh.add(moonMesh);
-                pMesh.userData.moon = { mesh: moonMesh, distance: 5.5, speed: 0.02, angle: 0 };
-                planets['Moon'] = { mesh: moonMesh, data: PLANET_DATA.Moon, parent: pMesh };
+            let pGroup;
+            if (key === 'Moon') {
+                pGroup = createCutawayPlanetMesh(data.radius, TEXTURE_URLS.moon);
+                planets['Earth'].mesh.add(pGroup);
+                pGroup.position.set(5.5, 0, 0);
+            } else {
+                pGroup = createCutawayPlanetMesh(data.radius, TEXTURE_URLS[key.toLowerCase()]);
+                scene.add(pGroup);
             }
 
-            // Special: Saturn Rings
-            if (key === 'Saturn') {
-                const ringGeo = new THREE.RingGeometry(data.radius * 1.3, data.radius * 2.5, 64);
-                const ringMesh = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: 0xc2ab80, side: THREE.DoubleSide, transparent: true, opacity: 0.8 }));
-                ringMesh.rotation.x = Math.PI / 2.2;
-                pMesh.add(ringMesh);
-            }
-
-            const initialAngle = Math.random() * Math.PI * 2;
-            planets[key] = { mesh: pMesh, data: data, angle: initialAngle };
-            planetMeshes.push(pMesh);
+            planets[key] = { mesh: pGroup, data: data, angle: Math.random() * Math.PI * 2 };
+            planetMeshes.push(pGroup.userData.outerMesh);
         });
 
-        // --- 5. 3D POI Marker System ---
-        const activePOIElements = [];
-
-        function convertLatLonToVector3(lat, lon, radius) {
-            const phi = (90 - lat) * (Math.PI / 180);
-            const theta = (lon + 180) * (Math.PI / 180);
-            return new THREE.Vector3(
-                -(radius * Math.sin(phi) * Math.cos(theta)),
-                radius * Math.cos(phi),
-                radius * Math.sin(phi) * Math.sin(theta)
-            );
-        }
-
-        function clearPOIs() {
-            activePOIElements.forEach(item => item.el.remove());
-            activePOIElements.length = 0;
-        }
-
-        function createPOIsForTarget(key) {
-            clearPOIs();
-            const pData = PLANET_DATA[key];
-            if (!pData || !pData.pois) return;
-
-            const targetMesh = planets[key].mesh;
-
-            pData.pois.forEach(poi => {
-                const localPos = convertLatLonToVector3(poi.lat, poi.lon, pData.radius * 1.02);
-
-                const el = document.createElement('div');
-                el.className = 'poi-label';
-                el.innerText = poi.name;
-                el.title = poi.desc;
-                poiContainer.appendChild(el);
-
-                el.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    // Fly to POI position
-                    const worldPos = localPos.clone().applyMatrix4(targetMesh.matrixWorld);
-                    targetLookAt.copy(worldPos);
-                    
-                    const camOffset = worldPos.clone().sub(targetMesh.getWorldPosition(new THREE.Vector3())).normalize().multiplyScalar(pData.radius * 1.8);
-                    targetCamPos.copy(worldPos).add(camOffset);
-                    isTransitioning = true;
-                });
-
-                activePOIElements.push({ el, localPos, mesh: targetMesh });
-            });
-        }
-
-        function updatePOIPositions() {
-            const tempV = new THREE.Vector3();
-            activePOIElements.forEach(item => {
-                tempV.copy(item.localPos).applyMatrix4(item.mesh.matrixWorld);
-                tempV.project(camera);
-
-                // Check front/back of sphere
-                const camDir = camera.getWorldDirection(new THREE.Vector3());
-                const meshWorldPos = item.mesh.getWorldPosition(new THREE.Vector3());
-                const poiWorldPos = item.localPos.clone().applyMatrix4(item.mesh.matrixWorld);
-                const dot = poiWorldPos.sub(meshWorldPos).dot(camera.position.clone().sub(meshWorldPos));
-
-                if (dot > 0 && tempV.z < 1) {
-                    const x = (tempV.x *  .5 + .5) * window.innerWidth;
-                    const y = (tempV.y * -.5 + .5) * window.innerHeight;
-                    item.el.style.transform = `translate(-50%, -100%) translate(${x}px,${y}px)`;
-                    item.el.style.opacity = '1';
-                } else {
-                    item.el.style.opacity = '0';
-                }
-            });
-        }
-
-        // --- 6. Camera Motion & Interaction ---
+        // Mode States
         let currentTargetKey = 'Earth';
-        let targetCamPos = new THREE.Vector3();
-        let targetLookAt = new THREE.Vector3();
-        let isTransitioning = false;
-        let isSurfaceMode = false;
+        let isXRayMode = false;
+        let isFPVMode = false;
+        let cutawayAngle = 270; // 270 deg = 90 deg cut
         let speedFactor = 1.0;
         let userDistanceScale = 1.0;
-        let isAutoFlyby = false;
-        let flybyTimer = null;
 
-        function focusOnTarget(key, smooth = true) {
+        // FPV Movement Keyboard listener
+        const keysPressed = {};
+        window.addEventListener('keydown', (e) => keysPressed[e.key.toLowerCase()] = true);
+        window.addEventListener('keyup', (e) => keysPressed[e.key.toLowerCase()] = false);
+
+        // Update Cutaway Geometry
+        function updateCutaway(angleDeg) {
+            cutawayAngle = angleDeg;
+            const thetaRad = (360 - angleDeg) * (Math.PI / 180);
+            document.getElementById('cut-val').innerText = `${angleDeg}°`;
+
+            const p = planets[currentTargetKey];
+            if (!p || !p.mesh.userData.outerMesh) return;
+
+            // Re-create outer geometry with new arc
+            const radius = p.data.radius;
+            p.mesh.userData.outerMesh.geometry.dispose();
+            p.mesh.userData.outerMesh.geometry = new THREE.SphereGeometry(radius, 64, 64, 0, thetaRad, 0, Math.PI);
+        }
+
+        function focusOnTarget(key) {
             currentTargetKey = key;
             const target = planets[key];
+            if (!target) return;
             const data = target.data;
 
             document.getElementById('info-name').innerText = data.name;
             document.getElementById('info-desc').innerText = data.desc;
             document.getElementById('stat-diameter').innerText = data.diameter;
             document.getElementById('stat-period').innerText = data.period;
-            document.getElementById('stat-distance').innerText = data.distance;
-            
-            const tagContainer = document.getElementById('info-tags');
-            tagContainer.innerHTML = '';
-            if (data.tags) {
-                data.tags.forEach(t => {
-                    const span = document.createElement('span');
-                    span.className = 'feature-tag';
-                    span.innerText = t;
-                    tagContainer.appendChild(span);
-                });
-            }
-
+            document.getElementById('stat-core').innerText = data.core || "未開闢層級";
             document.getElementById('info-panel').classList.add('visible');
-            document.getElementById('planet-select').value = key;
 
-            const meshWorldPos = target.mesh.getWorldPosition(new THREE.Vector3());
-            const offsetDist = data.radius * (isSurfaceMode ? 1.6 : 4.2) * userDistanceScale + 0.5;
-            
-            targetLookAt.copy(meshWorldPos);
-            targetCamPos.copy(meshWorldPos).add(new THREE.Vector3(offsetDist * 0.7, offsetDist * 0.35, offsetDist));
+            const worldPos = target.mesh.getWorldPosition(new THREE.Vector3());
 
-            if (isSurfaceMode) {
-                createPOIsForTarget(key);
+            if (isFPVMode) {
+                // FPV Landing: Position camera 2 units above planet surface
+                const surfacePos = worldPos.clone().add(new THREE.Vector3(0, data.radius + 0.15, 0));
+                camera.position.copy(surfacePos);
+                controls.target.copy(surfacePos.clone().add(new THREE.Vector3(0, 0, -1)));
+                controls.minDistance = 0.01;
+                controls.maxDistance = 10;
             } else {
-                clearPOIs();
-            }
-
-            if (!smooth) {
-                camera.position.copy(targetCamPos);
-                controls.target.copy(targetLookAt);
-            } else {
-                isTransitioning = true;
+                controls.minDistance = 0.1;
+                controls.maxDistance = 1000;
+                const dist = data.radius * 4.0 * userDistanceScale;
+                camera.position.copy(worldPos).add(new THREE.Vector3(dist*0.7, dist*0.4, dist));
+                controls.target.copy(worldPos);
             }
         }
 
-        // Toggle Surface / POI Mode
-        const landBtn = document.getElementById('btn-land');
-        landBtn.addEventListener('click', () => {
-            isSurfaceMode = !isSurfaceMode;
-            const modeText = document.getElementById('mode-text');
+        // --- UI Interactions ---
+        // 方案 1：X-Ray 內部剖面切換
+        const btnXRay = document.getElementById('btn-xray');
+        const xrayControls = document.getElementById('xray-controls');
+        btnXRay.addEventListener('click', () => {
+            isXRayMode = !isXRayMode;
+            if (isFPVMode) disableFPV();
 
-            if (isSurfaceMode) {
-                landBtn.innerText = "🚀 離開地表 / 重返軌道 (Return to Orbit)";
-                landBtn.style.background = "linear-gradient(135deg, rgba(0, 240, 255, 0.25), rgba(0, 100, 255, 0.25))";
-                landBtn.style.color = "#00f0ff";
-                modeText.innerText = `SURFACE / LANDMARK MODE (${PLANET_DATA[currentTargetKey].name})`;
+            if (isXRayMode) {
+                btnXRay.classList.add('active');
+                btnXRay.innerText = "🔬 關閉内部剖面 (Hide Core)";
+                xrayControls.style.display = 'block';
+                updateCutaway(90);
+                document.getElementById('mode-text').innerText = `X-RAY CORE DISSECTION (${currentTargetKey})`;
             } else {
-                landBtn.innerText = "🛬 進入地表 / 地標導航 (Enter Surface)";
-                landBtn.style.background = "linear-gradient(135deg, rgba(255, 170, 0, 0.25), rgba(255, 0, 100, 0.25))";
-                landBtn.style.color = "#ffcc00";
-                modeText.innerText = "ORBITAL VIEW (軌道全景)";
+                btnXRay.classList.remove('active');
+                btnXRay.innerText = "🔬 方案 1：開啟內部剖面 (X-Ray Core)";
+                xrayControls.style.display = 'none';
+                updateCutaway(0); // 0 = Full sphere
+                document.getElementById('mode-text').innerText = "ORBITAL VIEW (軌道全景)";
             }
-
-            focusOnTarget(currentTargetKey, true);
         });
 
-        // UI Handlers
-        document.getElementById('planet-select').addEventListener('change', (e) => {
-            stopAutoFlyby();
-            focusOnTarget(e.target.value);
+        // 方案 2：剖面角度 Slider
+        document.getElementById('cutaway-slider').addEventListener('input', (e) => {
+            updateCutaway(parseInt(e.target.value));
         });
 
+        // 方案 3：FPV 地表漫遊切換
+        const btnFPV = document.getElementById('btn-fpv');
+        const fpvPrompt = document.getElementById('fpv-instructions');
+        btnFPV.addEventListener('click', () => {
+            isFPVMode = !isFPVMode;
+            if (isFPVMode) {
+                if (isXRayMode) btnXRay.click(); // Turn off X-Ray for FPV
+                btnFPV.classList.add('active');
+                btnFPV.innerText = "🚶 離開地表漫遊 (Exit FPV)";
+                fpvPrompt.style.display = 'block';
+                document.getElementById('mode-text').innerText = `SURFACE FPV LANDING (${currentTargetKey})`;
+                focusOnTarget(currentTargetKey);
+            } else {
+                disableFPV();
+            }
+        });
+
+        function disableFPV() {
+            isFPVMode = false;
+            btnFPV.classList.remove('active');
+            btnFPV.innerText = "🚶 方案 3：降落地表 (FPV 漫遊)";
+            fpvPrompt.style.display = 'none';
+            document.getElementById('mode-text').innerText = "ORBITAL VIEW (軌道全景)";
+            focusOnTarget(currentTargetKey);
+        }
+
+        // Speed & Controls
+        document.getElementById('planet-select').addEventListener('change', (e) => focusOnTarget(e.target.value));
         document.getElementById('speed-0').addEventListener('click', function() { setSpeed(0, this); });
         document.getElementById('speed-1').addEventListener('click', function() { setSpeed(1, this); });
         document.getElementById('speed-5').addEventListener('click', function() { setSpeed(5, this); });
@@ -666,135 +385,51 @@
         document.getElementById('distance-slider').addEventListener('input', (e) => {
             userDistanceScale = parseFloat(e.target.value);
             document.getElementById('dist-val').innerText = Math.round(userDistanceScale * 100) + '%';
-            focusOnTarget(currentTargetKey, true);
+            if(!isFPVMode) focusOnTarget(currentTargetKey);
         });
 
         document.getElementById('btn-reset').addEventListener('click', () => {
-            stopAutoFlyby();
-            if (isSurfaceMode) landBtn.click();
+            if (isFPVMode) disableFPV();
+            if (isXRayMode) btnXRay.click();
             currentTargetKey = 'Sun';
-            targetLookAt.set(0, 0, 0);
-            targetCamPos.set(0, 180, 380);
-            isTransitioning = true;
-            document.getElementById('info-panel').classList.remove('visible');
-        });
-
-        // Flyby Feature
-        const flybyBtn = document.getElementById('btn-flyby');
-        flybyBtn.addEventListener('click', () => {
-            if (isAutoFlyby) stopAutoFlyby();
-            else startAutoFlyby();
-        });
-
-        function startAutoFlyby() {
-            isAutoFlyby = true;
-            flybyBtn.innerText = "🛑 停止巡航漫遊";
-            flybyBtn.style.background = "rgba(255, 50, 50, 0.35)";
-            
-            const keys = Object.keys(PLANET_DATA);
-            let idx = 0;
-
-            const nextStep = () => {
-                focusOnTarget(keys[idx]);
-                idx = (idx + 1) % keys.length;
-            };
-
-            nextStep();
-            flybyTimer = setInterval(nextStep, 6000);
-        }
-
-        function stopAutoFlyby() {
-            isAutoFlyby = false;
-            if (flybyTimer) clearInterval(flybyTimer);
-            flybyBtn.innerText = "🚀 啟動全星系巡航漫遊";
-            flybyBtn.style.background = "linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(100, 0, 255, 0.2))";
-        }
-
-        // Raycaster Selection
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-
-        window.addEventListener('click', (e) => {
-            if (e.target.closest('#ui-container') || e.target.closest('#info-panel') || e.target.closest('#mode-indicator') || e.target.closest('.poi-label')) return;
-
-            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(planetMeshes.concat([sunMesh]));
-
-            if (intersects.length > 0) {
-                const hitMesh = intersects[0].object;
-                Object.keys(planets).forEach(k => {
-                    if (planets[k].mesh === hitMesh) {
-                        stopAutoFlyby();
-                        focusOnTarget(k);
-                    }
-                });
-            }
-        });
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.position.set(0, 180, 360);
+            controls.target.set(0, 0, 0);
         });
 
         // Init Focus
-        focusOnTarget('Earth', false);
+        focusOnTarget('Earth');
 
-        // --- 7. Main Render Loop ---
+        // Render Loop
         const clock = new THREE.Clock();
-
         function animate() {
             requestAnimationFrame(animate);
-
             const delta = clock.getDelta();
 
-            // Self-rotation & Orbit Motion
-            Object.keys(planets).forEach(key => {
-                const p = planets[key];
-                
-                // Rotation
-                p.mesh.rotation.y += 0.003;
-
-                // Moon orbit
-                if (key === 'Earth' && p.mesh.userData.moon && speedFactor > 0) {
-                    const m = p.mesh.userData.moon;
-                    m.angle += m.speed * speedFactor * delta * 15;
-                    m.mesh.position.x = Math.cos(m.angle) * m.distance;
-                    m.mesh.position.z = Math.sin(m.angle) * m.distance;
-                }
-
-                // Orbit around Sun
-                if (key !== 'Sun' && key !== 'Moon' && speedFactor > 0) {
+            // Orbit & Rotation logic
+            Object.keys(planets).forEach(k => {
+                const p = planets[k];
+                if (p.mesh) p.mesh.rotation.y += 0.002;
+                if (k !== 'Sun' && k !== 'Moon' && speedFactor > 0) {
                     p.angle += p.data.speed * speedFactor * delta * 15;
                     p.mesh.position.x = Math.cos(p.angle) * p.data.orbitDist;
                     p.mesh.position.z = Math.sin(p.angle) * p.data.orbitDist;
                 }
             });
 
-            // Camera lerp
-            const activePlanet = planets[currentTargetKey];
-            if (activePlanet) {
-                const currentWorldPos = activePlanet.mesh.getWorldPosition(new THREE.Vector3());
+            // FPV Keyboard Movement Controls (WASD)
+            if (isFPVMode) {
+                const moveSpeed = 0.08;
+                const dir = new THREE.Vector3();
+                camera.getWorldDirection(dir);
+                dir.y = 0; // Lock to ground plane
+                dir.normalize();
 
-                if (isTransitioning) {
-                    camera.position.lerp(targetCamPos, 0.06);
-                    controls.target.lerp(targetLookAt, 0.06);
+                const sideDir = new THREE.Vector3().crossVectors(camera.up, dir).normalize();
 
-                    if (camera.position.distanceTo(targetCamPos) < 0.2) {
-                        isTransitioning = false;
-                    }
-                } else {
-                    const camOffset = camera.position.clone().sub(controls.target);
-                    controls.target.copy(currentWorldPos);
-                    camera.position.copy(currentWorldPos).add(camOffset);
-                }
-            }
-
-            if (isSurfaceMode) {
-                updatePOIPositions();
+                if (keysPressed['w'] || keysPressed['arrowup']) camera.position.addScaledVector(dir, moveSpeed);
+                if (keysPressed['s'] || keysPressed['arrowdown']) camera.position.addScaledVector(dir, -moveSpeed);
+                if (keysPressed['a'] || keysPressed['arrowleft']) camera.position.addScaledVector(sideDir, moveSpeed);
+                if (keysPressed['d'] || keysPressed['arrowright']) camera.position.addScaledVector(sideDir, -moveSpeed);
             }
 
             controls.update();
@@ -802,6 +437,12 @@
         }
 
         animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
     </script>
 </body>
 </html>
