@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Earth System - 全精細地標導覽系統</title>
+    <title>Earth System - 終極地標導覽體驗版</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
             background-color: #000;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            user-select: none;
         }
         #ui-panel {
             position: absolute;
@@ -70,9 +71,6 @@
             font-size: 12px;
             text-align: left;
             transition: all 0.25s ease;
-            display: flex;
-            align-items: center;
-            gap: 4px;
         }
         .btn-landmark:hover {
             background: rgba(79, 195, 247, 0.3);
@@ -89,23 +87,59 @@
         #controls-bar {
             display: flex;
             gap: 6px;
-            margin-top: 8px;
+            margin-top: 10px;
             pointer-events: auto;
         }
         .btn-sub {
+            flex: 1;
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: #fff;
-            padding: 4px 8px;
+            padding: 6px 8px;
             border-radius: 6px;
             cursor: pointer;
             font-size: 11px;
+            transition: background 0.2s;
         }
         .btn-sub:hover {
             background: rgba(255, 255, 255, 0.25);
         }
+
+        /* 3D 懸浮地標 CSS 標籤 */
+        .poi-label {
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform: translate(-50%, -100%);
+            color: #fff;
+            background: rgba(10, 25, 45, 0.85);
+            border: 1px solid #4fc3f7;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            pointer-events: none;
+            white-space: nowrap;
+            box-shadow: 0 0 12px rgba(79, 195, 247, 0.6);
+            display: none;
+            z-index: 5;
+            transition: opacity 0.3s ease;
+        }
+        .poi-label::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 6px 6px 0;
+            border-style: solid;
+            border-color: #4fc3f7 transparent;
+            display: block;
+            width: 0;
+        }
     </style>
 
+    <!-- GSAP 補間動畫庫與 Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script type="importmap">
         {
@@ -125,26 +159,29 @@
 
         <div class="section-title">📍 精選高解析地標導覽</div>
         <div id="landmark-grid">
-            <button class="btn-landmark" data-lat="23.47" data-lon="120.95" data-name="台灣 玉山">🏔 台灣玉山</button>
-            <button class="btn-landmark" data-lat="27.98" data-lon="86.92" data-name="珠穆朗瑪峰">🏔 聖母峰</button>
-            <button class="btn-landmark" data-lat="45.83" data-lon="6.86" data-name="阿爾卑斯山">🏔 白朗峰</button>
-            <button class="btn-landmark" data-lat="35.36" data-lon="138.72" data-name="日本 富士山">🗻 富士山</button>
-            <button class="btn-landmark" data-lat="36.10" data-lon="-112.11" data-name="美國 大峽谷">🏜 大峽谷</button>
-            <button class="btn-landmark" data-lat="-22.95" data-lon="-43.21" data-name="里約 耶穌像">🗿 耶穌山</button>
+            <button class="btn-landmark" data-lat="23.47" data-lon="120.95" data-name="台灣 玉山" data-info="標高 3,952m">🏔 台灣玉山</button>
+            <button class="btn-landmark" data-lat="27.98" data-lon="86.92" data-name="珠穆朗瑪峰" data-info="標高 8,848m">🏔 聖母峰</button>
+            <button class="btn-landmark" data-lat="45.83" data-lon="6.86" data-name="阿爾卑斯山" data-info="白朗峰 4,807m">🏔 阿爾卑斯山</button>
+            <button class="btn-landmark" data-lat="35.36" data-lon="138.72" data-name="日本 富士山" data-info="標高 3,776m">🗻 富士山</button>
+            <button class="btn-landmark" data-lat="36.10" data-lon="-112.11" data-name="美國 大峽谷" data-info="深度 1,800m">🏜 大峽谷</button>
+            <button class="btn-landmark" data-lat="-22.95" data-lon="-43.21" data-name="里約 耶穌像" data-info="基督山 710m">🗿 耶穌山</button>
         </div>
 
-        <div class="section-title">系統控制</div>
+        <div class="section-title">導覽控制</div>
         <div id="controls-bar">
             <button id="btn-reset" class="btn-sub">🌐 返回太空視野</button>
-            <button id="btn-pause" class="btn-sub">⏸ 暫停/播放</button>
+            <button id="btn-auto-orbit" class="btn-sub">🔄 環視: 開啟</button>
         </div>
     </div>
+
+    <!-- 3D 懸浮動態標籤 -->
+    <div id="poi-tag" class="poi-label">📍 地標名稱</div>
 
     <script type="module">
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-        // 1. 初始化場景與渲染器
+        // 1. Scene & Camera & Renderer
         const scene = new THREE.Scene();
 
         const camera = new THREE.PerspectiveCamera(
@@ -164,22 +201,22 @@
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         document.body.appendChild(renderer.domElement);
 
-        // 2. 控制器設定
+        // 2. Controls
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
         controls.minDistance = 6.0015; 
         controls.maxDistance = 150;
 
-        // 3. 光源系統
+        // 3. Lighting
         const sunLight = new THREE.DirectionalLight(0xffffff, 2.8);
         sunLight.position.set(100, 30, 60);
         scene.add(sunLight);
 
-        const ambientLight = new THREE.AmbientLight(0x0a1020, 0.2);
+        const ambientLight = new THREE.AmbientLight(0x0a1020, 0.25);
         scene.add(ambientLight);
 
-        // 4. 群組與材質設定
+        // 4. Groups & Textures
         const spaceGroup = new THREE.Group();
         const groundGroup = new THREE.Group();
         scene.add(spaceGroup);
@@ -193,7 +230,7 @@
         const earthNormalMap = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-topology.png');
         const cloudMap = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-clouds.png');
 
-        // 太空層材質
+        // Shader for Space Mode
         const earthShaderMaterial = new THREE.ShaderMaterial({
             uniforms: {
                 dayTexture: { value: earthDayMap },
@@ -230,29 +267,29 @@
             `
         });
 
-        const earthGeometry = new THREE.SphereGeometry(earthRadius, 64, 64);
-        const earthMesh = new THREE.Mesh(earthGeometry, earthShaderMaterial);
+        const earthMesh = new THREE.Mesh(new THREE.SphereGeometry(earthRadius, 64, 64), earthShaderMaterial);
         spaceGroup.add(earthMesh);
 
-        // 太空雲層
-        const cloudGeometry = new THREE.SphereGeometry(earthRadius * 1.015, 64, 64);
-        const cloudMaterial = new THREE.MeshStandardMaterial({
-            alphaMap: cloudMap,
-            transparent: true,
-            blending: THREE.AdditiveBlending,
-            opacity: 0.8
-        });
-        const cloudMesh = new THREE.Mesh(cloudGeometry, cloudMaterial);
+        // Clouds
+        const cloudMesh = new THREE.Mesh(
+            new THREE.SphereGeometry(earthRadius * 1.015, 64, 64),
+            new THREE.MeshStandardMaterial({
+                alphaMap: cloudMap,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                opacity: 0.8
+            })
+        );
         spaceGroup.add(cloudMesh);
 
-        // === 近地面地標專用：極高密度 512x512 幾何體與深度立體感 ===
+        // High-Res Ground LOD Mesh
         const highResGeometry = new THREE.SphereGeometry(earthRadius, 512, 512);
         const highResMaterial = new THREE.MeshStandardMaterial({
             map: earthDayMap,
             normalMap: earthNormalMap,
             normalScale: new THREE.Vector2(2.5, 2.5),
             displacementMap: earthNormalMap,
-            displacementScale: 0.45, // 顯著推高山脈高度
+            displacementScale: 0.45,
             displacementBias: -0.05,
             roughness: 0.45
         });
@@ -260,10 +297,12 @@
         groundGroup.add(highResEarth);
         groundGroup.visible = false;
 
-        // 5. 狀態變數與邏輯
-        let isPaused = false;
+        // 5. App State
         let isFlying = false;
+        let isAutoOrbiting = true;
+        let currentTargetWorldPos = null;
 
+        // Math helper
         function latLonToVector3(lat, lon, radius) {
             const phi = (90 - lat) * (Math.PI / 180);
             const theta = (lon + 180) * (Math.PI / 180);
@@ -275,27 +314,40 @@
             return new THREE.Vector3(x, y, z);
         }
 
-        // 6. 核心：傾斜視角飛航演算法（帶出立體山脈感）
+        // 6. 核心 UX 飛行與智慧光照系統
         const coordsReadout = document.getElementById('coords-readout');
+        const poiTag = document.getElementById('poi-tag');
 
-        function flyToLandmark(lat, lon, name) {
+        function flyToLandmark(lat, lon, name, info) {
             if (isFlying) return;
             isFlying = true;
-            isPaused = true;
+            controls.enabled = false; // 飛行途中鎖定操作
+            poiTag.style.display = 'none';
 
             coordsReadout.innerText = `目標區域: ${name}`;
 
-            // 1. 計算地表目標座標點
+            // A. 計算地標與鏡頭目標位置
             const targetSurface = latLonToVector3(lat, lon, earthRadius);
+            currentTargetWorldPos = targetSurface.clone();
 
-            // 2. 計算傾斜鏡頭位置（在目標上方 + 偏移量，形成斜俯視）
-            const tiltOffset = new THREE.Vector3(0, 0.15, 0.25); 
+            // 傾斜俯瞰視角偏移 (Tilt View)
+            const tiltOffset = latLonToVector3(lat, lon, 0.25).add(new THREE.Vector3(0, 0.1, 0));
             const targetCamPos = latLonToVector3(lat, lon, earthRadius + 0.12).add(tiltOffset);
 
-            // 3. GSAP 平滑飛行
+            // B. 智慧太陽光追蹤（確保地標永遠處於完美白晝光照下）
+            const idealSunPos = latLonToVector3(lat + 15, lon + 25, 120);
+
+            // C. GSAP 多重鏡頭動畫
             gsap.timeline({
                 onComplete: () => {
                     isFlying = false;
+                    controls.enabled = true; // 釋放控制器
+                    controls.autoRotate = isAutoOrbiting; // 啟用自動 360 度旋轉
+                    controls.autoRotateSpeed = 0.8;
+
+                    // 顯示 3D 浮動標籤
+                    poiTag.innerText = `📍 ${name} (${info})`;
+                    poiTag.style.display = 'block';
                 }
             })
             .to(camera.position, {
@@ -311,10 +363,17 @@
                 y: targetSurface.y,
                 z: targetSurface.z,
                 ease: "power3.inOut"
+            }, "<")
+            .to(sunLight.position, {
+                duration: 2.8,
+                x: idealSunPos.x,
+                y: idealSunPos.y,
+                z: idealSunPos.z,
+                ease: "power2.inOut"
             }, "<");
         }
 
-        // 按鈕點擊事件
+        // UI 按鈕事件
         document.querySelectorAll('.btn-landmark').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 document.querySelectorAll('.btn-landmark').forEach(b => b.classList.remove('active'));
@@ -324,31 +383,63 @@
                 const lat = parseFloat(targetBtn.dataset.lat);
                 const lon = parseFloat(targetBtn.dataset.lon);
                 const name = targetBtn.dataset.name;
-                flyToLandmark(lat, lon, name);
+                const info = targetBtn.dataset.info;
+                flyToLandmark(lat, lon, name, info);
             });
         });
 
-        // 返回太空視野按鈕
+        // 返回太空視野
         document.getElementById('btn-reset').addEventListener('click', () => {
             document.querySelectorAll('.btn-landmark').forEach(b => b.classList.remove('active'));
             coordsReadout.innerText = "目標區域: 全球檢視";
             isFlying = true;
-            
+            controls.enabled = false;
+            controls.autoRotate = false;
+            poiTag.style.display = 'none';
+            currentTargetWorldPos = null;
+
             gsap.timeline({
                 onComplete: () => {
                     isFlying = false;
-                    isPaused = false;
+                    controls.enabled = true;
                 }
             })
-            .to(camera.position, { duration: 2.0, x: 0, y: 0, z: 22, ease: "power2.inOut" })
-            .to(controls.target, { duration: 2.0, x: 0, y: 0, z: 0, ease: "power2.inOut" }, "<");
+            .to(camera.position, { duration: 2.2, x: 0, y: 0, z: 22, ease: "power2.inOut" })
+            .to(controls.target, { duration: 2.2, x: 0, y: 0, z: 0, ease: "power2.inOut" }, "<")
+            .to(sunLight.position, { duration: 2.2, x: 100, y: 30, z: 60, ease: "power2.inOut" }, "<");
         });
 
-        document.getElementById('btn-pause').addEventListener('click', () => {
-            isPaused = !isPaused;
+        // 切換自動環視按鈕
+        const btnAutoOrbit = document.getElementById('btn-auto-orbit');
+        btnAutoOrbit.addEventListener('click', () => {
+            isAutoOrbiting = !isAutoOrbiting;
+            controls.autoRotate = isAutoOrbiting && groundGroup.visible;
+            btnAutoOrbit.innerText = `🔄 環視: ${isAutoOrbiting ? '開啟' : '關閉'}`;
         });
 
-        // 7. 雙層無縫過渡
+        // 7. 更新 3D 懸浮標籤螢幕座標
+        function updatePOITagPosition() {
+            if (!currentTargetWorldPos || !groundGroup.visible || isFlying) return;
+
+            const tempV = currentTargetWorldPos.clone();
+            tempV.project(camera);
+
+            // 當標籤轉到球體背面時隱藏
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(new THREE.Vector2(tempV.x, tempV.y), camera);
+            const intersects = raycaster.intersectObject(highResEarth);
+
+            if (intersects.length > 0 && intersects[0].distance < camera.position.distanceTo(currentTargetWorldPos) - 0.05) {
+                poiTag.style.opacity = '0';
+            } else {
+                poiTag.style.opacity = '1';
+                const x = (tempV.x *  .5 + .5) * window.innerWidth;
+                const y = (tempV.y * -.5 + .5) * window.innerHeight;
+                poiTag.style.transform = `translate(-50%, -100%) translate(${x}px,${y}px)`;
+            }
+        }
+
+        // 8. 模式動態切換
         const altitudeReadout = document.getElementById('altitude-readout');
         const modeIndicator = document.getElementById('mode-indicator');
         const transitionThreshold = earthRadius + 2.0;
@@ -361,38 +452,48 @@
                 spaceGroup.visible = true;
                 groundGroup.visible = false;
                 scene.fog = null;
+                controls.autoRotate = false; // 太空模式不自動環視
+                poiTag.style.display = 'none';
+
                 modeIndicator.innerText = "模式: 太空全域 (Space)";
                 modeIndicator.style.background = "#0288d1";
             } else {
                 spaceGroup.visible = false;
                 groundGroup.visible = true;
-                scene.fog = new THREE.FogExp2(0x87ceeb, 0.12); // 近地面大氣霧感
+                scene.fog = new THREE.FogExp2(0x87ceeb, 0.12);
+
+                if (!isFlying && isAutoOrbiting) {
+                    controls.autoRotate = true;
+                }
+
                 modeIndicator.innerText = "模式: 精細地標近景 (LOD High)";
                 modeIndicator.style.background = "#2e7d32";
             }
         }
 
-        // 8. 算繪迴圈
+        // 9. Render Loop
         function animate() {
             requestAnimationFrame(animate);
 
             const camDistance = camera.position.distanceTo(scene.position);
             updateVisibility(camDistance);
 
-            if (!isPaused && spaceGroup.visible && !isFlying) {
+            // 太空緩慢自轉
+            if (spaceGroup.visible && !isFlying) {
                 earthMesh.rotation.y += 0.0003;
                 cloudMesh.rotation.y += 0.0004;
-                highResEarth.rotation.y += 0.0003;
             }
 
             earthShaderMaterial.uniforms.sunDirection.value.copy(sunLight.position).normalize();
 
             controls.update();
+            updatePOITagPosition();
             renderer.render(scene, camera);
         }
 
         animate();
 
+        // RWD
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
