@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>太陽系 3D 深度探索系統</title>
+    <title>太陽系 3D 深度探索系統 (九大行星版)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet"></script>
@@ -12,7 +12,6 @@
         body, html { width: 100%; height: 100%; overflow: hidden; background-color: #000; font-family: 'Noto Sans TC', sans-serif; color: #fff; }
         #webgl-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
 
-        /* Glassmorphism UI Panel */
         .glass-panel {
             background: rgba(10, 16, 28, 0.85);
             backdrop-filter: blur(16px);
@@ -23,10 +22,10 @@
         }
 
         #ui-container {
-            position: absolute; top: 20px; left: 20px; z-index: 10; width: 320px; padding: 18px; max-height: calc(100vh - 40px); overflow-y: auto;
+            position: absolute; top: 20px; left: 20px; z-index: 10; width: 330px; padding: 18px; max-height: calc(100vh - 40px); overflow-y: auto;
         }
 
-        h1 { font-family: 'Orbitron', sans-serif; font-size: 1.1rem; font-weight: 800; letter-spacing: 1.5px; color: #00f0ff; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+        h1 { font-family: 'Orbitron', sans-serif; font-size: 1.1rem; font-weight: 800; letter-spacing: 1.5px; color: #00f0ff; margin-bottom: 12px; }
         .section-title { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; color: #8a9ba8; margin: 12px 0 6px 0; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 3px; }
 
         select, button {
@@ -36,7 +35,6 @@
 
         select:hover, button:hover { border-color: #00f0ff; box-shadow: 0 0 10px rgba(0, 240, 255, 0.3); background: rgba(0, 240, 255, 0.15); }
 
-        /* Mode Selector Tabs */
         .mode-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px; }
         .mode-tab { padding: 8px 4px; font-size: 0.72rem; text-align: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; cursor: pointer; transition: all 0.2s; }
         .mode-tab.active { border-color: #00f0ff; background: rgba(0, 240, 255, 0.2); color: #00f0ff; font-weight: bold; }
@@ -48,26 +46,19 @@
         input[type=range] { -webkit-appearance: none; width: 100%; background: rgba(255, 255, 255, 0.15); height: 4px; border-radius: 2px; outline: none; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #00f0ff; cursor: pointer; box-shadow: 0 0 8px #00f0ff; }
 
-        /* Dynamic Tool Panel */
         #sub-tools { display: none; background: rgba(255, 0, 150, 0.08); padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 0, 150, 0.3); margin-top: 8px; }
 
-        /* Mode Status Badge */
         #mode-indicator { position: absolute; top: 20px; right: 20px; z-index: 10; padding: 8px 16px; font-family: 'Orbitron', sans-serif; font-size: 0.75rem; color: #00f0ff; display: flex; align-items: center; gap: 8px; }
         .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #00f0ff; box-shadow: 0 0 8px #00f0ff; }
 
-        /* FPV Prompt */
         #fpv-instructions {
             position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 20; padding: 10px 20px;
             font-size: 0.8rem; color: #00ffaa; display: none; text-align: center; border: 1px solid #00ffaa;
         }
-
-        /* 3D Annotation Labels */
-        .core-label { position: absolute; z-index: 15; background: rgba(10, 16, 28, 0.85); border: 1px solid #ff66cc; border-radius: 4px; padding: 2px 8px; font-size: 0.7rem; color: #ff66cc; pointer-events: none; transform: translate(-50%, -100%); white-space: nowrap; font-family: 'Orbitron', sans-serif; }
     </style>
 </head>
 <body>
     <div id="webgl-container"></div>
-    <div id="labels-container"></div>
 
     <!-- Mode Badge -->
     <div id="mode-indicator" class="glass-panel">
@@ -84,14 +75,19 @@
     <div id="ui-container" class="glass-panel">
         <h1>SOLAR EXPLORER</h1>
 
-        <div class="section-title">1. 選擇探索天體</div>
+        <div class="section-title">1. 選擇探索天體 (九大行星)</div>
         <select id="planet-select">
             <option value="Sun">太陽 (Sun)</option>
+            <option value="Mercury">水星 (Mercury)</option>
+            <option value="Venus">金星 (Venus)</option>
             <option value="Earth" selected>地球 (Earth) [支援解剖/漫遊]</option>
             <option value="Moon">月球 (Moon) [支援漫遊]</option>
             <option value="Mars">火星 (Mars) [支援解剖/漫遊]</option>
             <option value="Jupiter">木星 (Jupiter) [支援解剖]</option>
             <option value="Saturn">土星 (Saturn)</option>
+            <option value="Uranus">天王星 (Uranus)</option>
+            <option value="Neptune">海王星 (Neptune)</option>
+            <option value="Pluto">冥王星 (Pluto) [矮行星/第九星]</option>
         </select>
 
         <div class="section-title">2. 切換觀察模式</div>
@@ -121,29 +117,39 @@
 
         const TEXTURE_URLS = {
             sun: 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/lava/lavatile.jpg',
+            mercury: 'https://upload.wikimedia.org/wikipedia/commons/3/30/Mercury_in_color_-_Prockter07_centered.jpg',
+            venus: 'https://upload.wikimedia.org/wikipedia/commons/a/a9/Every_Planet_Map_-_Venus.png',
             earth: 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg',
             moon: 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/moon_1024.jpg',
             mars: 'https://upload.wikimedia.org/wikipedia/commons/0/02/OSIRIS_Mars_true_color.jpg',
             jupiter: 'https://upload.wikimedia.org/wikipedia/commons/e/e2/Jupiter.jpg',
-            saturn: 'https://upload.wikimedia.org/wikipedia/commons/b/b4/Saturn_map.jpg'
+            saturn: 'https://upload.wikimedia.org/wikipedia/commons/b/b4/Saturn_map.jpg',
+            uranus: 'https://upload.wikimedia.org/wikipedia/commons/9/95/Sol3-Uranus.jpg',
+            neptune: 'https://upload.wikimedia.org/wikipedia/commons/0/06/Neptune.jpg',
+            pluto: 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Pluto_in_True_Color_-_ALMA_HST.jpg'
         };
 
         const PLANET_DATA = {
             Sun: { name: "太陽 (Sun)", radius: 18, orbitDist: 0, speed: 0 },
-            Earth: { name: "地球 (Earth)", radius: 3.0, orbitDist: 70, speed: 0.005, layers: [{ name: "地殼", r: 1.0 }, { name: "地幔", r: 0.7 }, { name: "地核", r: 0.35 }] },
-            Moon: { name: "月球 (Moon)", radius: 0.9, orbitDist: 0, speed: 0 },
-            Mars: { name: "火星 (Mars)", radius: 1.8, orbitDist: 95, speed: 0.004, layers: [{ name: "火星殼", r: 1.0 }, { name: "矽酸鹽地幔", r: 0.68 }, { name: "硫化鐵核", r: 0.32 }] },
-            Jupiter: { name: "木星 (Jupiter)", radius: 7.0, orbitDist: 135, speed: 0.002, layers: [{ name: "大氣層", r: 1.0 }, { name: "液態金屬氫", r: 0.75 }, { name: "岩石重金屬核", r: 0.3 }] },
-            Saturn: { name: "土星 (Saturn)", radius: 5.8, orbitDist: 175, speed: 0.0015 }
+            Mercury: { name: "水星 (Mercury)", radius: 1.2, orbitDist: 35, speed: 0.01 },
+            Venus: { name: "金星 (Venus)", radius: 2.6, orbitDist: 50, speed: 0.007 },
+            Earth: { name: "地球 (Earth)", radius: 3.0, orbitDist: 70, speed: 0.005 },
+            Moon: { name: "月球 (Moon)", radius: 0.8, orbitDist: 0, speed: 0 },
+            Mars: { name: "火星 (Mars)", radius: 1.8, orbitDist: 95, speed: 0.004 },
+            Jupiter: { name: "木星 (Jupiter)", radius: 7.0, orbitDist: 130, speed: 0.002 },
+            Saturn: { name: "土星 (Saturn)", radius: 5.8, orbitDist: 170, speed: 0.0015 },
+            Uranus: { name: "天王星 (Uranus)", radius: 4.0, orbitDist: 210, speed: 0.001 },
+            Neptune: { name: "海王星 (Neptune)", radius: 3.8, orbitDist: 250, speed: 0.0008 },
+            Pluto: { name: "冥王星 (Pluto)", radius: 0.9, orbitDist: 285, speed: 0.0005 }
         };
 
         // Scene Setup
         const container = document.getElementById('webgl-container');
         const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x02050a, 0.0003);
+        scene.fog = new THREE.FogExp2(0x02050a, 0.0002);
 
-        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.05, 2000);
-        camera.position.set(0, 90, 180);
+        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.05, 3000);
+        camera.position.set(0, 120, 280);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -154,34 +160,31 @@
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
 
-        scene.add(new THREE.AmbientLight(0x666677, 1.2));
-        const sunLight = new THREE.PointLight(0xffffff, 2.0, 2000);
+        scene.add(new THREE.AmbientLight(0x777788, 1.2));
+        const sunLight = new THREE.PointLight(0xffffff, 2.0, 3000);
         scene.add(sunLight);
 
         // Starfield Background
         const starGeo = new THREE.BufferGeometry();
-        const starPos = new Float32Array(4000 * 3);
-        for(let i=0; i<12000; i++) starPos[i] = (Math.random()-0.5)*1600;
+        const starPos = new Float32Array(5000 * 3);
+        for(let i=0; i<15000; i++) starPos[i] = (Math.random()-0.5)*2000;
         starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
         scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ size: 1.2, color: 0xffffff })));
 
-        // Create Dissection Planet Geometry
+        // Create Planet Mesh with Orbit Lines
         function createCutawayPlanet(radius, mapUrl) {
             const group = new THREE.Group();
 
-            // 1. Outer Shell
             const outerGeo = new THREE.SphereGeometry(radius, 64, 64, 0, Math.PI * 1.5, 0, Math.PI);
             const outerMat = new THREE.MeshStandardMaterial({ map: textureLoader.load(mapUrl), side: THREE.DoubleSide, roughness: 0.5 });
             const outerMesh = new THREE.Mesh(outerGeo, outerMat);
             group.add(outerMesh);
 
-            // 2. Middle Layer (Mantle)
             const mantleGeo = new THREE.SphereGeometry(radius * 0.7, 32, 32);
             const mantleMat = new THREE.MeshStandardMaterial({ color: 0xff5500, emissive: 0xaa2200, emissiveIntensity: 0.3 });
             const mantleMesh = new THREE.Mesh(mantleGeo, mantleMat);
             group.add(mantleMesh);
 
-            // 3. Inner Core
             const coreGeo = new THREE.SphereGeometry(radius * 0.35, 32, 32);
             const coreMat = new THREE.MeshBasicMaterial({ color: 0xffffaa });
             const coreMesh = new THREE.Mesh(coreGeo, coreMat);
@@ -191,7 +194,19 @@
             return group;
         }
 
-        // Build Planets
+        // Orbit Line Generator
+        function createOrbitLine(radius) {
+            const points = [];
+            for (let i = 0; i <= 128; i++) {
+                const theta = (i / 128) * Math.PI * 2;
+                points.push(new THREE.Vector3(Math.cos(theta) * radius, 0, Math.sin(theta) * radius));
+            }
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const material = new THREE.LineBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.18 });
+            return new THREE.LineLoop(geometry, material);
+        }
+
+        // Build All Planets
         const planets = {};
 
         // Sun
@@ -199,10 +214,11 @@
         scene.add(sunMesh);
         planets['Sun'] = { mesh: sunMesh, data: PLANET_DATA.Sun, angle: 0 };
 
-        // Other Planets
-        ['Earth', 'Mars', 'Jupiter', 'Saturn', 'Moon'].forEach(key => {
+        // 9 Planets + Moon
+        ['Mercury', 'Venus', 'Earth', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto', 'Moon'].forEach(key => {
             const data = PLANET_DATA[key];
             let pGroup;
+
             if (key === 'Moon') {
                 pGroup = createCutawayPlanet(data.radius, TEXTURE_URLS.moon);
                 planets['Earth'].mesh.add(pGroup);
@@ -210,13 +226,18 @@
             } else {
                 pGroup = createCutawayPlanet(data.radius, TEXTURE_URLS[key.toLowerCase()]);
                 scene.add(pGroup);
+                
+                // Add orbit line to scene
+                if (data.orbitDist > 0) {
+                    scene.add(createOrbitLine(data.orbitDist));
+                }
             }
             planets[key] = { mesh: pGroup, data: data, angle: Math.random() * Math.PI * 2 };
         });
 
         // App State
         let currentTarget = 'Earth';
-        let currentMode = 'ORBIT'; // 'ORBIT' | 'XRAY' | 'FPV'
+        let currentMode = 'ORBIT';
         let userDistScale = 1.0;
 
         // FPV Movement Controls
@@ -224,7 +245,6 @@
         window.addEventListener('keydown', (e) => keysPressed[e.key.toLowerCase()] = true);
         window.addEventListener('keyup', (e) => keysPressed[e.key.toLowerCase()] = false);
 
-        // Update Outer Shell Angle (Cutaway)
         function setCutawayAngle(angleDeg) {
             document.getElementById('cut-val').innerText = `${angleDeg}°`;
             const thetaRad = (360 - angleDeg) * (Math.PI / 180);
@@ -236,11 +256,9 @@
             p.mesh.userData.outerMesh.geometry = new THREE.SphereGeometry(radius, 64, 64, 0, thetaRad, 0, Math.PI);
         }
 
-        // Mode Switching Manager
         function switchMode(newMode) {
             currentMode = newMode;
 
-            // Reset UI Tabs
             document.querySelectorAll('.mode-tab').forEach(t => t.className = 'mode-tab');
             document.getElementById('sub-tools').style.display = 'none';
             document.getElementById('fpv-instructions').style.display = 'none';
@@ -252,14 +270,14 @@
                 document.getElementById('tab-orbit').classList.add('active');
                 statusDot.style.background = '#00f0ff';
                 modeText.innerText = `軌道全景視角 (${currentTarget})`;
-                setCutawayAngle(0); // Full sphere
+                setCutawayAngle(0);
             } 
             else if (newMode === 'XRAY') {
                 document.getElementById('tab-xray').classList.add('xray-active');
                 document.getElementById('sub-tools').style.display = 'block';
                 statusDot.style.background = '#ff66cc';
                 modeText.innerText = `內部解剖模式 (${currentTarget})`;
-                setCutawayAngle(90); // 90 deg cut
+                setCutawayAngle(90);
             } 
             else if (newMode === 'FPV') {
                 document.getElementById('tab-fpv').classList.add('fpv-active');
@@ -279,7 +297,6 @@
             const worldPos = p.mesh.getWorldPosition(new THREE.Vector3());
 
             if (currentMode === 'FPV') {
-                // Position 0.15 units above ground
                 const surfacePos = worldPos.clone().add(new THREE.Vector3(0, p.data.radius + 0.15, 0));
                 camera.position.copy(surfacePos);
                 controls.target.copy(surfacePos.clone().add(new THREE.Vector3(0, 0, -1)));
@@ -287,7 +304,7 @@
                 controls.maxDistance = 10;
             } else {
                 controls.minDistance = 0.1;
-                controls.maxDistance = 1000;
+                controls.maxDistance = 1500;
                 const dist = p.data.radius * 4.2 * userDistScale;
                 camera.position.copy(worldPos).add(new THREE.Vector3(dist*0.7, dist*0.4, dist));
                 controls.target.copy(worldPos);
@@ -318,20 +335,17 @@
             currentTarget = 'Sun';
             document.getElementById('planet-select').value = 'Sun';
             switchMode('ORBIT');
-            camera.position.set(0, 100, 220);
+            camera.position.set(0, 140, 320);
             controls.target.set(0, 0, 0);
         });
 
-        // Initialize Focus
         switchMode('ORBIT');
 
-        // Render Loop
         const clock = new THREE.Clock();
         function animate() {
             requestAnimationFrame(animate);
             const delta = clock.getDelta();
 
-            // Self rotation & Orbits
             Object.keys(planets).forEach(k => {
                 const p = planets[k];
                 if (p.mesh) p.mesh.rotation.y += 0.002;
@@ -342,7 +356,6 @@
                 }
             });
 
-            // FPV Keyboard Movement
             if (currentMode === 'FPV') {
                 const moveSpeed = 0.08;
                 const dir = new THREE.Vector3();
