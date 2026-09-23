@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Earth System - 雙層 LOD 與 晝夜城市燈光系統</title>
+    <title>Earth System - 經緯度偵測與地標飛航系統</title>
     <style>
         body {
             margin: 0;
@@ -23,6 +23,7 @@
             border: 1px solid rgba(255, 255, 255, 0.15);
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
             z-index: 10;
+            max-width: 320px;
         }
         #ui-panel h2 {
             margin: 0 0 6px 0;
@@ -37,7 +38,7 @@
         }
         #mode-indicator {
             display: inline-block;
-            margin-top: 6px;
+            margin: 6px 0;
             padding: 4px 10px;
             border-radius: 20px;
             font-size: 12px;
@@ -45,17 +46,24 @@
             background: #0288d1;
             color: #fff;
         }
-        #controls-bar {
-            margin-top: 12px;
+        .section-title {
+            font-size: 12px;
+            color: #81d4fa;
+            margin-top: 10px;
+            margin-bottom: 4px;
+            font-weight: bold;
+        }
+        #controls-bar, #fly-bar {
             display: flex;
-            gap: 8px;
+            flex-wrap: wrap;
+            gap: 6px;
             pointer-events: auto;
         }
         .btn {
             background: rgba(255, 255, 255, 0.12);
             border: 1px solid rgba(255, 255, 255, 0.3);
             color: #fff;
-            padding: 6px 12px;
+            padding: 5px 10px;
             border-radius: 6px;
             cursor: pointer;
             font-size: 12px;
@@ -69,8 +77,18 @@
             background: #0288d1;
             border-color: #0288d1;
         }
+        .btn-fly {
+            background: rgba(46, 125, 50, 0.3);
+            border-color: rgba(76, 175, 80, 0.5);
+        }
+        .btn-fly:hover {
+            background: #2e7d32;
+            border-color: #81c784;
+        }
     </style>
 
+    <!-- 引入 GSAP 補間動畫庫與 Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script type="importmap">
         {
             "imports": {
@@ -85,13 +103,24 @@
         <h2>EARTH SYSTEM</h2>
         <p>✦ 滾輪進行縮放（自動於太空與近地面切換）</p>
         <p id="altitude-readout">視角高度: 計算中...</p>
-        <div id="mode-indicator">渲染模式: 太空全域 (Space Shell)</div>
+        <p id="coords-readout">指向座標: 指向地表中...</p>
+        <div id="mode-indicator">渲染模式: 太空全域 (晝夜城市燈光開啟)</div>
         
+        <div class="section-title">自轉控制</div>
         <div id="controls-bar">
             <button id="btn-pause" class="btn">⏸ 暫停自轉</button>
             <button id="btn-1x" class="btn active">1x 速度</button>
             <button id="btn-2x" class="btn">2x 速度</button>
             <button id="btn-5x" class="btn">5x 速度</button>
+        </div>
+
+        <div class="section-title">快速飛往熱門地標</div>
+        <div id="fly-bar">
+            <button class="btn btn-fly" data-lat="23.47" data-lon="120.95">🏔 台灣玉山</button>
+            <button class="btn btn-fly" data-lat="27.98" data-lon="86.92">🏔 喜馬拉雅山</button>
+            <button class="btn btn-fly" data-lat="45.83" data-lon="6.86">🏔 阿爾卑斯山</button>
+            <button class="btn btn-fly" data-lat="35.67" data-lon="139.65">🗼 東京</button>
+            <button class="btn btn-fly" data-lat="40.71" data-lon="-74.00">🏙 紐約</button>
         </div>
     </div>
 
@@ -140,7 +169,7 @@
         scene.add(spaceGroup);
         scene.add(groundGroup);
 
-        // === 載入貼圖 (包含 Daytime、Night Lights 與 Bump Normal) ===
+        // === 貼圖與 Shader ===
         const earthRadius = 6;
         const textureLoader = new THREE.TextureLoader();
 
@@ -149,7 +178,6 @@
         const earthNormalMap = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-topology.png');
         const cloudMap = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-clouds.png');
 
-        // === 太空層：自訂晝夜 Shader 材質（動態呈現黑夜城市燈火） ===
         const earthShaderMaterial = new THREE.ShaderMaterial({
             uniforms: {
                 dayTexture: { value: earthDayMap },
@@ -180,13 +208,8 @@
                     vec3 dayColor = texture2D(dayTexture, vUv).rgb;
                     vec3 nightColor = texture2D(nightTexture, vUv).rgb;
 
-                    // 計算陽光照射角度強度
                     float cosineAngle = dot(vWorldNormal, sunDirection);
-
-                    // 晨昏線平滑混合 ( -0.15 到 0.25 之間過渡 )
                     float mixFactor = smoothstep(-0.15, 0.25, cosineAngle);
-
-                    // 混合日間與夜間城市燈火
                     vec3 finalColor = mix(nightColor * 1.8, dayColor * 1.2, mixFactor);
 
                     gl_FragColor = vec4(finalColor, 1.0);
@@ -233,7 +256,6 @@
         const atmosphereMesh = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
         spaceGroup.add(atmosphereMesh);
 
-
         // === 近地面層：高解析實體山脈地形 ===
         const highResGeometry = new THREE.SphereGeometry(earthRadius, 256, 256);
         const highResMaterial = new THREE.MeshStandardMaterial({
@@ -254,8 +276,91 @@
         let baseRotationSpeed = 0.0003;
         let speedMultiplier = 1.0;
         let isPaused = false;
+        let isFlying = false;
 
-        // 6. 雙層無縫過渡與地表霧氣邏輯
+        // 6. 經緯度座標轉換與 Raycaster 射線偵測
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const coordsReadout = document.getElementById('coords-readout');
+
+        window.addEventListener('pointermove', (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const activeEarth = spaceGroup.visible ? earthMesh : highResEarth;
+            const intersects = raycaster.intersectObject(activeEarth);
+
+            if (intersects.length > 0) {
+                const point = intersects[0].point;
+                // 將 3D 世界座標轉回地塊本地座標
+                const localPoint = activeEarth.worldToLocal(point.clone());
+                
+                // 計算緯度與經度
+                const lat = 90 - (Math.acos(localPoint.y / earthRadius) * 180 / Math.PI);
+                let lon = ((Math.atan2(localPoint.z, localPoint.x) * 180 / Math.PI) + 180) % 360 - 180;
+                // 修正球面貼圖 UV 偏移角
+                lon = -lon - 90;
+                if (lon < -180) lon += 360;
+
+                const latStr = `${Math.abs(lat).toFixed(2)}° ${lat >= 0 ? 'N' : 'S'}`;
+                const lonStr = `${Math.abs(lon).toFixed(2)}° ${lon >= 0 ? 'E' : 'W'}`;
+                coordsReadout.innerText = `指向座標: ${latStr}, ${lonStr}`;
+            } else {
+                coordsReadout.innerText = `指向座標: 外太空`;
+            }
+        });
+
+        // 7. 經緯度轉 3D 空間座標（用於飛行目的地計算）
+        function latLonToVector3(lat, lon, radius) {
+            const phi = (90 - lat) * (Math.PI / 180);
+            const theta = (lon + 180) * (Math.PI / 180);
+
+            const x = -(radius * Math.sin(phi) * Math.cos(theta));
+            const z = (radius * Math.sin(phi) * Math.sin(theta));
+            const y = (radius * Math.cos(phi));
+
+            return new THREE.Vector3(x, y, z);
+        }
+
+        // 8. 飛航動畫邏輯 (GSAP)
+        function flyToLocation(lat, lon) {
+            if (isFlying) return;
+            isFlying = true;
+            isPaused = true; // 飛行期間自動暫停自轉
+
+            // 算目標點在地表與近地高度的 3D 向量
+            const targetSurfaceVec = latLonToVector3(lat, lon, earthRadius);
+            const targetCamVec = latLonToVector3(lat, lon, earthRadius + 0.3); // 降落高度 300km
+
+            // 飛行時間與拋物線高度
+            gsap.timeline({
+                onComplete: () => {
+                    isFlying = false;
+                }
+            })
+            .to(camera.position, {
+                duration: 2.5,
+                x: targetCamVec.x,
+                y: targetCamVec.y,
+                z: targetCamVec.z,
+                ease: "power2.inOut",
+                onUpdate: () => {
+                    controls.target.lerp(targetSurfaceVec, 0.1);
+                }
+            });
+        }
+
+        // 地標按鈕事件綁定
+        document.querySelectorAll('.btn-fly').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const lat = parseFloat(e.target.dataset.lat);
+                const lon = parseFloat(e.target.dataset.lon);
+                flyToLocation(lat, lon);
+            });
+        });
+
+        // 9. 雙層無縫過渡邏輯
         const altitudeReadout = document.getElementById('altitude-readout');
         const modeIndicator = document.getElementById('mode-indicator');
         const transitionThreshold = earthRadius + 2.0; 
@@ -269,7 +374,7 @@
                 groundGroup.visible = false;
                 scene.fog = null;
                 
-                modeIndicator.innerText = "渲染模式: 太空全域 (晝夜城市燈光開啟)";
+                modeIndicator.innerText = "渲染模式: 太空全域 (晝夜城市燈光)";
                 modeIndicator.style.background = "#0288d1";
             } else {
                 spaceGroup.visible = false;
@@ -282,7 +387,7 @@
             }
         }
 
-        // 7. 按鈕控制事件
+        // 10. 自轉速度控制按鈕
         const btnPause = document.getElementById('btn-pause');
         const btn1x = document.getElementById('btn-1x');
         const btn2x = document.getElementById('btn-2x');
@@ -305,15 +410,14 @@
         btn2x.addEventListener('click', () => setSpeed(2.0, btn2x));
         btn5x.addEventListener('click', () => setSpeed(5.0, btn5x));
 
-
-        // 8. 動畫與算繪迴圈
+        // 11. 動畫迴圈
         function animate() {
             requestAnimationFrame(animate);
 
             const camDistance = camera.position.distanceTo(scene.position);
             updateLayersVisibility(camDistance);
 
-            const shouldRotate = !isPaused && spaceGroup.visible;
+            const shouldRotate = !isPaused && spaceGroup.visible && !isFlying;
 
             if (shouldRotate) {
                 const currentSpeed = baseRotationSpeed * speedMultiplier;
@@ -322,7 +426,6 @@
                 highResEarth.rotation.y += currentSpeed;
             }
 
-            // 更新 Shader 中的太陽相對方向向量
             earthShaderMaterial.uniforms.sunDirection.value.copy(sunLight.position).normalize();
 
             controls.update();
