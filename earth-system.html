@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Earth System - 雙層 LOD 與 3D Tiles 實時地形模擬</title>
+    <title>Earth System - 雙層 LOD 與模擬系統</title>
     <style>
         body {
             margin: 0;
@@ -48,13 +48,12 @@
         }
     </style>
 
-    <!-- 修正版 importmap：確保所有套件路徑指向完整打包好的 bundle -->
+    <!-- 使用最標準穩定的 Three.js CDN -->
     <script type="importmap">
         {
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
-                "3d-tiles-renderer": "https://unpkg.com/3d-tiles-renderer@0.2.22/build/index.module.js"
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
             }
         }
     </script>
@@ -62,7 +61,7 @@
 <body>
     <div id="ui-panel">
         <h2>EARTH SYSTEM</h2>
-        <p>✦ 滾輪進行縮放（自動於太空與近地面切換）</p>
+        <p>✦ 滾輪縮放（自動於太空與近地面切換）</p>
         <p id="altitude-readout">視角高度: 計算中...</p>
         <div id="mode-indicator">渲染模式: 太空全域 (Space Shell)</div>
     </div>
@@ -70,7 +69,6 @@
     <script type="module">
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-        import { TilesRenderer } from '3d-tiles-renderer';
 
         // 1. 初始化場景、相機與渲染器
         const scene = new THREE.Scene();
@@ -96,7 +94,7 @@
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
-        controls.minDistance = 6.005;
+        controls.minDistance = 6.01;
         controls.maxDistance = 150;
 
         // 3. 光源系統
@@ -107,13 +105,13 @@
         const ambientLight = new THREE.AmbientLight(0x0a1020, 0.2);
         scene.add(ambientLight);
 
-        // 4. 群組分層：Space Group (太空層) vs Ground Group (近地面層)
+        // 4. 雙層架構群組：Space Group (太空層) vs Ground Group (近地面高解析層)
         const spaceGroup = new THREE.Group();
         const groundGroup = new THREE.Group();
         scene.add(spaceGroup);
         scene.add(groundGroup);
 
-        // === 太空層：NASA 地球與大氣 Shell ===
+        // === 太空層：NASA 地球、雲層與大氣 Shell ===
         const earthRadius = 6;
         const textureLoader = new THREE.TextureLoader();
 
@@ -130,7 +128,7 @@
         const earthMesh = new THREE.Mesh(earthGeometry, earthMaterial);
         spaceGroup.add(earthMesh);
 
-        // 雲層
+        // 太空雲層
         const cloudGeometry = new THREE.SphereGeometry(earthRadius * 1.015, 64, 64);
         const cloudMaterial = new THREE.MeshStandardMaterial({
             alphaMap: cloudMap,
@@ -141,7 +139,7 @@
         const cloudMesh = new THREE.Mesh(cloudGeometry, cloudMaterial);
         spaceGroup.add(cloudMesh);
 
-        // 大氣光暈
+        // 太空大氣光暈
         const atmosphereGeometry = new THREE.SphereGeometry(earthRadius * 1.12, 64, 64);
         const atmosphereMaterial = new THREE.ShaderMaterial({
             vertexShader: `
@@ -165,24 +163,28 @@
         const atmosphereMesh = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
         spaceGroup.add(atmosphereMesh);
 
-        // === 近地面層：3D Tiles Renderer (開放式地形) ===
-        const tilesRenderer = new TilesRenderer('https://raw.githubusercontent.com/CesiumGS/cesium/main/Apps/SampleData/Cesium3DTiles/Terrain/tileset.json');
-        
-        tilesRenderer.setCamera(camera);
-        tilesRenderer.setResolutionFromRenderer(camera, renderer);
-        
-        tilesRenderer.errorTarget = 6;
-        tilesRenderer.maxDepth = 15;
-        tilesRenderer.lruCache.minSize = 100;
-        tilesRenderer.lruCache.maxSize = 300;
 
-        tilesRenderer.group.scale.setScalar(earthRadius / 6371);
-        groundGroup.add(tilesRenderer.group);
+        // === 近地面層：高密度實體地形與高程細節網格 ===
+        // 使用 256x256 高密度幾何體配合高程圖，近距離觀看會有實體山脈起伏
+        const highResGeometry = new THREE.SphereGeometry(earthRadius, 256, 256);
+        const highResMaterial = new THREE.MeshStandardMaterial({
+            map: earthDayMap,
+            normalMap: earthNormalMap,
+            normalScale: new THREE.Vector2(1.5, 1.5),
+            displacementMap: earthNormalMap,
+            displacementScale: 0.15, // 真實高程推擠山脈
+            displacementBias: -0.05,
+            roughness: 0.5
+        });
+        const highResEarth = new THREE.Mesh(highResGeometry, highResMaterial);
+        groundGroup.add(highResEarth);
+        groundGroup.visible = false; // 初始預設隱藏
 
-        // 5. 雙層過渡邏輯
+
+        // 5. 雙層無縫過渡機制
         const altitudeReadout = document.getElementById('altitude-readout');
         const modeIndicator = document.getElementById('mode-indicator');
-        const transitionThreshold = earthRadius + 0.5;
+        const transitionThreshold = earthRadius + 0.8; // 切換高度點
 
         function updateLayersVisibility(camDistance) {
             const altitudeKM = Math.max(0, ((camDistance - earthRadius) * 1000)).toFixed(1);
@@ -196,19 +198,21 @@
             } else {
                 spaceGroup.visible = false;
                 groundGroup.visible = true;
-                tilesRenderer.update();
-                modeIndicator.innerText = "渲染模式: 近地面 3D Tiles 地形 (LOD Active)";
+                modeIndicator.innerText = "渲染模式: 近地面高解析地形 (High-Res LOD)";
                 modeIndicator.style.background = "#2e7d32";
             }
         }
 
-        // 6. 動畫迴圈
+        // 6. 渲染與動畫迴圈
         function animate() {
             requestAnimationFrame(animate);
 
+            // 太空自轉
             if (spaceGroup.visible) {
                 earthMesh.rotation.y += 0.0003;
                 cloudMesh.rotation.y += 0.00045;
+            } else {
+                highResEarth.rotation.y += 0.0003;
             }
 
             const camDistance = camera.position.distanceTo(scene.position);
@@ -220,7 +224,7 @@
 
         animate();
 
-        // RWD 視窗自動適應
+        // 視窗變更適應
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
