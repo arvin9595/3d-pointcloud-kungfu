@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>太陽系 3D 深度探索系統 (完整球體修正版)</title>
+    <title>太陽系 3D 深度探索系統 (懸停暫停與倍速控制版)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         body, html { width: 100%; height: 100%; overflow: hidden; background-color: #000; font-family: 'Noto Sans TC', sans-serif; color: #fff; }
-        #webgl-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
+        #webgl-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; cursor: pointer; }
 
         .glass-panel {
             background: rgba(10, 16, 28, 0.85);
@@ -55,6 +55,10 @@
             position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 20; padding: 10px 20px;
             font-size: 0.8rem; color: #00ffaa; display: none; text-align: center; border: 1px solid #00ffaa;
         }
+
+        .hover-tip {
+            position: absolute; bottom: 20px; right: 20px; z-index: 10; padding: 8px 14px; font-size: 0.75rem; color: #ffdd66; border: 1px solid rgba(255,221,102,0.4); display: none;
+        }
     </style>
 </head>
 <body>
@@ -69,10 +73,14 @@
         🎮 <b>第一人稱地表漫遊中</b><br>按住滑鼠拖曳旋轉視角 | 按下 [W][A][S][D] 鍵移動
     </div>
 
+    <div id="hover-notice" class="glass-panel hover-tip">
+        ⏸️ 已選取/懸停星球：運動已暫停
+    </div>
+
     <div id="ui-container" class="glass-panel">
         <h1>SOLAR EXPLORER</h1>
 
-        <div class="section-title">1. 選擇探索天體 (九大行星)</div>
+        <div class="section-title">1. 選擇探索天體 (可直接點選畫面)</div>
         <select id="planet-select">
             <option value="Sun">太陽 (Sun)</option>
             <option value="Mercury">水星 (Mercury)</option>
@@ -99,7 +107,17 @@
             <input type="range" id="cutaway-slider" min="10" max="180" value="90">
         </div>
 
-        <div class="section-title">3. 視角微調</div>
+        <div class="section-title">3. 運轉倍速與控制</div>
+        <select id="speed-select">
+            <option value="0">0.0x (完全靜止)</option>
+            <option value="0.2">0.2x (極慢速)</option>
+            <option value="0.5">0.5x (慢速觀測)</option>
+            <option value="1.0" selected>1.0x (正常速度)</option>
+            <option value="2.0">2.0x (快速運轉)</option>
+            <option value="5.0">5.0x (高速運轉)</option>
+        </select>
+
+        <div class="section-title">4. 視角微調</div>
         <div class="slider-container">
             <div class="slider-label"><span>鏡頭距離</span><span id="dist-val">100%</span></div>
             <input type="range" id="distance-slider" min="0.2" max="2.5" step="0.05" value="1">
@@ -166,31 +184,28 @@
         starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
         scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ size: 1.2, color: 0xffffff })));
 
-        // 建立球體結構（預設皆為 360 度完整球體，且內核預設隱藏）
-        function createPlanetGroup(radius, mapUrl) {
+        function createPlanetGroup(key, radius, mapUrl) {
             const group = new THREE.Group();
 
-            // 1. 外殼（預設 360 度完整）
             const outerGeo = new THREE.SphereGeometry(radius, 64, 64, 0, Math.PI * 2, 0, Math.PI);
             const outerMat = new THREE.MeshStandardMaterial({ map: textureLoader.load(mapUrl), side: THREE.DoubleSide, roughness: 0.5 });
             const outerMesh = new THREE.Mesh(outerGeo, outerMat);
+            outerMesh.userData = { planetKey: key };
             group.add(outerMesh);
 
-            // 2. 地幔 (預設隱藏)
             const mantleGeo = new THREE.SphereGeometry(radius * 0.7, 32, 32);
             const mantleMat = new THREE.MeshStandardMaterial({ color: 0xff5500, emissive: 0xaa2200, emissiveIntensity: 0.3 });
             const mantleMesh = new THREE.Mesh(mantleGeo, mantleMat);
             mantleMesh.visible = false;
             group.add(mantleMesh);
 
-            // 3. 地核 (預設隱藏)
             const coreGeo = new THREE.SphereGeometry(radius * 0.35, 32, 32);
             const coreMat = new THREE.MeshBasicMaterial({ color: 0xffffaa });
             const coreMesh = new THREE.Mesh(coreGeo, coreMat);
             coreMesh.visible = false;
             group.add(coreMesh);
 
-            group.userData = { outerMesh, mantleMesh, coreMesh, radius };
+            group.userData = { planetKey: key, outerMesh, mantleMesh, coreMesh, radius };
             return group;
         }
 
@@ -206,11 +221,14 @@
         }
 
         const planets = {};
+        const raycastTargets = [];
 
         // 太陽
         const sunMesh = new THREE.Mesh(new THREE.SphereGeometry(PLANET_DATA.Sun.radius, 32, 32), new THREE.MeshBasicMaterial({ map: textureLoader.load(TEXTURE_URLS.sun) }));
+        sunMesh.userData = { planetKey: 'Sun' };
         scene.add(sunMesh);
         planets['Sun'] = { mesh: sunMesh, data: PLANET_DATA.Sun, angle: 0 };
+        raycastTargets.push(sunMesh);
 
         // 八大行星 + 冥王星 + 月球
         ['Mercury', 'Venus', 'Earth', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto', 'Moon'].forEach(key => {
@@ -218,26 +236,32 @@
             let pGroup;
 
             if (key === 'Moon') {
-                pGroup = createPlanetGroup(data.radius, TEXTURE_URLS.moon);
+                pGroup = createPlanetGroup(key, data.radius, TEXTURE_URLS.moon);
                 planets['Earth'].mesh.add(pGroup);
                 pGroup.position.set(6.5, 0, 0);
             } else {
-                pGroup = createPlanetGroup(data.radius, TEXTURE_URLS[key.toLowerCase()]);
+                pGroup = createPlanetGroup(key, data.radius, TEXTURE_URLS[key.toLowerCase()]);
                 scene.add(pGroup);
                 if (data.orbitDist > 0) scene.add(createOrbitLine(data.orbitDist));
             }
             planets[key] = { mesh: pGroup, data: data, angle: Math.random() * Math.PI * 2 };
+            raycastTargets.push(pGroup.userData.outerMesh);
         });
 
         let currentTarget = 'Earth';
         let currentMode = 'ORBIT';
         let userDistScale = 1.0;
+        let globalSpeed = 1.0;
+        let hoveredPlanetKey = null;
+
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
 
         const keysPressed = {};
         window.addEventListener('keydown', (e) => keysPressed[e.key.toLowerCase()] = true);
         window.addEventListener('keyup', (e) => keysPressed[e.key.toLowerCase()] = false);
 
-        // 設定剖面角度（當角度為 0 時，顯示完整 360 度球體並隱藏內核）
+        // 剖面視角更新
         function updateCutawayView(angleDeg) {
             document.getElementById('cut-val').innerText = `${angleDeg}°`;
             const p = planets[currentTarget];
@@ -249,14 +273,12 @@
             const coreMesh = p.mesh.userData.coreMesh;
 
             if (currentMode === 'XRAY' && angleDeg > 0) {
-                // 開啟剖面：顯示內核，並將外殼根據角度剝離
                 mantleMesh.visible = true;
                 coreMesh.visible = true;
                 const thetaRad = (360 - angleDeg) * (Math.PI / 180);
                 outerMesh.geometry.dispose();
                 outerMesh.geometry = new THREE.SphereGeometry(radius, 64, 64, 0, thetaRad, 0, Math.PI);
             } else {
-                // 恢復完整球體：隱藏內核，外殼設為滿圓 360 度 (2*PI)
                 mantleMesh.visible = false;
                 coreMesh.visible = false;
                 outerMesh.geometry.dispose();
@@ -278,7 +300,7 @@
                 document.getElementById('tab-orbit').classList.add('active');
                 statusDot.style.background = '#00f0ff';
                 modeText.innerText = `軌道全景視角 (${currentTarget})`;
-                updateCutawayView(0); // 恢復完整球體
+                updateCutawayView(0);
             } 
             else if (newMode === 'XRAY') {
                 document.getElementById('tab-xray').classList.add('xray-active');
@@ -286,14 +308,14 @@
                 statusDot.style.background = '#ff66cc';
                 modeText.innerText = `內部解剖模式 (${currentTarget})`;
                 const sliderVal = parseInt(document.getElementById('cutaway-slider').value);
-                updateCutawayView(sliderVal); // 觸發剖面
+                updateCutawayView(sliderVal);
             } 
             else if (newMode === 'FPV') {
                 document.getElementById('tab-fpv').classList.add('fpv-active');
                 document.getElementById('fpv-instructions').style.display = 'block';
                 statusDot.style.background = '#00ffaa';
                 modeText.innerText = `地表漫遊模式 (${currentTarget})`;
-                updateCutawayView(0); // 恢復完整球體
+                updateCutawayView(0);
             }
 
             focusCameraOnTarget();
@@ -320,11 +342,55 @@
             }
         }
 
+        // 滑鼠懸停與點擊互動檢測
+        function onMouseMove(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(raycastTargets);
+
+            if (intersects.length > 0) {
+                const key = intersects[0].object.userData.planetKey;
+                hoveredPlanetKey = key;
+                document.getElementById('hover-notice').style.display = 'block';
+                document.getElementById('hover-notice').innerText = `⏸️ 已鎖定 [${PLANET_DATA[key].name}]：動態暫停中`;
+            } else {
+                hoveredPlanetKey = null;
+                document.getElementById('hover-notice').style.display = 'none';
+            }
+        }
+
+        function onPointerDown(event) {
+            // 防止點擊 UI 時誤觸 3D 畫面
+            if (event.clientX < 360 && event.clientY < 500) return;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(raycastTargets);
+
+            if (intersects.length > 0) {
+                const key = intersects[0].object.userData.planetKey;
+                if (key && key !== currentTarget) {
+                    updateCutawayView(0);
+                    currentTarget = key;
+                    document.getElementById('planet-select').value = key;
+                    switchMode(currentMode);
+                }
+            }
+        }
+
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('pointerdown', onPointerDown);
+
+        // UI 事件綁定
         document.getElementById('planet-select').addEventListener('change', (e) => {
-            // 切換行星時，若當前是 XRAY 模式，先恢復舊行星完整度
             updateCutawayView(0);
             currentTarget = e.target.value;
             switchMode(currentMode);
+        });
+
+        document.getElementById('speed-select').addEventListener('change', (e) => {
+            globalSpeed = parseFloat(e.target.value);
         });
 
         document.getElementById('tab-orbit').addEventListener('click', () => switchMode('ORBIT'));
@@ -359,9 +425,15 @@
 
             Object.keys(planets).forEach(k => {
                 const p = planets[k];
-                if (p.mesh) p.mesh.rotation.y += 0.002;
-                if (k !== 'Sun' && k !== 'Moon') {
-                    p.angle += p.data.speed * delta * 12;
+                // 當滑鼠懸停在該星球時，該星球暫停旋轉與公轉
+                const isPaused = (hoveredPlanetKey === k) || (globalSpeed === 0);
+
+                if (p.mesh && !isPaused) {
+                    p.mesh.rotation.y += 0.002 * (globalSpeed > 0 ? globalSpeed : 1);
+                }
+
+                if (k !== 'Sun' && k !== 'Moon' && !isPaused) {
+                    p.angle += p.data.speed * delta * 12 * globalSpeed;
                     p.mesh.position.x = Math.cos(p.angle) * p.data.orbitDist;
                     p.mesh.position.z = Math.sin(p.angle) * p.data.orbitDist;
                 }
