@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>全 3D 沉浸式身歷其境太陽系星際探索 - 深度高精完整版</title>
+    <title>全 3D 沉浸式身歷其境太陽系星際探索 - 深度高精完整版 (移除邊界)</title>
     <!-- Three.js and OrbitControls -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -454,45 +454,7 @@
         }
         createStarfield();
 
-        // Solar System Boundaries (Heliopause & Oort Cloud)
-        function createSolarBoundaries() {
-            // A. Heliopause Wireframe Bubble
-            const helioRadius = 350;
-            const helioGeo = new THREE.SphereGeometry(helioRadius, 32, 32);
-            const helioMat = new THREE.MeshBasicMaterial({
-                color: 0x00f0ff,
-                wireframe: true,
-                transparent: true,
-                opacity: 0.12,
-                side: THREE.DoubleSide
-            });
-            const helioMesh = new THREE.Mesh(helioGeo, helioMat);
-            scene.add(helioMesh);
-
-            // B. Oort Cloud Particles Envelope
-            const oortCount = 3000;
-            const oortGeo = new THREE.BufferGeometry();
-            const oortPos = new Float32Array(oortCount * 3);
-            const innerR = 380, outerR = 500;
-
-            for (let i = 0; i < oortCount; i++) {
-                const u = Math.random();
-                const v = Math.random();
-                const theta = u * 2.0 * Math.PI;
-                const phi = Math.acos(2.0 * v - 1.0);
-                const r = innerR + Math.random() * (outerR - innerR);
-
-                oortPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-                oortPos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-                oortPos[i * 3 + 2] = r * Math.cos(phi);
-            }
-
-            oortGeo.setAttribute('position', new THREE.BufferAttribute(oortPos, 3));
-            const oortMat = new THREE.PointsMaterial({ color: 0x77bbff, size: 0.8, transparent: true, opacity: 0.35 });
-            const oortCloud = new THREE.Points(oortGeo, oortMat);
-            scene.add(oortCloud);
-        }
-        createSolarBoundaries();
+        // 太陽系邊界 (日球層頂與歐特雲) 已移除
 
         // --- 5. Planets & Moons Creation ---
         const planets = {};
