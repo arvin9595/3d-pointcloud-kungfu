@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>太陽系 3D 深度探索系統 (完整功能紀錄與下載版)</title>
+    <title>太陽系 3D 深度探索系統 (懸停暫停與倍速控制版)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet"></script>
@@ -58,13 +58,6 @@
 
         .hover-tip {
             position: absolute; bottom: 20px; right: 20px; z-index: 10; padding: 8px 14px; font-size: 0.75rem; color: #ffdd66; border: 1px solid rgba(255,221,102,0.4); display: none;
-        }
-
-        .btn-download {
-            background: rgba(0, 240, 255, 0.15) !important;
-            border-color: #00f0ff !important;
-            color: #00f0ff !important;
-            font-weight: bold;
         }
     </style>
 </head>
@@ -130,8 +123,7 @@
             <input type="range" id="distance-slider" min="0.2" max="2.5" step="0.05" value="1">
         </div>
 
-        <button id="btn-reset" style="margin-top: 6px; background: rgba(255,255,255,0.05);">↺ 重置太陽系視角</button>
-        <button id="btn-download-html" class="btn-download" style="margin-top: 6px;">📥 下載網頁檔 (.html)</button>
+        <button id="btn-reset" style="margin-top: 10px; background: rgba(255,255,255,0.05);">↺ 重置太陽系視角</button>
     </div>
 
     <script>
@@ -238,7 +230,7 @@
         planets['Sun'] = { mesh: sunMesh, data: PLANET_DATA.Sun, angle: 0 };
         raycastTargets.push(sunMesh);
 
-        // 九大行星 + 月球
+        // 八大行星 + 冥王星 + 月球
         ['Mercury', 'Venus', 'Earth', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto', 'Moon'].forEach(key => {
             const data = PLANET_DATA[key];
             let pGroup;
@@ -269,6 +261,7 @@
         window.addEventListener('keydown', (e) => keysPressed[e.key.toLowerCase()] = true);
         window.addEventListener('keyup', (e) => keysPressed[e.key.toLowerCase()] = false);
 
+        // 剖面視角更新
         function updateCutawayView(angleDeg) {
             document.getElementById('cut-val').innerText = `${angleDeg}°`;
             const p = planets[currentTarget];
@@ -349,6 +342,7 @@
             }
         }
 
+        // 滑鼠懸停與點擊互動檢測
         function onMouseMove(event) {
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -368,7 +362,8 @@
         }
 
         function onPointerDown(event) {
-            if (event.clientX < 360 && event.clientY < 520) return;
+            // 防止點擊 UI 時誤觸 3D 畫面
+            if (event.clientX < 360 && event.clientY < 500) return;
 
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObjects(raycastTargets);
@@ -387,7 +382,7 @@
         window.addEventListener('mousemove', onMouseMove);
         window.addEventListener('pointerdown', onPointerDown);
 
-        // UI 事件屬性處理
+        // UI 事件綁定
         document.getElementById('planet-select').addEventListener('change', (e) => {
             updateCutawayView(0);
             currentTarget = e.target.value;
@@ -421,20 +416,6 @@
             controls.target.set(0, 0, 0);
         });
 
-        // 匯出與下載 HTML 原始碼功能
-        document.getElementById('btn-download-html').addEventListener('click', () => {
-            const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'Solar_System_3D_Explorer.html';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        });
-
         switchMode('ORBIT');
 
         const clock = new THREE.Clock();
@@ -444,6 +425,7 @@
 
             Object.keys(planets).forEach(k => {
                 const p = planets[k];
+                // 當滑鼠懸停在該星球時，該星球暫停旋轉與公轉
                 const isPaused = (hoveredPlanetKey === k) || (globalSpeed === 0);
 
                 if (p.mesh && !isPaused) {
