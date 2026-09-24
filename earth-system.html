@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>STARSHIP EARTH SYSTEM V3.3 PHASE 6 // AI INTELLIGENCE SUMMARY</title>
+<title>STARSHIP EARTH SYSTEM V3.3 PHASE 6.1 // SUMMARY CHANNEL STATE FIX</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 <style>
 :root{
@@ -230,7 +230,7 @@ body.focus-open .bridge{filter:brightness(.42) saturate(.72)}
 <div class="space-bg"></div>
 <main class="bridge">
   <header class="topbar">
-    <span>[SYS.SECURE // STARSHIP ORBITAL HUD // V3.3-P6]</span>
+    <span>[SYS.SECURE // STARSHIP ORBITAL HUD // V3.3-P6.1]</span>
     <span class="live">PLANETARY INTELLIGENCE NETWORK: ONLINE</span>
     <span id="utcClock">UTC --:--:--</span>
   </header>
@@ -343,7 +343,7 @@ body.focus-open .bridge{filter:brightness(.42) saturate(.72)}
           <div class="summary-fresh" id="summaryFreshness">DATA FRESHNESS // --</div>
         </div>
         <div class="summary-col">
-          <div class="summary-kicker">SYNTHESIS ENGINE V1</div>
+          <div class="summary-kicker">SYNTHESIS ENGINE V1.1</div>
           <div class="summary-title">AI INTERPRETATION</div>
           <div class="summary-interpret" id="summaryInterpret"><b>INTERPRETATION</b>Waiting for observed data.</div>
           <div class="summary-note">Observed Data 與 Interpretation 分離顯示。此版本使用瀏覽器端 deterministic synthesis rules，不呼叫外部 LLM，也不把系統推論冒充 NASA / USGS / NOAA / Open-Meteo / RainViewer 的官方結論。</div>
@@ -480,7 +480,7 @@ body.focus-open .bridge{filter:brightness(.42) saturate(.72)}
         <h3 id="focusSummaryTarget">ACTIVE TARGET // --</h3>
         <div id="focusSummaryObserved" style="font-size:.48rem;line-height:1.65;color:#9fb9c3"></div>
         <div style="margin-top:9px;padding:8px;border:1px solid rgba(255,61,154,.22);background:rgba(255,61,154,.025)">
-          <div style="color:var(--pink);font-size:.45rem;letter-spacing:1px;margin-bottom:5px">AI INTERPRETATION // SYNTHESIS ENGINE V1</div>
+          <div style="color:var(--pink);font-size:.45rem;letter-spacing:1px;margin-bottom:5px">AI INTERPRETATION // SYNTHESIS ENGINE V1.1</div>
           <div id="focusSummaryInterpret" style="font-size:.49rem;line-height:1.65;color:#b7cbd3">--</div>
         </div>
         <div id="focusSummaryFreshness" style="margin-top:8px;color:#66838e;font-size:.42rem;line-height:1.55">DATA FRESHNESS // --</div>
@@ -1251,17 +1251,35 @@ async function buildPlanetaryBrief(){
     getWeather(),getTargetAirQuality(),getEvents(),getQuakes(),getSpace(),loadRadarMeta()
   ]);
   const [w,a,e,q,s,r]=settled;
+  // BUG-SUMMARY-001 FIX (P6.1):
+  // Availability is based on usable channel data, not only Promise fulfillment.
+  // Radar frame state is derived directly from the fulfilled RainViewer payload
+  // so the brief does not depend on a global side effect.
+  const radarPast=(r.status==='fulfilled'&&Array.isArray(r.value?.radar?.past))?r.value.radar.past:[];
+  if(radarPast.length){
+    radarMeta=r.value;
+    radarFrames=radarPast;
+    radarIndex=radarFrames.length-1;
+  }
   const obs={
-    weather:w.status==='fulfilled'?w.value:null,
-    air:a.status==='fulfilled'?a.value:null,
-    events:e.status==='fulfilled'?e.value:null,
-    quakes:q.status==='fulfilled'?q.value:null,
+    weather:w.status==='fulfilled'&&w.value?.current?w.value:null,
+    air:a.status==='fulfilled'&&a.value?.current?a.value:null,
+    events:e.status==='fulfilled'&&Array.isArray(e.value?.events)?e.value:null,
+    quakes:q.status==='fulfilled'&&Array.isArray(q.value?.features)?q.value:null,
     space:s.status==='fulfilled'?summarySpaceSnapshot(s.value):null,
-    radar:r.status==='fulfilled'&&radarFrames.length?radarFrames.at(-1):null
+    radarFrame:radarPast.length?radarPast.at(-1):null,
+    radarFrameCount:radarPast.length
   };
   obs.quakeNearest=obs.quakes?nearestQuakeToTarget(obs.quakes,4):null;
   obs.eventNearest=obs.events?nearestEonetToTarget(obs.events):null;
-  const unavailable=settled.map((x,i)=>x.status==='rejected'?['WEATHER','ATMOSPHERE','EONET','USGS','SWPC','RADAR'][i]:null).filter(Boolean);
+  const unavailable=[
+    !obs.weather?'WEATHER':null,
+    !obs.air?'ATMOSPHERE':null,
+    !obs.events?'EONET':null,
+    !obs.quakes?'USGS':null,
+    !obs.space?'SWPC':null,
+    !obs.radarFrame?'RADAR':null
+  ].filter(Boolean);
 
   const c=obs.weather?.current||{},aq=obs.air?.current||{},sp=obs.space;
   const observed=[
@@ -1270,7 +1288,7 @@ async function buildPlanetaryBrief(){
     summaryRow('USGS // SEISMIC',obs.quakes?`${obs.quakes.metadata?.count??obs.quakes.features?.length??'--'} M2.5+ / 24H${obs.quakeNearest?` · nearest M4+ ${Math.round(obs.quakeNearest.distanceKm)} km`:''}`:'UNAVAILABLE',obs.quakes?'':'off'),
     summaryRow('NASA EONET // OPEN EVENTS',obs.events?`${obs.events.events?.length??0} returned${obs.eventNearest?` · nearest ${Math.round(obs.eventNearest.distanceKm)} km`:''}`:'UNAVAILABLE',obs.events?'':'off'),
     summaryRow('NOAA SWPC // SPACE WX',sp?`Kp ${sp.k.kp} · G${sp.s.G} / R${sp.s.R} / S${sp.s.S}`:'UNAVAILABLE',sp?'':'off'),
-    summaryRow('RAINVIEWER // RADAR',obs.radarFrame?`${radarTimeText(obs.radarFrame)} · ${radarFrames.length} past frames`:'UNAVAILABLE',obs.radarFrame?'':'off')
+    summaryRow('RAINVIEWER // RADAR',obs.radarFrame?`${radarTimeText(obs.radarFrame)} · ${obs.radarFrameCount} past frames`:'UNAVAILABLE',obs.radarFrame?'':'off')
   ].join('');
 
   const freshness=[
@@ -1499,7 +1517,7 @@ async function renderMode(mode){currentMode=mode;syncFocusPanel();$('focusOpen')
         <div class="metric">ACTIVE TARGET<b>${esc(currentTarget.name)}</b></div>
         <div class="metric">INTELLIGENCE CHANNELS<b>6</b></div>
         <div class="metric">CHANNEL STATUS<b>${brief.unavailable.length?6-brief.unavailable.length+'/6':'6/6'}</b></div>
-        <div class="metric">SYNTHESIS ENGINE<b>RULE-BASED V1</b></div>
+        <div class="metric">SYNTHESIS ENGINE<b>RULE-BASED V1.1</b></div>
         <div class="metric">OBSERVED DATA<b>SEPARATED</b></div>
         <div class="metric">INTERPRETATION<b>NON-OFFICIAL</b></div>
       </div>
