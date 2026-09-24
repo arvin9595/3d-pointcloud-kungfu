@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>STARSHIP EARTH SYSTEM V3 // PLANETARY ANALYSIS BRIDGE</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+<style>
+:root{
+  --cyan:#35f2ff; --cyan2:#00a9ff; --blue:#2677ff; --violet:#8b5cff;
+  --pink:#ff3d9a; --amber:#ffe56b; --red:#ff3b67; --green:#50ffb1;
+  --bg:#01050a; --panel:rgba(2,11,20,.82); --line:rgba(53,242,255,.24);
+  --text:#d8fbff; --muted:#71909b;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%}
+body{overflow:hidden;background:#000;color:var(--text);font-family:"SFMono-Regular",Consolas,"Liberation Mono","Courier New",monospace}
+button{font:inherit}
+.space-bg{position:fixed;inset:0;background:
+ radial-gradient(circle at 20% 25%,rgba(45,132,255,.12),transparent 28%),
+ radial-gradient(circle at 78% 38%,rgba(132,77,255,.08),transparent 30%),
+ radial-gradient(ellipse at 50% 50%,#06131f 0%,#02070d 52%,#000 100%);z-index:0}
+.space-bg:after{content:"";position:absolute;inset:0;opacity:.28;background-image:
+ radial-gradient(#fff 0.7px,transparent .8px),radial-gradient(#55dfff .6px,transparent .7px);background-size:97px 97px,151px 151px;background-position:0 0,37px 61px}
+.bridge{position:relative;z-index:2;width:98vw;height:96vh;margin:2vh auto;padding:10px 12px 0;display:grid;grid-template-columns:clamp(220px,16vw,290px) minmax(0,1fr) clamp(265px,20vw,355px);grid-template-rows:36px minmax(0,1fr) clamp(230px,30vh,320px);gap:9px;background:linear-gradient(180deg,rgba(1,7,13,.96),rgba(0,5,11,.86));border:1px solid rgba(53,242,255,.25);box-shadow:0 0 70px rgba(0,180,255,.10),inset 0 0 90px rgba(53,242,255,.03);clip-path:polygon(0 0,calc(100% - 22px) 0,100% 22px,100% 100%,22px 100%,0 calc(100% - 22px));overflow:hidden}
+.topbar{grid-column:1/4;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding:0 4px 5px;color:var(--amber);font-size:.64rem;letter-spacing:2px}.topbar .live{color:var(--cyan)}
+.panel{min-height:0;background:linear-gradient(145deg,rgba(7,27,42,.65),rgba(1,7,13,.84));border:1px solid rgba(53,242,255,.16);overflow:hidden}.panel-head{height:32px;padding:7px 9px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);background:linear-gradient(90deg,rgba(53,242,255,.11),transparent);font-size:.62rem;letter-spacing:1px;color:var(--cyan)}
+.left-panel{grid-column:1;grid-row:2;display:flex;flex-direction:column}.target-list{padding:7px;overflow:auto;display:flex;flex-direction:column;gap:6px}.target-list::-webkit-scrollbar,.intel-body::-webkit-scrollbar,.analysis-log::-webkit-scrollbar{width:3px}.target-list::-webkit-scrollbar-thumb,.intel-body::-webkit-scrollbar-thumb,.analysis-log::-webkit-scrollbar-thumb{background:var(--cyan)}
+.accordion-head{position:relative;padding:8px 10px;color:var(--amber);font-size:.60rem;font-weight:700;cursor:pointer;border:1px solid rgba(53,242,255,.17);background:rgba(53,242,255,.025);overflow:hidden}.accordion-head:after{content:"▸";position:absolute;right:9px;color:var(--cyan);transition:.25s}.accordion-head.active:after{transform:rotate(90deg);color:var(--pink)}.accordion-content{max-height:0;overflow:hidden;display:flex;flex-direction:column;gap:4px;transition:max-height .3s ease}.accordion-content.show{max-height:520px;padding-top:4px}
+/* AI-style animated border */
+.target-btn{position:relative;width:100%;padding:8px 9px;border:0;color:var(--cyan);background:linear-gradient(#03101a,#03101a) padding-box,conic-gradient(from var(--a,0deg),rgba(53,242,255,.18),rgba(38,119,255,.85),rgba(139,92,255,.85),rgba(255,61,154,.55),rgba(53,242,255,.18)) border-box;border:1px solid transparent;display:flex;justify-content:space-between;align-items:center;cursor:pointer;text-align:left;font-size:.60rem;transition:.2s;isolation:isolate}
+.target-btn:before{content:"";position:absolute;inset:-3px;z-index:-1;background:conic-gradient(from var(--a,0deg),transparent 0 25%,rgba(53,242,255,.25),rgba(139,92,255,.20),transparent 65%);filter:blur(8px);opacity:.18;transition:.2s}.target-btn:hover:before,.target-btn.active:before{opacity:.8}.target-btn:hover{transform:translateX(3px);color:#fff}.target-btn.active{color:#fff;background:linear-gradient(rgba(4,15,25,.95),rgba(4,15,25,.95)) padding-box,conic-gradient(from var(--a,0deg),var(--cyan),var(--blue),var(--violet),var(--pink),var(--cyan)) border-box;animation:edgePulse 2.8s ease-in-out infinite}.target-btn small{font-size:.45rem;color:#7d92a0;margin-left:8px}.target-btn.active small{color:#c7dcff}@property --a{syntax:'<angle>';inherits:false;initial-value:0deg}@keyframes edgePulse{0%,100%{box-shadow:0 0 7px rgba(53,242,255,.10)}50%{box-shadow:0 0 16px rgba(139,92,255,.30)}}
+.center{grid-column:2;grid-row:2;position:relative;min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;background:radial-gradient(ellipse at center,rgba(0,150,220,.09),transparent 64%)}.center:before{content:"";position:absolute;inset:6%;pointer-events:none;background:linear-gradient(var(--cyan),var(--cyan)) left top/72px 1px no-repeat,linear-gradient(var(--cyan),var(--cyan)) left top/1px 72px no-repeat,linear-gradient(var(--cyan),var(--cyan)) right top/72px 1px no-repeat,linear-gradient(var(--cyan),var(--cyan)) right top/1px 72px no-repeat,linear-gradient(var(--cyan),var(--cyan)) left bottom/72px 1px no-repeat,linear-gradient(var(--cyan),var(--cyan)) left bottom/1px 72px no-repeat,linear-gradient(var(--cyan),var(--cyan)) right bottom/72px 1px no-repeat,linear-gradient(var(--cyan),var(--cyan)) right bottom/1px 72px no-repeat;opacity:.23}.viewport-title{position:absolute;top:14px;left:18px;z-index:6;font-size:.55rem;letter-spacing:2px;color:rgba(53,242,255,.64)}.mode-chip{position:absolute;top:14px;right:18px;z-index:6;padding:4px 7px;border:1px solid rgba(53,242,255,.25);color:var(--green);font-size:.50rem;background:rgba(0,0,0,.45)}
+.earth-stage{position:relative;z-index:3;display:flex;align-items:center;justify-content:center;width:100%;height:100%}.holo-beam{position:absolute;width:52%;height:95%;background:linear-gradient(90deg,transparent,rgba(53,242,255,.03),rgba(53,242,255,.09),rgba(53,242,255,.03),transparent);clip-path:polygon(43% 0,57% 0,100% 100%,0 100%);filter:blur(3px);opacity:.7}
+#earth-box{position:relative;width:clamp(210px,26vw,360px);aspect-ratio:1;border-radius:50%;filter:drop-shadow(0 0 18px rgba(53,242,255,.25));transition:.5s}#earth-box:before{content:"";position:absolute;inset:-9%;border:1px dashed rgba(53,242,255,.28);border-radius:50%;animation:spin 20s linear infinite;pointer-events:none}#earth-box:after{content:"";position:absolute;left:-13%;right:-13%;top:18%;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);box-shadow:0 0 12px var(--cyan);opacity:.42;animation:scan 4.6s ease-in-out infinite;pointer-events:none}@keyframes spin{to{transform:rotate(360deg)}}@keyframes scan{0%,100%{top:18%;opacity:.12}50%{top:82%;opacity:.6}}
+#radarMap{position:absolute;inset:46px 18px 18px;z-index:5;display:none;border:1px solid rgba(53,242,255,.28);background:#02070c}.center.radar-mode #radarMap{display:block}.center.radar-mode .earth-stage{display:none}.leaflet-container{background:#02070c}.leaflet-control-attribution{font-size:9px!important;background:rgba(0,0,0,.72)!important;color:#9fb8c1!important}.leaflet-control-attribution a{color:#53dfff!important}
+.right-panel{grid-column:3;grid-row:2;display:flex;flex-direction:column}.intel-body{padding:7px;overflow:auto;display:flex;flex-direction:column;gap:7px;min-height:0}.map-frame{height:122px;border:1px solid rgba(53,242,255,.25);background:#000;overflow:hidden}.map-frame iframe{width:100%;height:100%;border:0;filter:saturate(.72) contrast(1.1) brightness(.72)}.data-card{padding:7px;background:rgba(53,242,255,.025);border-left:2px solid rgba(53,242,255,.30);font-size:.58rem}.data-row{display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-bottom:1px dashed rgba(53,242,255,.12)}.data-row:last-child{border-bottom:0}.value{color:var(--amber);text-align:right}.desc{padding:8px;min-height:70px;background:rgba(0,0,0,.28);border-left:2px solid rgba(139,92,255,.38);font-size:.58rem;line-height:1.55;color:#bed3db}.source-badges{display:flex;flex-wrap:wrap;gap:4px}.source-badge{padding:3px 5px;border:1px solid rgba(53,242,255,.18);font-size:.44rem;color:#88b8c5}.source-badge.live{color:var(--green);border-color:rgba(80,255,177,.28)}
+.console{grid-column:1/4;grid-row:3;position:relative;margin:0 clamp(8px,3.5vw,70px);padding:36px 4.5% 17px;display:grid;grid-template-columns:minmax(270px,.9fr) minmax(0,2.1fr);gap:14px;background:linear-gradient(180deg,rgba(7,32,47,.97),rgba(1,8,15,.99));clip-path:polygon(7% 0,93% 0,100% 100%,0 100%);border-top:1px solid rgba(53,242,255,.55);box-shadow:0 -14px 45px rgba(53,242,255,.08),inset 0 1px rgba(255,255,255,.06);overflow:hidden}.console:before{content:"PLANETARY ANALYSIS DECK // LIVE DATA INTERFACE";position:absolute;top:11px;left:50%;transform:translateX(-50%);font-size:.54rem;letter-spacing:3px;color:rgba(53,242,255,.65);white-space:nowrap}.console:after{content:"";position:absolute;left:5%;right:5%;bottom:0;height:11px;border-top:1px solid rgba(53,242,255,.24);background:linear-gradient(180deg,rgba(53,242,255,.08),#000)}
+.analysis-display{min-width:0;border:1px solid rgba(53,242,255,.18);background:linear-gradient(135deg,rgba(53,242,255,.04),rgba(139,92,255,.025));padding:10px;display:grid;grid-template-rows:auto 1fr;gap:8px}.analysis-head{display:flex;justify-content:space-between;align-items:center;font-size:.57rem;color:var(--cyan);letter-spacing:1px}.analysis-head span:last-child{color:var(--green)}.analysis-log{overflow:auto;font-size:.55rem;line-height:1.45;color:#b9d0d8}.metric-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.metric{padding:6px;border:1px solid rgba(53,242,255,.12);background:rgba(0,0,0,.18)}.metric b{display:block;color:var(--amber);font-size:.70rem;margin-top:2px}.mini-list{display:grid;gap:4px}.mini-item{display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px dashed rgba(53,242,255,.10)}
+.mode-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;align-content:stretch}.mode-btn{position:relative;min-height:54px;padding:7px 8px;border:1px solid transparent;color:#a9c9d2;background:linear-gradient(#04111b,#04111b) padding-box,linear-gradient(120deg,rgba(53,242,255,.18),rgba(139,92,255,.15)) border-box;cursor:pointer;text-align:left;overflow:hidden;transition:.18s}.mode-btn:before{content:"";position:absolute;inset:-8px;background:radial-gradient(circle at 15% 50%,rgba(53,242,255,.16),transparent 36%);opacity:.2;transition:.18s}.mode-btn:hover:before,.mode-btn.active:before{opacity:.85}.mode-btn:hover{transform:translateY(-2px);color:#fff}.mode-btn.active{color:#fff;background:linear-gradient(#06131f,#06131f) padding-box,linear-gradient(120deg,var(--cyan),var(--violet),var(--pink)) border-box;box-shadow:0 0 14px rgba(53,242,255,.12)}.mode-btn .num{font-size:.42rem;color:#698894}.mode-btn strong{display:block;margin-top:3px;font-size:.58rem;letter-spacing:.6px}.mode-btn small{display:block;margin-top:2px;font-size:.43rem;color:#6e909c}
+.footer-credit{position:fixed;right:18px;bottom:5px;z-index:8;font-size:9px;color:#54717c;opacity:.7}.footer-credit a{color:#6fa7b8;text-decoration:none}
+@media(max-width:1050px){body{overflow:auto}.bridge{width:100%;height:auto;min-height:100vh;margin:0;grid-template-columns:1fr;grid-template-rows:38px minmax(430px,62vh) auto auto auto;clip-path:none}.topbar{grid-column:1}.topbar span:first-child,.topbar span:last-child{display:none}.center{grid-column:1;grid-row:2}.left-panel{grid-column:1;grid-row:3;max-height:420px}.right-panel{grid-column:1;grid-row:4;max-height:560px}.console{grid-column:1;grid-row:5;margin:0;clip-path:none;grid-template-columns:1fr;padding:38px 10px 18px}.mode-grid{grid-template-columns:repeat(3,1fr)}#earth-box{width:min(58vw,330px)}}
+@media(max-width:600px){.mode-grid{grid-template-columns:repeat(2,1fr)}.console:before{font-size:.44rem;letter-spacing:1.4px}.topbar{justify-content:center}.viewport-title{font-size:.46rem}.map-frame{height:160px}}
+</style>
+</head>
+<body>
+<div class="space-bg"></div>
+<main class="bridge">
+  <header class="topbar">
+    <span>[SYS.SECURE // STARSHIP ORBITAL HUD]</span>
+    <span class="live">PLANETARY INTELLIGENCE NETWORK: ONLINE</span>
+    <span id="utcClock">UTC --:--:--</span>
+  </header>
+
+  <aside class="panel left-panel">
+    <div class="panel-head"><span>[GLOBAL TARGET NODES]</span><span style="color:var(--amber)">AI LINK</span></div>
+    <div class="target-list" id="targetList"></div>
+  </aside>
+
+  <section class="center" id="centerViewport">
+    <div class="viewport-title">[TACTICAL HOLOGRAPHIC EARTH // LIVE ANALYSIS]</div>
+    <div class="mode-chip" id="modeChip">GLOBAL VIEW</div>
+    <div class="earth-stage">
+      <div class="holo-beam"></div>
+      <div id="earth-box"></div>
+    </div>
+    <div id="radarMap"></div>
+  </section>
+
+  <aside class="panel right-panel">
+    <div class="panel-head"><span>[TARGET ANALYZER]</span><span id="targetStatus" style="color:var(--green)">ONLINE</span></div>
+    <div class="intel-body">
+      <div class="map-frame"><iframe id="mapIframe" src="about:blank" loading="lazy"></iframe></div>
+      <div class="data-card">
+        <div class="data-row"><span>目標</span><span class="value" id="targetName">台北 101</span></div>
+        <div class="data-row"><span>座標</span><span class="value" id="targetCoords">25.03° N, 121.56° E</span></div>
+        <div class="data-row"><span>目前模式</span><span class="value" id="targetMode">GLOBAL</span></div>
+        <div class="data-row"><span>資料時間</span><span class="value" id="dataTime">--</span></div>
+      </div>
+      <div class="desc" id="rightDesc">系統正在建立地球情報鏈路。選擇左側地標，再從下方九宮格切換分析模式。</div>
+      <div class="source-badges">
+        <span class="source-badge live">NASA EONET</span><span class="source-badge live">USGS</span><span class="source-badge live">NOAA SWPC</span><span class="source-badge live">OPEN-METEO</span><span class="source-badge">RAINVIEWER</span><span class="source-badge">CWA READY*</span>
+      </div>
+    </div>
+  </aside>
+
+  <section class="console">
+    <div class="analysis-display">
+      <div class="analysis-head"><span id="analysisTitle">GLOBAL SYSTEM STATUS</span><span id="analysisState">READY</span></div>
+      <div class="analysis-log" id="analysisLog"></div>
+    </div>
+    <div class="mode-grid" id="modeGrid">
+      <button class="mode-btn active" data-mode="global"><span class="num">01</span><strong>🌍 GLOBAL</strong><small>地球總覽</small></button>
+      <button class="mode-btn" data-mode="weather"><span class="num">02</span><strong>☁ WEATHER</strong><small>即時氣象</small></button>
+      <button class="mode-btn" data-mode="atmosphere"><span class="num">03</span><strong>◌ ATMOSPHERE</strong><small>大氣分析</small></button>
+      <button class="mode-btn" data-mode="storms"><span class="num">04</span><strong>🌀 STORMS</strong><small>全球風暴</small></button>
+      <button class="mode-btn" data-mode="quakes"><span class="num">05</span><strong>◉ EARTHQUAKES</strong><small>USGS 地震</small></button>
+      <button class="mode-btn" data-mode="events"><span class="num">06</span><strong>△ EVENTS</strong><small>NASA 天然事件</small></button>
+      <button class="mode-btn" data-mode="space"><span class="num">07</span><strong>☀ SPACE WX</strong><small>NOAA 太空天氣</small></button>
+      <button class="mode-btn" data-mode="radar"><span class="num">08</span><strong>▦ RADAR</strong><small>全球降雨雷達</small></button>
+      <button class="mode-btn" data-mode="summary"><span class="num">09</span><strong>✦ AI SUMMARY</strong><small>情報摘要</small></button>
+    </div>
+  </section>
+</main>
+<div class="footer-credit">Data: NASA EONET · USGS · NOAA SWPC · Open-Meteo · <a href="https://www.rainviewer.com/" target="_blank" rel="noopener">RainViewer</a></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script>
+const targets=[
+ {group:"[01] 亞洲精選 (ASIA)",items:[
+  {name:"日本 富士山",sub:"MOUNT FUJI",lat:35.3606,lon:138.7274,desc:"日本最高峰與代表性火山地貌。"},
+  {name:"台北 101",sub:"TAIPEI 101",lat:25.0330,lon:121.5645,desc:"臺北都會地標與高層建築工程代表。"},
+  {name:"東京晴空塔",sub:"TOKYO SKYTREE",lat:35.7100,lon:139.8107,desc:"東京大型通訊與觀景塔。"},
+  {name:"萬里長城（八達嶺）",sub:"GREAT WALL",lat:40.4319,lon:116.5704,desc:"中國北方重要歷史防禦工程。"}]},
+ {group:"[02] 非洲大陸 (AFRICA)",items:[
+  {name:"吉薩金字塔群",sub:"GIZA PYRAMIDS",lat:29.9792,lon:31.1342,desc:"古埃及吉薩高原大型墓葬建築群。"},
+  {name:"南非 桌山",sub:"TABLE MOUNTAIN",lat:-33.9628,lon:18.4098,desc:"開普敦代表性自然地標。"},
+  {name:"維多利亞瀑布",sub:"VICTORIA FALLS",lat:-17.9243,lon:25.8572,desc:"贊比西河大型瀑布景觀。"}]},
+ {group:"[03] 歐洲大陸 (EUROPE)",items:[
+  {name:"巴黎 艾菲爾鐵塔",sub:"EIFFEL TOWER",lat:48.8584,lon:2.2945,desc:"巴黎代表性鐵構建築。"},
+  {name:"羅馬競技場",sub:"COLOSSEUM",lat:41.8902,lon:12.4922,desc:"古羅馬大型圓形競技場。"}]},
+ {group:"[04] 美洲與馬雅 (AMERICA & MAYA)",items:[
+  {name:"墨西哥 奇琴伊察",sub:"CHICHEN ITZA",lat:20.6843,lon:-88.5678,desc:"馬雅文明重要城市遺址。"},
+  {name:"瓜地馬拉 蒂卡爾",sub:"TIKAL RUINS",lat:17.2220,lon:-89.6237,desc:"馬雅古典期大型城市遺址。"},
+  {name:"紐約 自由女神像",sub:"STATUE OF LIBERTY",lat:40.6892,lon:-74.0445,desc:"紐約港代表性地標。"},
+  {name:"秘魯 馬丘比丘",sub:"MACHU PICCHU",lat:-13.1631,lon:-72.5450,desc:"安地斯山區重要印加遺址。"}]},
+ {group:"[05] 極地科考站 (POLAR STATIONS)",items:[
+  {name:"南極 麥克默多站",sub:"MCMURDO STATION",lat:-77.8419,lon:166.6863,desc:"南極大型科學研究與後勤基地。"},
+  {name:"南極 東方站",sub:"VOSTOK STATION",lat:-78.4645,lon:106.8340,desc:"南極內陸研究站。"}]}
+];
+const flatTargets=targets.flatMap(g=>g.items);
+let currentTarget=flatTargets[1], currentMode='global';
+let weatherCache=null, eventsCache=null, quakesCache=null, spaceCache=null;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+function fmtCoord(lat,lon){return `${Math.abs(lat).toFixed(2)}° ${lat>=0?'N':'S'}, ${Math.abs(lon).toFixed(2)}° ${lon>=0?'E':'W'}`}
+function fmtTime(d=new Date()){return new Intl.DateTimeFormat('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(d)}
+setInterval(()=>{$('utcClock').textContent='UTC '+new Date().toISOString().slice(11,19)},1000);
+
+// ---------- THREE.JS EARTH ----------
+const container=$('earth-box');
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(42,1,.1,1000); camera.position.set(0,0,22);
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true}); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); container.appendChild(renderer.domElement);
+const controls=new THREE.OrbitControls(camera,renderer.domElement); controls.enableDamping=true; controls.enablePan=false; controls.minDistance=13; controls.maxDistance=30;
+scene.add(new THREE.AmbientLight(0xffffff,1.15)); const dl=new THREE.DirectionalLight(0x9fefff,1);dl.position.set(8,5,12);scene.add(dl);
+const R=5;
+const earth=new THREE.Mesh(new THREE.SphereGeometry(R,64,64),new THREE.MeshStandardMaterial({map:new THREE.TextureLoader().load('https://upload.wikimedia.org/wikipedia/commons/8/83/Equirectangular_projection_SW.jpg'),roughness:.55})); earth.rotation.y=-Math.PI/2.2;scene.add(earth);
+scene.add(new THREE.Mesh(new THREE.SphereGeometry(R*1.035,64,64),new THREE.MeshBasicMaterial({color:0x00dfff,transparent:true,opacity:.05,side:THREE.BackSide})));
+function orbitRing(rad,rx,ry){const m=new THREE.Mesh(new THREE.TorusGeometry(rad,.012,8,128),new THREE.MeshBasicMaterial({color:0x35f2ff,transparent:true,opacity:.18}));m.rotation.x=rx;m.rotation.y=ry;scene.add(m);return m}
+const orbit1=orbitRing(6.1,Math.PI/2.2,.2),orbit2=orbitRing(6.5,Math.PI/2.8,1.1);
+function latLonVec(lat,lon,r){const phi=(90-lat)*Math.PI/180,theta=(lon+180)*Math.PI/180;return new THREE.Vector3(-(r*Math.sin(phi)*Math.cos(theta)),r*Math.cos(phi),r*Math.sin(phi)*Math.sin(theta))}
+const targetMeshes=[];
+flatTargets.forEach(t=>{const p=latLonVec(t.lat,t.lon,R+.03);const dot=new THREE.Mesh(new THREE.SphereGeometry(.065,16,16),new THREE.MeshBasicMaterial({color:0x35f2ff}));dot.position.copy(p);earth.add(dot);const ring=new THREE.Mesh(new THREE.RingGeometry(.10,.19,32),new THREE.MeshBasicMaterial({color:0xff3d9a,side:THREE.DoubleSide,transparent:true,opacity:.95}));ring.position.copy(p.clone().multiplyScalar(1.012));ring.lookAt(p.clone().multiplyScalar(2));ring.visible=false;earth.add(ring);targetMeshes.push({dot,ring})});
+let pulseTween=null;
+function resize3D(){const w=container.clientWidth,h=container.clientHeight;if(!w||!h)return;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false)}
+new ResizeObserver(resize3D).observe(container);resize3D();
+(function animate(){requestAnimationFrame(animate);TWEEN.update();earth.rotation.y+=.00028;orbit1.rotation.z+=.00065;orbit2.rotation.z-=.00042;controls.update();renderer.render(scene,camera)})();
+
+// ---------- LEFT NAV ----------
+let idx=0;
+targets.forEach((g,gi)=>{const h=document.createElement('div');h.className='accordion-head'+(gi===0?' active':'');h.textContent=g.group;const c=document.createElement('div');c.className='accordion-content'+(gi===0?' show':'');h.onclick=()=>{h.classList.toggle('active');c.classList.toggle('show')};g.items.forEach(t=>{const i=idx++;const b=document.createElement('button');b.className='target-btn';b.id='target-'+i;b.innerHTML=`<span>${esc(t.name)}</span><small>${esc(t.sub)}</small>`;b.onclick=()=>selectTarget(i);c.appendChild(b)});$('targetList').append(h,c)});
+function selectTarget(i){currentTarget=flatTargets[i];document.querySelectorAll('.target-btn').forEach(b=>b.classList.remove('active'));$('target-'+i)?.classList.add('active');targetMeshes.forEach(m=>{m.dot.material.color.setHex(0x35f2ff);m.ring.visible=false;m.ring.scale.set(1,1,1)});const m=targetMeshes[i];m.dot.material.color.setHex(0xff3d9a);m.ring.visible=true;if(pulseTween)pulseTween.stop();pulseTween=new TWEEN.Tween(m.ring.scale).to({x:2.2,y:2.2,z:2.2},800).yoyo(true).repeat(Infinity).start();$('targetName').textContent=currentTarget.name;$('targetCoords').textContent=fmtCoord(currentTarget.lat,currentTarget.lon);$('mapIframe').src=`https://maps.google.com/maps?q=${currentTarget.lat},${currentTarget.lon}&t=k&z=12&ie=UTF8&iwloc=&output=embed`;weatherCache=null;renderMode(currentMode)}
+
+// ---------- LIVE DATA ----------
+async function getWeather(){if(weatherCache)return weatherCache;const p=new URLSearchParams({latitude:currentTarget.lat,longitude:currentTarget.lon,current:'temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,weather_code,cloud_cover,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m',hourly:'precipitation_probability,temperature_2m,cloud_cover,wind_speed_10m',forecast_days:'2',timezone:'auto'});const r=await fetch('https://api.open-meteo.com/v1/forecast?'+p);if(!r.ok)throw new Error('Open-Meteo '+r.status);weatherCache=await r.json();return weatherCache}
+async function getEonet(category=''){const url='https://eonet.gsfc.nasa.gov/api/v3/events?status=open&limit=30&days=30'+(category?'&category='+encodeURIComponent(category):'');const r=await fetch(url);if(!r.ok)throw new Error('NASA EONET '+r.status);return r.json()}
+async function getEvents(){if(!eventsCache)eventsCache=await getEonet();return eventsCache}
+async function getQuakes(){if(quakesCache)return quakesCache;const r=await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson');if(!r.ok)throw new Error('USGS '+r.status);quakesCache=await r.json();return quakesCache}
+async function getSpace(){if(spaceCache)return spaceCache;const [kpR,windR]=await Promise.all([fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json'),fetch('https://services.swpc.noaa.gov/products/summary/solar-wind-speed.json')]);if(!kpR.ok||!windR.ok)throw new Error('NOAA SWPC unavailable');spaceCache={kp:await kpR.json(),wind:await windR.json()};return spaceCache}
+function wmo(code){const m={0:'晴朗',1:'大致晴朗',2:'局部多雲',3:'陰天',45:'霧',48:'霧淞',51:'毛毛雨',53:'毛毛雨',55:'強毛毛雨',61:'小雨',63:'中雨',65:'大雨',71:'小雪',73:'中雪',75:'大雪',80:'陣雨',81:'陣雨',82:'強陣雨',95:'雷雨',96:'雷雨／冰雹',99:'強雷雨／冰雹'};return m[code]||'氣象代碼 '+code}
+function setAnalysis(title,state,html){$('analysisTitle').textContent=title;$('analysisState').textContent=state;$('analysisLog').innerHTML=html;$('dataTime').textContent=fmtTime()}
+function loading(title){setAnalysis(title,'LINKING','<div style="color:var(--cyan)">>> CONNECTING TO LIVE DATA NETWORK...</div>')}
+function fail(title,e){setAnalysis(title,'DEGRADED',`<div style="color:var(--red)">資料暫時無法取得：${esc(e.message)}</div><div style="margin-top:7px;color:var(--muted)">網路、CORS 或資料供應端可能暫時不可用；其他模組仍可使用。</div>`)}
+
+// ---------- RADAR ----------
+let radarMap=null,radarLayer=null;
+function ensureRadarMap(){if(radarMap)return;radarMap=L.map('radarMap',{zoomControl:true,worldCopyJump:true}).setView([currentTarget.lat,currentTarget.lon],4);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(radarMap)}
+async function showRadar(){ensureRadarMap();radarMap.setView([currentTarget.lat,currentTarget.lon],5);setTimeout(()=>radarMap.invalidateSize(),100);const r=await fetch('https://api.rainviewer.com/public/weather-maps.json');if(!r.ok)throw new Error('RainViewer '+r.status);const d=await r.json();const frame=d.radar?.past?.at(-1);if(!frame)throw new Error('No radar frame');if(radarLayer)radarMap.removeLayer(radarLayer);radarLayer=L.tileLayer(`${d.host}${frame.path}/256/{z}/{x}/{y}/2/1_1.png`,{opacity:.72,zIndex:5,attribution:'Radar © RainViewer'}).addTo(radarMap);return {time:new Date(frame.time*1000),count:d.radar.past.length}}
+
+// ---------- MODES ----------
+async function renderMode(mode){currentMode=mode;document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));$('targetMode').textContent=mode.toUpperCase();$('modeChip').textContent=mode.toUpperCase()+' MODE';$('centerViewport').classList.toggle('radar-mode',mode==='radar');$('rightDesc').innerHTML=`<span style="color:var(--cyan)">[${esc(currentTarget.name)}]</span><br>${esc(currentTarget.desc)}`;
+ try{
+  if(mode==='global'){
+    loading('GLOBAL SYSTEM STATUS');const [w,e,q,s]=await Promise.allSettled([getWeather(),getEvents(),getQuakes(),getSpace()]);const wc=w.status==='fulfilled'?w.value.current:null,ev=e.status==='fulfilled'?e.value.events.length:'--',qc=q.status==='fulfilled'?q.value.metadata.count:'--';let kp='--';if(s.status==='fulfilled'){const rows=s.value.kp;const last=rows[rows.length-1];kp=Array.isArray(last)?last[1]:last?.Kp??'--'}setAnalysis('GLOBAL SYSTEM STATUS','ONLINE',`<div class="metric-grid"><div class="metric">TARGET<b>${esc(currentTarget.name)}</b></div><div class="metric">LOCAL TEMP<b>${wc?wc.temperature_2m+'°C':'--'}</b></div><div class="metric">NASA OPEN EVENTS<b>${ev}</b></div><div class="metric">USGS M2.5+ / 24H<b>${qc}</b></div><div class="metric">PLANETARY Kp<b>${esc(kp)}</b></div><div class="metric">NETWORK<b>LIVE</b></div></div>`);break;
+  }
+  if(mode==='weather'){
+    loading('LOCAL WEATHER LINK');const d=await getWeather(),c=d.current,u=d.current_units;setAnalysis('LOCAL WEATHER // OPEN-METEO','LIVE',`<div class="metric-grid"><div class="metric">WEATHER<b>${wmo(c.weather_code)}</b></div><div class="metric">TEMP<b>${c.temperature_2m}${u.temperature_2m}</b></div><div class="metric">FEELS LIKE<b>${c.apparent_temperature}${u.apparent_temperature}</b></div><div class="metric">HUMIDITY<b>${c.relative_humidity_2m}${u.relative_humidity_2m}</b></div><div class="metric">WIND<b>${c.wind_speed_10m} ${u.wind_speed_10m}</b></div><div class="metric">RAIN<b>${c.precipitation} ${u.precipitation}</b></div></div>`);$('rightDesc').innerHTML=`<span style="color:var(--green)">LIVE WEATHER</span><br>${esc(currentTarget.name)}：${wmo(c.weather_code)}，雲量 ${c.cloud_cover}%；地面氣壓 ${c.surface_pressure} hPa。`;break;
+  }
+  if(mode==='atmosphere'){
+    loading('ATMOSPHERIC ANALYSIS');const d=await getWeather(),c=d.current,u=d.current_units;const dir=c.wind_direction_10m;setAnalysis('ATMOSPHERE // LOCAL COLUMN','LIVE',`<div class="metric-grid"><div class="metric">CLOUD COVER<b>${c.cloud_cover}%</b></div><div class="metric">PRESSURE<b>${c.surface_pressure} hPa</b></div><div class="metric">HUMIDITY<b>${c.relative_humidity_2m}%</b></div><div class="metric">WIND DIR<b>${dir}°</b></div><div class="metric">GUSTS<b>${c.wind_gusts_10m} ${u.wind_gusts_10m}</b></div><div class="metric">DAY/NIGHT<b>${c.is_day?'DAY':'NIGHT'}</b></div></div>`);break;
+  }
+  if(mode==='storms'){
+    loading('GLOBAL STORM SCAN');const d=await getEonet('severeStorms');const list=d.events.slice(0,8);setAnalysis('NASA EONET // SEVERE STORMS','LIVE',`<div class="metric">ACTIVE / RECENT OPEN STORMS<b>${d.events.length}</b></div><div class="mini-list">${list.length?list.map(e=>`<div class="mini-item"><span>${esc(e.title)}</span><span style="color:var(--pink)">${esc(e.geometry?.at(-1)?.date?.slice(0,10)||'OPEN')}</span></div>`).join(''):'<div>目前查詢範圍沒有 EONET 開放中的 severe storm 事件。</div>'}</div>`);$('rightDesc').innerHTML='<span style="color:var(--pink)">NASA EONET STORM SCAN</span><br>這裡顯示 EONET 目前標記為開放中的 severe storm 事件；不是單一國家的颱風警報。';break;
+  }
+  if(mode==='quakes'){
+    loading('SEISMIC NETWORK');const d=await getQuakes();const top=[...d.features].sort((a,b)=>(b.properties.mag||0)-(a.properties.mag||0)).slice(0,8);setAnalysis('USGS // EARTHQUAKES M2.5+ / 24H','LIVE',`<div class="metric">EVENT COUNT<b>${d.metadata.count}</b></div><div class="mini-list">${top.map(f=>`<div class="mini-item"><span>M${Number(f.properties.mag).toFixed(1)} · ${esc(f.properties.place)}</span><span>${new Date(f.properties.time).toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})}</span></div>`).join('')}</div>`);break;
+  }
+  if(mode==='events'){
+    loading('PLANETARY EVENT SCAN');const d=await getEvents();const counts={};d.events.forEach(e=>(e.categories||[]).forEach(c=>counts[c.title]=(counts[c.title]||0)+1));const cats=Object.entries(counts).sort((a,b)=>b[1]-a[1]);setAnalysis('NASA EONET // NATURAL EVENTS','LIVE',`<div class="metric">OPEN EVENTS<b>${d.events.length}</b></div><div class="mini-list">${cats.slice(0,9).map(([k,v])=>`<div class="mini-item"><span>${esc(k)}</span><span style="color:var(--amber)">${v}</span></div>`).join('')}</div>`);break;
+  }
+  if(mode==='space'){
+    loading('SPACE WEATHER LINK');const d=await getSpace();const rows=d.kp,last=rows[rows.length-1],prev=rows[rows.length-2];const kp=Array.isArray(last)?last[1]:(last?.Kp??'--');const kpPrev=Array.isArray(prev)?prev[1]:(prev?.Kp??'--');let wind='--',windTime='--';if(Array.isArray(d.wind)){if(Array.isArray(d.wind[0])){const hdr=d.wind[0],row=d.wind[d.wind.length-1];const si=hdr.findIndex(x=>String(x).toLowerCase().includes('speed'));wind=si>=0?row[si]:'--';windTime=row[0]||'--'}else{wind=d.wind.WindSpeed??d.wind.wind_speed??d.wind.speed??'--';windTime=d.wind.TimeStamp??d.wind.time_tag??'--'}}setAnalysis('NOAA SWPC // SPACE WEATHER','LIVE',`<div class="metric-grid"><div class="metric">PLANETARY Kp<b>${esc(kp)}</b></div><div class="metric">PREVIOUS Kp<b>${esc(kpPrev)}</b></div><div class="metric">SOLAR WIND<b>${esc(wind)} km/s</b></div><div class="metric">SOURCE<b>NOAA SWPC</b></div></div><div style="margin-top:7px;color:var(--muted)">Solar wind timestamp: ${esc(windTime)}</div>`);break;
+  }
+  if(mode==='radar'){
+    loading('PRECIPITATION RADAR');const d=await showRadar();setAnalysis('RAINVIEWER // WEATHER RADAR','LIVE',`<div class="metric-grid"><div class="metric">LATEST FRAME<b>${fmtTime(d.time)}</b></div><div class="metric">PAST FRAMES<b>${d.count}</b></div></div><div style="margin-top:7px">中央主畫面已切換為降雨雷達。拖曳地圖可移動；滾輪或雙指可縮放。</div><div style="margin-top:7px;color:var(--muted)">RainViewer 免費公開 API 適用個人、教育與小型社群用途；本頁已保留資料來源標示。</div>`);break;
+  }
+  if(mode==='summary'){
+    loading('SITUATION SYNTHESIS');const [w,e,q,s]=await Promise.allSettled([getWeather(),getEvents(),getQuakes(),getSpace()]);const lines=[];if(w.status==='fulfilled'){const c=w.value.current;lines.push(`目標 ${currentTarget.name}：${wmo(c.weather_code)}，${c.temperature_2m}°C，濕度 ${c.relative_humidity_2m}%，風速 ${c.wind_speed_10m} km/h。`)}if(e.status==='fulfilled')lines.push(`NASA EONET：目前取得 ${e.value.events.length} 個開放事件。`);if(q.status==='fulfilled')lines.push(`USGS：過去 24 小時 M2.5+ 地震 ${q.value.metadata.count} 起。`);if(s.status==='fulfilled'){const row=s.value.kp.at(-1);lines.push(`NOAA SWPC：最新行星 Kp 約 ${Array.isArray(row)?row[1]:(row?.Kp??'--')}。`)}setAnalysis('SITUATION SUMMARY','SYNTHESIZED',`<div style="line-height:1.7">${lines.map(x=>'• '+esc(x)).join('<br>')}</div><div style="margin-top:8px;color:var(--muted)">此摘要只是把各資料源目前回傳值整理在一起，不是災害預警或安全判斷。</div>`);break;
+  }
+ }catch(e){fail(currentMode.toUpperCase(),e)}
+}
+$('modeGrid').addEventListener('click',e=>{const b=e.target.closest('.mode-btn');if(b)renderMode(b.dataset.mode)});
+selectTarget(1);
+</script>
+</body>
+</html>
