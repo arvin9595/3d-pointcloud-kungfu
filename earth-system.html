@@ -292,13 +292,10 @@
     <!-- CesiumJS Library -->
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Cesium.js"></script>
     <script>
-        // 🔑 1. Cesium Ion Access Token
-        Cesium.Ion.defaultAccessToken = 'EyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IklhNEdrRkZmYzZaWTNZaVUiLCJqdGkiOiI2NmI4ZmY4NC01NjY0LTRlZDYtYTJiYS1jZjk0NmYzMWNjMzYiLCJpZCI6NTA2NDI4LCJpc3MiOiJodHRwczovL2FwaS5jZXNpdW0uY29tIiwiYXVkIjoidW5kZWZpbmVkX2RlZmF1bHQiLCJpYXQiOjE3OTAyMzg3MzR9.fnoc-A5kVV2LJFmyvvtLvt_UkAeporC6Q6azntIZqgw';
-
-        // 2. 初始化 Cesium Viewer (優化圖層相容性，確保快速載入)
+        // 1. 初始化 Cesium Viewer 並使用 ArcGIS 免費高畫質衛星地圖
         const viewer = new Cesium.Viewer('cesiumContainer', {
-            imageryProvider: new Cesium.OpenStreetMapImageryProvider({
-                url : 'https://a.tile.openstreetmap.org/'
+            imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
+                url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
             }),
             animation: false,
             baseLayerPicker: false,
@@ -314,9 +311,9 @@
         });
 
         const scene = viewer.scene;
-        scene.globe.enableLighting = true; // 開啟太陽光照效果
+        scene.globe.enableLighting = true; // 開啟太陽日光照射效果
 
-        // 3. 自轉與即時數據更新
+        // 2. 自轉與即時數據更新
         let isOrbiting = true;
         const orbitAltitude = 15000000;
         let lastTime = Date.now();
@@ -342,7 +339,7 @@
             }
         });
 
-        // 4. 完整的景點選單資料（臺灣景點 + 全球地標）
+        // 3. 完整的景點選單資料（臺灣景點 + 全球地標）
         const tourData = [
             {
                 category: "臺灣經典名勝",
@@ -428,7 +425,7 @@
             }
         ];
 
-        // 5. 動態產生左側選單
+        // 4. 動態產生左側選單
         const tourListContainer = document.getElementById('tourList');
         let globalLocations = [];
         let locIndex = 0;
@@ -452,7 +449,7 @@
             });
         });
 
-        // 6. 鏡頭飛行控制
+        // 5. 鏡頭飛行控制
         function flyToLocation(index) {
             isOrbiting = false;
             document.getElementById('statusText').innerText = "地面模式：景點對焦中";
@@ -490,7 +487,7 @@
             });
         }
 
-        // 7. 卡片顯示控制
+        // 6. 卡片顯示控制
         const card = document.getElementById('storyCard');
         function showCard(data) {
             document.getElementById('storyTag').innerText = data.tag;
