@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TerraLens 3D | 台灣地標沉浸式 3D 導覽系統</title>
+    <title>TerraLens 3D | 次世代 3D 地球與台灣地標實景導覽系統</title>
     <!-- CesiumJS CSS -->
     <link href="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
     <style>
@@ -40,7 +40,6 @@
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
         }
 
-        /* 自定義捲軸 */
         .hud-panel::-webkit-scrollbar {
             width: 6px;
         }
@@ -188,9 +187,7 @@
         <div class="hud-subtitle">次世代 3D 地球與台灣地標實景導覽</div>
 
         <div class="section-label">台灣標竿地標特輯 (Taiwan Landmarks)</div>
-        <div class="tour-controls" id="tourButtons">
-            <!-- 動態生成按鈕 -->
-        </div>
+        <div class="tour-controls" id="tourButtons"></div>
 
         <button class="btn-tour btn-reset" onclick="resetView()">
             <span>返回地球全景視角</span>
@@ -233,6 +230,10 @@
         scene.globe.showGroundAtmosphere = true;
         scene.skyAtmosphere.show = true;
         scene.highDynamicRange = true;
+
+        // 【防呆關鍵】限制相機高度，防止鏡頭鑽入地下造成黑屏或深空洞穴視角
+        scene.screenSpaceCameraController.minimumZoomDistance = 50; // 最小距離地面 50 公尺
+        scene.screenSpaceCameraController.maximumZoomDistance = 25000000; // 最大太空視角
 
         // 非同步安全載入地形與 3D 建築
         async function initEnvironment() {
