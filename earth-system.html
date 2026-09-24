@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D 地球與實景導覽系統 (Orbit & Ground Tour)</title>
+    <title>3D 地球與實景導覽系統 (Next-Gen Earth 3D)</title>
     <!-- CesiumJS CSS -->
     <link href="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
     <style>
@@ -27,14 +27,17 @@
             top: 20px;
             left: 20px;
             z-index: 10;
-            width: 320px;
+            width: 340px;
+            max-height: calc(100vh - 40px);
             padding: 20px;
-            background: rgba(10, 15, 30, 0.75);
+            background: rgba(10, 15, 30, 0.85);
             backdrop-filter: blur(16px);
-            border: 1px solid rgba(0, 210, 255, 0.3);
+            border: 1px solid rgba(0, 242, 254, 0.3);
             border-radius: 16px;
             color: #fff;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
         }
 
         .hud-title {
@@ -50,7 +53,7 @@
         .hud-status {
             font-size: 0.75rem;
             color: #00f2fe;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
             display: flex;
             align-items: center;
             gap: 6px;
@@ -64,21 +67,40 @@
             box-shadow: 0 0 8px #00f2fe;
         }
 
-        /* 選單按鈕 */
-        .tour-controls {
+        /* 選單分類與按鈕容器（支援滾動） */
+        .tour-list {
+            overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
+            padding-right: 4px;
+        }
+
+        .tour-list::-webkit-scrollbar {
+            width: 4px;
+        }
+        .tour-list::-webkit-scrollbar-thumb {
+            background: rgba(0, 242, 254, 0.4);
+            border-radius: 4px;
+        }
+
+        .category-title {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-top: 8px;
+            margin-bottom: 2px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
         }
 
         .btn-tour {
             width: 100%;
-            padding: 12px 14px;
+            padding: 10px 12px;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(0, 242, 254, 0.2);
             border-radius: 8px;
             color: #ffffff;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.25s ease;
@@ -97,6 +119,7 @@
             margin-top: 10px;
             background: linear-gradient(135deg, rgba(0, 242, 254, 0.2), rgba(79, 172, 254, 0.2));
             border-color: #00f2fe;
+            flex-shrink: 0;
         }
 
         /* 地標資訊卡片 */
@@ -159,24 +182,14 @@
             <span id="statusText">太空中：衛星軌道運轉中</span>
         </div>
 
-        <div class="tour-controls">
-            <button class="btn-tour" onclick="flyToLocation(0)">
-                <span>台北 101 / 信義區 3D</span>
-                <small>Taipei 101</small>
-            </button>
-            <button class="btn-tour" onclick="flyToLocation(1)">
-                <span>玉山主峰 3D 地形</span>
-                <small>3,952 m</small>
-            </button>
-            <button class="btn-tour" onclick="flyToLocation(2)">
-                <span>高雄流行音樂中心</span>
-                <small>Kaohsiung Port</small>
-            </button>
-            <button class="btn-tour btn-orbit" onclick="returnToOrbit()">
-                <span>🚀 返回太空軌道運行</span>
-                <small>Orbit View</small>
-            </button>
+        <div class="tour-list" id="tourList">
+            <!-- 動態生成地標列表 -->
         </div>
+
+        <button class="btn-tour btn-orbit" onclick="returnToOrbit()">
+            <span>🚀 返回太空軌道運行</span>
+            <small>Orbit View</small>
+        </button>
     </div>
 
     <!-- 介紹卡片 -->
@@ -189,7 +202,10 @@
     <!-- CesiumJS Library -->
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Cesium.js"></script>
     <script>
-        // 1. 初始化 Cesium 視圖
+        // 🔑 1. 設定 Cesium Ion Access Token (使用您提供的金鑰)
+        Cesium.Ion.defaultAccessToken = 'EyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IklhNEdrRkZmYzZaWTNZaVUiLCJqdGkiOiI2NmI4ZmY4NC01NjY0LTRlZDYtYTJiYS1jZjk0NmYzMWNjMzYiLCJpZCI6NTA2NDI4LCJpc3MiOiJodHRwczovL2FwaS5jZXNpdW0uY29tIiwiYXVkIjoidW5kZWZpbmVkX2RlZmF1bHQiLCJpYXQiOjE3OTAyMzg3MzR9.fnoc-A5kVV2LJFmyvvtLvt_UkAeporC6Q6azntIZqgw';
+
+        // 2. 初始化 Cesium 視圖 (加載 Bing / Cesium 衛星地圖與地形)
         const viewer = new Cesium.Viewer('cesiumContainer', {
             terrainProvider: Cesium.createWorldTerrain({ requestWaterMask: true }),
             animation: false,
@@ -209,7 +225,7 @@
         scene.globe.enableLighting = true; // 開啟光照
         scene.highDynamicRange = true;     // HDR 畫面
 
-        // 2. 自動載入台灣 3D 建築資料 (免 API Key，採用 Cesium OSM 全球 3D 建築)
+        // 3. 自動載入 3D 建築 (OSM 3D Buildings)
         async function load3DBuildings() {
             try {
                 const buildings = await Cesium.createOsmBuildingsAsync();
@@ -220,71 +236,133 @@
         }
         load3DBuildings();
 
-        // 3. 太空軌道運轉控制 (Orbit Motion Logic)
+        // 4. 太空軌道運轉邏輯
         let isOrbiting = true;
-        const orbitAltitude = 15000000; // 太空軌道高度 (米)
+        const orbitAltitude = 15000000; // 太空高度 (米)
         let lastTime = Date.now();
 
-        // 在太空時自動旋轉地球
         viewer.clock.onTick.addEventListener(() => {
             if (isOrbiting) {
                 const now = Date.now();
                 const delta = (now - lastTime) / 1000;
                 lastTime = now;
-                
-                // 每秒旋轉相機角度 (模擬衛星視角俯瞰)
                 scene.camera.rotate(Cesium.Cartesian3.UNIT_Z, -0.05 * delta);
             }
         });
 
-        // 4. 地標資料庫（降落座標與傾斜俯瞰角度）
-        const locations = [
+        // 5. 擴充版地標資料庫 (台灣 + 全球熱門景點)
+        const tourData = [
             {
-                name: "台北 101 (Taipei 101)",
-                tag: "TAIPEI / URBAN 3D",
-                desc: "臺灣第一高樓，高度 508 公尺。配合 3D Tiles 建築網格與街道紋理，可清楚俯瞰信義區精細實景。",
-                destination: Cesium.Cartesian3.fromDegrees(121.5645, 25.0330, 800),
-                orientation: {
-                    heading: Cesium.Math.toRadians(330),
-                    pitch: Cesium.Math.toRadians(-25),
-                    roll: 0
-                }
+                category: "臺灣經典地標",
+                items: [
+                    {
+                        name: "台北 101",
+                        sub: "Taipei 101",
+                        tag: "TAIPEI / URBAN 3D",
+                        desc: "臺灣第一高樓，高度 508 公尺。搭配 3D 建築模型，可精細俯瞰信義區整體現代都市景觀。",
+                        destination: Cesium.Cartesian3.fromDegrees(121.5645, 25.0330, 700),
+                        orientation: { heading: Cesium.Math.toRadians(330), pitch: Cesium.Math.toRadians(-25), roll: 0 }
+                    },
+                    {
+                        name: "玉山主峰",
+                        sub: "3,952 m",
+                        tag: "TAIWAN / MOUNTAIN",
+                        desc: "東北亞第一高峰。高精度地形數據精準呈現陡峭的脊樑山脈與磅礡的百岳地貌。",
+                        destination: Cesium.Cartesian3.fromDegrees(120.9573, 23.4700, 4800),
+                        orientation: { heading: Cesium.Math.toRadians(25), pitch: Cesium.Math.toRadians(-20), roll: 0 }
+                    },
+                    {
+                        name: "高雄流行音樂中心",
+                        sub: "Kaohsiung Harbor",
+                        tag: "KAOHSIUNG / HARBOR",
+                        desc: "座落於高雄港 11-15 號碼頭，具備獨特的海浪與蜂巢建築外觀，展現港灣城市的沉浸視野。",
+                        destination: Cesium.Cartesian3.fromDegrees(120.2930, 22.6180, 600),
+                        orientation: { heading: Cesium.Math.toRadians(45), pitch: Cesium.Math.toRadians(-30), roll: 0 }
+                    },
+                    {
+                        name: "日月潭",
+                        sub: "Sun Moon Lake",
+                        tag: "NANTOU / LAKE",
+                        desc: "台灣最大的半天然湖泊，四周群山環抱，提供絕佳的高空水岸視野與湖光山色。",
+                        destination: Cesium.Cartesian3.fromDegrees(120.9159, 23.8517, 2200),
+                        orientation: { heading: Cesium.Math.toRadians(180), pitch: Cesium.Math.toRadians(-35), roll: 0 }
+                    }
+                ]
             },
             {
-                name: "玉山主峰 (Mt. Jade)",
-                tag: "NATURE / TERRAIN 3D",
-                desc: "東北亞第一高峰，海拔 3,952 公尺。採用高精度 3D 高程網格，可實地觀賞極具震撼力的山脊陡峭地形。",
-                destination: Cesium.Cartesian3.fromDegrees(120.9573, 23.4700, 4800),
-                orientation: {
-                    heading: Cesium.Math.toRadians(25),
-                    pitch: Cesium.Math.toRadians(-20),
-                    roll: 0
-                }
-            },
-            {
-                name: "高雄流行音樂中心 (KMC)",
-                tag: "KAOHSIUNG / HARBOR 3D",
-                desc: "座落於高雄港 11-15 號碼頭，具備獨特的海浪與蜂巢建築外型，能清楚觀賞高雄港灣的實景風貌。",
-                destination: Cesium.Cartesian3.fromDegrees(120.2930, 22.6180, 600),
-                orientation: {
-                    heading: Cesium.Math.toRadians(45),
-                    pitch: Cesium.Math.toRadians(-30),
-                    roll: 0
-                }
+                category: "全球國際名勝",
+                items: [
+                    {
+                        name: "日本 東京塔",
+                        sub: "Tokyo Tower",
+                        tag: "JAPAN / TOKYO",
+                        desc: "位於東京都港區的紅白色地標塔，周邊結合豐富的 3D 建築網格，展現繁華的東京都市圈。",
+                        destination: Cesium.Cartesian3.fromDegrees(139.7454, 35.6586, 650),
+                        orientation: { heading: Cesium.Math.toRadians(140), pitch: Cesium.Math.toRadians(-25), roll: 0 }
+                    },
+                    {
+                        name: "法國 艾菲爾鐵塔",
+                        sub: "Eiffel Tower",
+                        tag: "FRANCE / PARIS",
+                        desc: "巴黎最具代表性的標誌性建築，可俯瞰塞納河畔與巴黎平原的典雅城市規劃。",
+                        destination: Cesium.Cartesian3.fromDegrees(2.2945, 48.8584, 550),
+                        orientation: { heading: Cesium.Math.toRadians(50), pitch: Cesium.Math.toRadians(-20), roll: 0 }
+                    },
+                    {
+                        name: "美國 大峽谷",
+                        sub: "Grand Canyon",
+                        tag: "USA / NATURE",
+                        desc: "科羅拉多河數百萬年切割出的壯麗峽谷，展現出極致的地層層次與大氣霞光效果。",
+                        destination: Cesium.Cartesian3.fromDegrees(-112.1129, 36.1069, 3200),
+                        orientation: { heading: Cesium.Math.toRadians(290), pitch: Cesium.Math.toRadians(-18), roll: 0 }
+                    },
+                    {
+                        name: "埃及 金字塔群",
+                        sub: "Giza Pyramids",
+                        tag: "EGYPT / HERITAGE",
+                        desc: "位於開羅吉薩高原的古代世界七大奇蹟，呈現沙漠地形與千年前宏偉陵墓的歷史沉浸感。",
+                        destination: Cesium.Cartesian3.fromDegrees(31.1342, 29.9792, 900),
+                        orientation: { heading: Cesium.Math.toRadians(70), pitch: Cesium.Math.toRadians(-25), roll: 0 }
+                    }
+                ]
             }
         ];
 
-        // 5. 飛往地標 (從太空俯衝降落至地面)
+        // 6. 動態渲染選單
+        const tourListContainer = document.getElementById('tourList');
+        let globalLocations = [];
+        let locIndex = 0;
+
+        tourData.forEach(group => {
+            const catHeader = document.createElement('div');
+            catHeader.className = 'category-title';
+            catHeader.innerText = group.category;
+            tourListContainer.appendChild(catHeader);
+
+            group.items.forEach(item => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-tour';
+                const currentIndex = locIndex;
+                btn.onclick = () => flyToLocation(currentIndex);
+                btn.innerHTML = `<span>${item.name}</span><small>${item.sub}</small>`;
+                tourListContainer.appendChild(btn);
+
+                globalLocations.push(item);
+                locIndex++;
+            });
+        });
+
+        // 7. 飛行與運鏡邏輯
         function flyToLocation(index) {
-            isOrbiting = false; // 到達地面時停止太空軌道旋轉
+            isOrbiting = false;
             document.getElementById('statusText').innerText = "地面模式：實景導覽中";
             hideCard();
 
-            const loc = locations[index];
+            const loc = globalLocations[index];
             viewer.camera.flyTo({
                 destination: loc.destination,
                 orientation: loc.orientation,
-                duration: 4.0, // 4 秒平滑過渡
+                duration: 4.0,
                 easingFunction: Cesium.EasingFunction.CUBIC_IN_OUT,
                 complete: () => {
                     showCard(loc);
@@ -292,7 +370,6 @@
             });
         }
 
-        // 6. 返回太空軌道模式
         function returnToOrbit() {
             hideCard();
             document.getElementById('statusText').innerText = "太空中：衛星軌道運轉中";
@@ -301,19 +378,19 @@
                 destination: Cesium.Cartesian3.fromDegrees(121.0, 23.5, orbitAltitude),
                 orientation: {
                     heading: 0,
-                    pitch: Cesium.Math.toRadians(-90), // 垂直俯瞰地球
+                    pitch: Cesium.Math.toRadians(-90),
                     roll: 0
                 },
                 duration: 3.5,
                 easingFunction: Cesium.EasingFunction.QUINTIC_OUT,
                 complete: () => {
                     lastTime = Date.now();
-                    isOrbiting = true; // 啟動軌道運轉
+                    isOrbiting = true;
                 }
             });
         }
 
-        // 7. 卡片顯示邏輯
+        // 8. 卡片顯示
         const card = document.getElementById('storyCard');
         function showCard(data) {
             document.getElementById('storyTag').innerText = data.tag;
@@ -325,7 +402,6 @@
             card.classList.remove('active');
         }
 
-        // 初始設定相機於太空軌道
         returnToOrbit();
     </script>
 </body>
