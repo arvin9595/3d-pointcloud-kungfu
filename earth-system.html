@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>STARSHIP EARTH SYSTEM V3.3 PHASE 5.1 // RADAR STATE SYNC FIX</title>
+<title>STARSHIP EARTH SYSTEM V3.3 PHASE 6 // AI INTELLIGENCE SUMMARY</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 <style>
 :root{
@@ -60,7 +60,25 @@ button{font:inherit}
 .focus-radar-hud input{flex:1;accent-color:#35f2ff}
 .focus-radar-time{min-width:170px;color:var(--amber);font-size:.50rem}
 .focus-radar-frame{min-width:65px;text-align:right;color:#86a3ad;font-size:.46rem}
+
 .radar-contact{display:none}.radar-contact.show{display:block!important}
+.summary-panel{position:absolute;z-index:11;left:6%;right:6%;top:54px;bottom:24px;display:none;grid-template-columns:1.18fr .82fr;gap:10px;padding:10px;border:1px solid rgba(139,92,255,.32);background:linear-gradient(135deg,rgba(1,12,20,.93),rgba(10,5,22,.91));box-shadow:0 0 38px rgba(139,92,255,.12),inset 0 0 35px rgba(53,242,255,.025);backdrop-filter:blur(7px);overflow:auto}
+.center.summary-mode .summary-panel{display:grid}
+.center.summary-mode #earth-box{opacity:.22;filter:drop-shadow(0 0 22px rgba(139,92,255,.25))}
+.summary-col{min-width:0}
+.summary-kicker{font-size:.46rem;letter-spacing:1.3px;color:var(--violet);margin-bottom:5px}
+.summary-title{font-size:.72rem;color:#e8faff;letter-spacing:.7px;margin-bottom:8px}
+.summary-source-row{display:grid;grid-template-columns:1fr auto;gap:6px;padding:5px 7px;margin-bottom:4px;border-left:1px solid rgba(53,242,255,.26);background:rgba(53,242,255,.025);font-size:.48rem;color:#88a4ae}
+.summary-source-row b{color:#dffcff;font-weight:500;text-align:right}
+.summary-source-row.warn{border-left-color:var(--amber)}
+.summary-source-row.off{opacity:.48}
+.summary-interpret{padding:9px;border:1px solid rgba(255,61,154,.22);background:rgba(255,61,154,.025);font-size:.50rem;line-height:1.62;color:#a9c1ca}
+.summary-interpret b{display:block;color:var(--pink);font-size:.48rem;letter-spacing:1px;margin-bottom:6px}
+.summary-note{margin-top:7px;color:#617d88;font-size:.43rem;line-height:1.55}
+.summary-fresh{margin-top:8px;padding-top:7px;border-top:1px solid rgba(53,242,255,.12);font-size:.43rem;color:#678590;line-height:1.55}
+.focus-summary-event{display:none}
+.focus-summary-event.show{display:block!important}
+
 
 .right-panel{grid-column:3;grid-row:2;display:flex;flex-direction:column}.intel-body{padding:7px;overflow:auto;display:flex;flex-direction:column;gap:7px;min-height:0}.landmark-photo{position:relative;width:100%;aspect-ratio:16/9;border:1px solid rgba(53,242,255,.25);background:linear-gradient(135deg,#06131f,#01060b);overflow:hidden}.landmark-photo img{width:100%;height:100%;object-fit:cover;display:block;filter:saturate(.88) contrast(1.06) brightness(.78);transition:.3s}.landmark-photo:after{content:"LANDMARK VISUAL // WIKIMEDIA";position:absolute;left:5px;bottom:5px;padding:2px 5px;background:rgba(0,0,0,.72);font-size:.42rem;letter-spacing:1px;color:var(--cyan)}.photo-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#557681;font-size:.52rem;letter-spacing:1px}.photo-credit{font-size:.42rem;color:#688893;line-height:1.35}.photo-credit a{color:#7fdfff;text-decoration:none}.map-frame{height:105px;border:1px solid rgba(53,242,255,.25);background:#000;overflow:hidden}.map-frame iframe{width:100%;height:100%;border:0;filter:saturate(.72) contrast(1.1) brightness(.72)}.data-card{padding:7px;background:rgba(53,242,255,.025);border-left:2px solid rgba(53,242,255,.30);font-size:.58rem}.data-row{display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-bottom:1px dashed rgba(53,242,255,.12)}.data-row:last-child{border-bottom:0}.value{color:var(--amber);text-align:right}.desc{padding:8px;min-height:70px;background:rgba(0,0,0,.28);border-left:2px solid rgba(139,92,255,.38);font-size:.58rem;line-height:1.55;color:#bed3db}.source-badges{display:flex;flex-wrap:wrap;gap:4px}.source-badge{padding:3px 5px;border:1px solid rgba(53,242,255,.18);font-size:.44rem;color:#88b8c5}.source-badge.live{color:var(--green);border-color:rgba(80,255,177,.28)}
 .console{grid-column:1/4;grid-row:3;position:relative;margin:0 clamp(8px,3.5vw,70px);padding:36px 4.5% 17px;display:grid;grid-template-columns:minmax(270px,.9fr) minmax(0,2.1fr);gap:14px;background:linear-gradient(180deg,rgba(7,32,47,.97),rgba(1,8,15,.99));clip-path:polygon(7% 0,93% 0,100% 100%,0 100%);border-top:1px solid rgba(53,242,255,.55);box-shadow:0 -14px 45px rgba(53,242,255,.08),inset 0 1px rgba(255,255,255,.06);overflow:hidden}.console:before{content:"PLANETARY ANALYSIS DECK // LIVE DATA INTERFACE";position:absolute;top:11px;left:50%;transform:translateX(-50%);font-size:.54rem;letter-spacing:3px;color:rgba(53,242,255,.65);white-space:nowrap}.console:after{content:"";position:absolute;left:5%;right:5%;bottom:0;height:11px;border-top:1px solid rgba(53,242,255,.24);background:linear-gradient(180deg,rgba(53,242,255,.08),#000)}
@@ -212,7 +230,7 @@ body.focus-open .bridge{filter:brightness(.42) saturate(.72)}
 <div class="space-bg"></div>
 <main class="bridge">
   <header class="topbar">
-    <span>[SYS.SECURE // STARSHIP ORBITAL HUD // V3.3-P5.1]</span>
+    <span>[SYS.SECURE // STARSHIP ORBITAL HUD // V3.3-P6]</span>
     <span class="live">PLANETARY INTELLIGENCE NETWORK: ONLINE</span>
     <span id="utcClock">UTC --:--:--</span>
   </header>
@@ -316,6 +334,20 @@ body.focus-open .bridge{filter:brightness(.42) saturate(.72)}
         <button id="radarNext" type="button" aria-label="下一個雷達影格">▶</button>
         <span class="radar-time" id="radarTime">--</span>
         <span class="radar-frame" id="radarFrame">0 / 0</span>
+      </div>
+      <div class="summary-panel" id="summaryPanel" aria-live="polite">
+        <div class="summary-col">
+          <div class="summary-kicker">PLANETARY INTELLIGENCE BRIEF // OBSERVED DATA</div>
+          <div class="summary-title" id="summaryTarget">ACTIVE TARGET // --</div>
+          <div id="summaryObserved">Waiting for intelligence synthesis…</div>
+          <div class="summary-fresh" id="summaryFreshness">DATA FRESHNESS // --</div>
+        </div>
+        <div class="summary-col">
+          <div class="summary-kicker">SYNTHESIS ENGINE V1</div>
+          <div class="summary-title">AI INTERPRETATION</div>
+          <div class="summary-interpret" id="summaryInterpret"><b>INTERPRETATION</b>Waiting for observed data.</div>
+          <div class="summary-note">Observed Data 與 Interpretation 分離顯示。此版本使用瀏覽器端 deterministic synthesis rules，不呼叫外部 LLM，也不把系統推論冒充 NASA / USGS / NOAA / Open-Meteo / RainViewer 的官方結論。</div>
+        </div>
       </div>
     </div>
   </section>
@@ -443,6 +475,16 @@ body.focus-open .bridge{filter:brightness(.42) saturate(.72)}
         </div>
         <div style="margin-top:7px;color:#7896a2;font-size:.46rem;line-height:1.5">Radar reflectivity imagery by RainViewer. Historical radar frames only; the 2026 free public API does not expose future nowcast frames.</div>
       </div>
+      <div class="focus-event focus-summary-event" id="focusSummaryEvent">
+        <div class="label" style="color:var(--violet)">PLANETARY INTELLIGENCE BRIEF</div>
+        <h3 id="focusSummaryTarget">ACTIVE TARGET // --</h3>
+        <div id="focusSummaryObserved" style="font-size:.48rem;line-height:1.65;color:#9fb9c3"></div>
+        <div style="margin-top:9px;padding:8px;border:1px solid rgba(255,61,154,.22);background:rgba(255,61,154,.025)">
+          <div style="color:var(--pink);font-size:.45rem;letter-spacing:1px;margin-bottom:5px">AI INTERPRETATION // SYNTHESIS ENGINE V1</div>
+          <div id="focusSummaryInterpret" style="font-size:.49rem;line-height:1.65;color:#b7cbd3">--</div>
+        </div>
+        <div id="focusSummaryFreshness" style="margin-top:8px;color:#66838e;font-size:.42rem;line-height:1.55">DATA FRESHNESS // --</div>
+      </div>
       <div class="focus-hint">拖曳地球可旋轉；滾輪可縮放。EARTHQUAKES 可短按 USGS 地震光點；EVENTS / STORMS 可短按 NASA EONET 事件光點；SPACE WX 顯示全球地球—太空環境狀態；RADAR 可在 Focus View 操作地圖與歷史時間軸。按 ESC 或右上角 × 返回艦橋總覽。</div>
     </aside>
     <footer class="focus-footer"><span>BRIDGE VIEW</span> 總覽與監控　→　<span>FOCUS VIEW</span> 詳細分析與操作</footer>
@@ -479,7 +521,7 @@ const targets=[
 ];
 const flatTargets=targets.flatMap(g=>g.items);
 let currentTarget=flatTargets[1], currentMode='global';
-let weatherCache=null, eventsCache=null, quakesCache=null, spaceCache=null;
+let weatherCache=null, eventsCache=null, quakesCache=null, spaceCache=null, targetAirCache=null;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
 function fmtCoord(lat,lon){return `${Math.abs(lat).toFixed(2)}° ${lat>=0?'N':'S'}, ${Math.abs(lon).toFixed(2)}° ${lon>=0?'E':'W'}`}
@@ -929,6 +971,12 @@ function syncFocusPanel(){
     $('focusRadarContact').style.display='none';
     $('focusRadarContact').classList.remove('show');
   }
+  if(currentMode==='summary'){
+    $('focusSummaryEvent').style.display='block';
+  }else{
+    $('focusSummaryEvent').style.display='none';
+    $('focusSummaryEvent').classList.remove('show');
+  }
 }
 function openFocusView(){
   focusOpen=true;syncFocusPanel();
@@ -1067,7 +1115,7 @@ async function loadLandmarkPhoto(target){
     credit.innerHTML=`Visual: <a href="${filePage}" target="_blank" rel="noopener">Wikimedia Commons</a> · ${esc(artist).slice(0,80)} · 授權請見原始檔案頁`;
   }catch(e){ph.textContent='LANDMARK VISUAL UNAVAILABLE';credit.textContent='Wikimedia 圖片暫時無法載入；不影響其他分析功能。'}
 }
-function selectTarget(i){currentTarget=flatTargets[i];document.querySelectorAll('.target-btn').forEach(b=>b.classList.remove('active'));$('target-'+i)?.classList.add('active');targetMeshes.forEach(m=>{m.dot.material.color.setHex(0x35f2ff);m.ring.visible=false;m.ring.scale.set(1,1,1)});const m=targetMeshes[i];m.dot.material.color.setHex(0xff3d9a);m.ring.visible=true;if(pulseTween)pulseTween.stop();pulseTween=new TWEEN.Tween(m.ring.scale).to({x:2.2,y:2.2,z:2.2},800).yoyo(true).repeat(Infinity).start();$('targetName').textContent=currentTarget.name;$('targetCoords').textContent=fmtCoord(currentTarget.lat,currentTarget.lon);$('mapIframe').src=`https://maps.google.com/maps?q=${currentTarget.lat},${currentTarget.lon}&t=k&z=12&ie=UTF8&iwloc=&output=embed`;$('hudTarget').textContent=currentTarget.sub;$('hudCoords').textContent=fmtCoord(currentTarget.lat,currentTarget.lon);loadLandmarkPhoto(currentTarget);weatherCache=null;weatherRequestSeq++;syncFocusPanel();renderMode(currentMode)}
+function selectTarget(i){currentTarget=flatTargets[i];document.querySelectorAll('.target-btn').forEach(b=>b.classList.remove('active'));$('target-'+i)?.classList.add('active');targetMeshes.forEach(m=>{m.dot.material.color.setHex(0x35f2ff);m.ring.visible=false;m.ring.scale.set(1,1,1)});const m=targetMeshes[i];m.dot.material.color.setHex(0xff3d9a);m.ring.visible=true;if(pulseTween)pulseTween.stop();pulseTween=new TWEEN.Tween(m.ring.scale).to({x:2.2,y:2.2,z:2.2},800).yoyo(true).repeat(Infinity).start();$('targetName').textContent=currentTarget.name;$('targetCoords').textContent=fmtCoord(currentTarget.lat,currentTarget.lon);$('mapIframe').src=`https://maps.google.com/maps?q=${currentTarget.lat},${currentTarget.lon}&t=k&z=12&ie=UTF8&iwloc=&output=embed`;$('hudTarget').textContent=currentTarget.sub;$('hudCoords').textContent=fmtCoord(currentTarget.lat,currentTarget.lon);loadLandmarkPhoto(currentTarget);weatherCache=null;targetAirCache=null;weatherRequestSeq++;targetAirRequestSeq++;syncFocusPanel();renderMode(currentMode)}
 
 // ---------- LIVE DATA ----------
 let weatherRequestSeq=0;
@@ -1079,6 +1127,21 @@ async function getWeather(){
   if(!r.ok)throw new Error('Open-Meteo '+r.status);
   const d=await r.json();
   if(seq===weatherRequestSeq&&currentTarget===targetSnapshot)weatherCache=d;
+  return d;
+}
+let targetAirRequestSeq=0;
+async function getTargetAirQuality(){
+  if(targetAirCache)return targetAirCache;
+  const seq=++targetAirRequestSeq,targetSnapshot=currentTarget;
+  const p=new URLSearchParams({
+    latitude:targetSnapshot.lat,longitude:targetSnapshot.lon,
+    current:'us_aqi,pm2_5,pm10,ozone,aerosol_optical_depth,dust,uv_index',
+    timezone:'auto'
+  });
+  const r=await fetch('https://air-quality-api.open-meteo.com/v1/air-quality?'+p);
+  if(!r.ok)throw new Error('Open-Meteo air quality '+r.status);
+  const d=await r.json();
+  if(seq===targetAirRequestSeq&&currentTarget===targetSnapshot)targetAirCache=d;
   return d;
 }
 async function getEonet(category=''){const url='https://eonet.gsfc.nasa.gov/api/v3/events?status=open&limit=30&days=30'+(category?'&category='+encodeURIComponent(category):'');const r=await fetch(url);if(!r.ok)throw new Error('NASA EONET '+r.status);return r.json()}
@@ -1108,6 +1171,135 @@ async function getSpace(){
   return spaceCache;
 }
 function wmo(code){const m={0:'晴朗',1:'大致晴朗',2:'局部多雲',3:'陰天',45:'霧',48:'霧淞',51:'毛毛雨',53:'毛毛雨',55:'強毛毛雨',61:'小雨',63:'中雨',65:'大雨',71:'小雪',73:'中雪',75:'大雪',80:'陣雨',81:'陣雨',82:'強陣雨',95:'雷雨',96:'雷雨／冰雹',99:'強雷雨／冰雹'};return m[code]||'氣象代碼 '+code}
+
+// ---------- PHASE 6 // PLANETARY INTELLIGENCE SYNTHESIS ----------
+function haversineKm(lat1,lon1,lat2,lon2){
+  const Rk=6371,toRad=v=>v*Math.PI/180;
+  const dLat=toRad(lat2-lat1),dLon=toRad(lon2-lon1);
+  const a=Math.sin(dLat/2)**2+Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+  return 2*Rk*Math.asin(Math.sqrt(a));
+}
+function nearestQuakeToTarget(data,minMag=4){
+  let best=null;
+  for(const f of data?.features||[]){
+    const c=f.geometry?.coordinates,p=f.properties||{},mag=Number(p.mag);
+    if(!Array.isArray(c)||!Number.isFinite(mag)||mag<minMag)continue;
+    const d=haversineKm(currentTarget.lat,currentTarget.lon,Number(c[1]),Number(c[0]));
+    if(!best||d<best.distanceKm)best={distanceKm:d,mag,place:p.place||'Unnamed event',time:p.time};
+  }
+  return best;
+}
+function nearestEonetToTarget(data){
+  let best=null;
+  for(const ev of data?.events||[]){
+    const p=eventPoint(ev);if(!p)continue;
+    const d=haversineKm(currentTarget.lat,currentTarget.lon,p.lat,p.lon);
+    if(!best||d<best.distanceKm)best={distanceKm:d,title:ev.title||'Unnamed event',category:eventCategoryTitle(ev),date:p.geometry?.date||'--'};
+  }
+  return best;
+}
+function aqiBand(aqi){
+  const n=Number(aqi);
+  if(!Number.isFinite(n))return '資料不足';
+  if(n<=50)return '良好';
+  if(n<=100)return '普通';
+  if(n<=150)return '對敏感族群偏高';
+  return '偏高';
+}
+function summaryRow(label,value,cls=''){
+  return `<div class="summary-source-row ${cls}"><span>${esc(label)}</span><b>${esc(value)}</b></div>`;
+}
+function summarySpaceSnapshot(d){
+  if(!d)return null;
+  return {k:swpcLatestKp(d.kp),w:swpcWind(d.wind),m:swpcMag(d.mag),s:swpcScales(d.scales),x:swpcXray(d.xray)};
+}
+function buildInterpretation(obs){
+  const notes=[];
+  if(obs.weather){
+    const c=obs.weather.current||{},wind=Number(c.wind_speed_10m),precip=Number(c.precipitation);
+    if(Number.isFinite(precip)&&precip>0)notes.push(`目標位置的 Open-Meteo 模型目前回報降水 ${precip} mm。`);
+    else notes.push(`目標位置目前的 Open-Meteo 天氣狀態為「${wmo(c.weather_code)}」。`);
+    if(Number.isFinite(wind)&&wind>=40)notes.push(`10 公尺風速 ${wind} km/h，屬本摘要規則中的較強風訊號，建議回到 WEATHER 模式查看細節。`);
+  }
+  if(obs.air){
+    const aq=obs.air.current?.us_aqi;
+    notes.push(`空氣品質模型 US AQI ${aq??'--'}，分層為「${aqiBand(aq)}」。`);
+  }
+  if(obs.quakeNearest){
+    const q=obs.quakeNearest;
+    notes.push(`本次 USGS M2.5+ / 24H feed 中，距目標最近的 M4+ 事件約 ${Math.round(q.distanceKm)} km（M${q.mag.toFixed(1)}）。這是距離摘要，不等同災害影響評估。`);
+  }else if(obs.quakes){
+    notes.push('本次 USGS feed 未找到可用的 M4+ 鄰近事件摘要。');
+  }
+  if(obs.eventNearest){
+    const e=obs.eventNearest;
+    if(e.distanceKm<=1500)notes.push(`NASA EONET 本次最多 30 筆 open-event sample 中，最近事件為「${e.title}」，約 ${Math.round(e.distanceKm)} km。`);
+    else notes.push('NASA EONET 本次最多 30 筆 open-event sample 中，未見距目標 1500 km 內的事件；這不是完整全球無事件聲明。');
+  }
+  if(obs.space){
+    const kp=Number(obs.space.k.kp),g=Number(obs.space.s.G);
+    if(Number.isFinite(kp)&&kp>=5)notes.push(`行星 Kp ${kp}，太空天氣擾動值得持續觀察。`);
+    else notes.push(`NOAA SWPC 行星 Kp ${obs.space.k.kp}、G${obs.space.s.G}；本摘要未將其解讀為目標地面的地方性警報。`);
+  }
+  if(obs.radarFrame){
+    notes.push(`RainViewer 最新可用歷史雷達影格為 ${radarTimeText(obs.radarFrame)}；Phase 6 不讀取目標像素，因此不自動宣稱目標正在降雨。`);
+  }
+  return notes;
+}
+async function buildPlanetaryBrief(){
+  const settled=await Promise.allSettled([
+    getWeather(),getTargetAirQuality(),getEvents(),getQuakes(),getSpace(),loadRadarMeta()
+  ]);
+  const [w,a,e,q,s,r]=settled;
+  const obs={
+    weather:w.status==='fulfilled'?w.value:null,
+    air:a.status==='fulfilled'?a.value:null,
+    events:e.status==='fulfilled'?e.value:null,
+    quakes:q.status==='fulfilled'?q.value:null,
+    space:s.status==='fulfilled'?summarySpaceSnapshot(s.value):null,
+    radar:r.status==='fulfilled'&&radarFrames.length?radarFrames.at(-1):null
+  };
+  obs.quakeNearest=obs.quakes?nearestQuakeToTarget(obs.quakes,4):null;
+  obs.eventNearest=obs.events?nearestEonetToTarget(obs.events):null;
+  const unavailable=settled.map((x,i)=>x.status==='rejected'?['WEATHER','ATMOSPHERE','EONET','USGS','SWPC','RADAR'][i]:null).filter(Boolean);
+
+  const c=obs.weather?.current||{},aq=obs.air?.current||{},sp=obs.space;
+  const observed=[
+    summaryRow('OPEN-METEO // WEATHER',obs.weather?`${wmo(c.weather_code)} · ${c.temperature_2m}°C · RH ${c.relative_humidity_2m}%`:'UNAVAILABLE',obs.weather?'':'off'),
+    summaryRow('OPEN-METEO / CAMS // ATMOSPHERE',obs.air?`US AQI ${aq.us_aqi??'--'} · PM2.5 ${aq.pm2_5??'--'} μg/m³`:'UNAVAILABLE',obs.air?'':'off'),
+    summaryRow('USGS // SEISMIC',obs.quakes?`${obs.quakes.metadata?.count??obs.quakes.features?.length??'--'} M2.5+ / 24H${obs.quakeNearest?` · nearest M4+ ${Math.round(obs.quakeNearest.distanceKm)} km`:''}`:'UNAVAILABLE',obs.quakes?'':'off'),
+    summaryRow('NASA EONET // OPEN EVENTS',obs.events?`${obs.events.events?.length??0} returned${obs.eventNearest?` · nearest ${Math.round(obs.eventNearest.distanceKm)} km`:''}`:'UNAVAILABLE',obs.events?'':'off'),
+    summaryRow('NOAA SWPC // SPACE WX',sp?`Kp ${sp.k.kp} · G${sp.s.G} / R${sp.s.R} / S${sp.s.S}`:'UNAVAILABLE',sp?'':'off'),
+    summaryRow('RAINVIEWER // RADAR',obs.radarFrame?`${radarTimeText(obs.radarFrame)} · ${radarFrames.length} past frames`:'UNAVAILABLE',obs.radarFrame?'':'off')
+  ].join('');
+
+  const freshness=[
+    obs.weather?.current?.time?`Weather ${obs.weather.current.time}`:null,
+    obs.air?.current?.time?`Air ${obs.air.current.time}`:null,
+    obs.quakes?.metadata?.generated?`USGS ${fmtTime(new Date(obs.quakes.metadata.generated))}`:null,
+    obs.eventNearest?.date?`EONET nearest ${obs.eventNearest.date}`:null,
+    sp?.k?.time&&sp.k.time!=='--'?`SWPC Kp ${sp.k.time}`:null,
+    obs.radarFrame?`Radar ${radarTimeText(obs.radarFrame)}`:null
+  ].filter(Boolean).join(' // ');
+
+  const interpretation=buildInterpretation(obs);
+  return {obs,observed,freshness,interpretation,unavailable};
+}
+function renderPlanetaryBrief(brief){
+  const target=`ACTIVE TARGET // ${currentTarget.name} // ${fmtCoord(currentTarget.lat,currentTarget.lon)}`;
+  const interp=brief.interpretation.map(x=>`• ${esc(x)}`).join('<br>')||'目前可用資料不足，無法形成跨來源解讀。';
+  $('summaryTarget').textContent=target;
+  $('summaryObserved').innerHTML=brief.observed;
+  $('summaryFreshness').textContent='DATA FRESHNESS // '+(brief.freshness||'--');
+  $('summaryInterpret').innerHTML='<b>INTERPRETATION</b>'+interp;
+  $('focusSummaryTarget').textContent=target;
+  $('focusSummaryObserved').innerHTML=brief.observed;
+  $('focusSummaryInterpret').innerHTML=interp;
+  $('focusSummaryFreshness').textContent='DATA FRESHNESS // '+(brief.freshness||'--');
+  $('focusSummaryEvent').classList.add('show');
+  $('rightDesc').innerHTML=`<span style="color:var(--violet)">PLANETARY INTELLIGENCE BRIEF</span><br><b>${esc(currentTarget.name)}</b> · 6 intelligence channels queried · ${brief.unavailable.length?esc(brief.unavailable.join(', ')+' unavailable'):'all channels returned'}<br><span style="color:#7896a2">Observed Data 與 Interpretation 已分離；Synthesis Engine V1 為瀏覽器端規則式整合，不是官方預警。</span>`;
+}
+
 function setAnalysis(title,state,html){$('analysisTitle').textContent=title;$('analysisState').textContent=state;$('analysisLog').innerHTML=html;$('dataTime').textContent=fmtTime()}
 function loading(title){setAnalysis(title,'LINKING','<div style="color:var(--cyan)">>> CONNECTING TO LIVE DATA NETWORK...</div>')}
 function fail(title,e){setAnalysis(title,'DEGRADED',`<div style="color:var(--red)">資料暫時無法取得：${esc(e.message)}</div><div style="margin-top:7px;color:var(--muted)">網路、CORS 或資料供應端可能暫時不可用；其他模組仍可使用。</div>`)}
@@ -1222,7 +1414,7 @@ function openRadarFocus(){
 }
 
 // ---------- MODES ----------
-async function renderMode(mode){currentMode=mode;syncFocusPanel();$('focusOpen').disabled=false;$('focusOpen').style.opacity='1';$('focusOpen').title=mode==='radar'?'開啟 Radar Focus View':'放大中央地球分析區';document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));$('targetMode').textContent=mode.toUpperCase();$('modeChip').textContent=mode.toUpperCase()+' MODE';$('hudMode').textContent=mode.toUpperCase();$('centerViewport').classList.toggle('radar-mode',mode==='radar');$('centerViewport').classList.toggle('quake-mode',mode==='quakes');$('centerViewport').classList.toggle('event-mode',mode==='events'||mode==='storms');$('centerViewport').classList.toggle('wx-mode',mode==='weather'||mode==='atmosphere');$('centerViewport').classList.toggle('space-mode',mode==='space');if(mode!=='quakes'){clearQuakeLayer()}if(mode!=='events'&&mode!=='storms'){clearEonetLayer()}if(mode!=='weather'&&mode!=='atmosphere'){clearWxLayer()}if(mode!=='space'){clearSpaceWxLayer()}$('rightDesc').innerHTML=`<span style="color:var(--cyan)">[${esc(currentTarget.name)}]</span><br>${esc(currentTarget.desc)}`;
+async function renderMode(mode){currentMode=mode;syncFocusPanel();$('focusOpen').disabled=false;$('focusOpen').style.opacity='1';$('focusOpen').title=mode==='radar'?'開啟 Radar Focus View':'放大中央地球分析區';document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));$('targetMode').textContent=mode.toUpperCase();$('modeChip').textContent=mode.toUpperCase()+' MODE';$('hudMode').textContent=mode.toUpperCase();$('centerViewport').classList.toggle('radar-mode',mode==='radar');$('centerViewport').classList.toggle('quake-mode',mode==='quakes');$('centerViewport').classList.toggle('event-mode',mode==='events'||mode==='storms');$('centerViewport').classList.toggle('wx-mode',mode==='weather'||mode==='atmosphere');$('centerViewport').classList.toggle('space-mode',mode==='space');$('centerViewport').classList.toggle('summary-mode',mode==='summary');if(mode!=='quakes'){clearQuakeLayer()}if(mode!=='events'&&mode!=='storms'){clearEonetLayer()}if(mode!=='weather'&&mode!=='atmosphere'){clearWxLayer()}if(mode!=='space'){clearSpaceWxLayer()}$('rightDesc').innerHTML=`<span style="color:var(--cyan)">[${esc(currentTarget.name)}]</span><br>${esc(currentTarget.desc)}`;
  try{
   if(mode==='global'){
     loading('GLOBAL SYSTEM STATUS');const [w,e,q,s]=await Promise.allSettled([getWeather(),getEvents(),getQuakes(),getSpace()]);const wc=w.status==='fulfilled'?w.value.current:null,ev=e.status==='fulfilled'?e.value.events.length:'--',qc=q.status==='fulfilled'?q.value.metadata.count:'--';$('hudWeather').textContent=wc?`${wc.temperature_2m}°C · ${wmo(wc.weather_code)}`:'UNAVAILABLE';$('hudEvents').textContent=e.status==='fulfilled'?String(e.value.events.length):'--';let kp='--';if(s.status==='fulfilled'){const rows=s.value.kp;const last=rows[rows.length-1];kp=Array.isArray(last)?last[1]:last?.Kp??'--'}setAnalysis('GLOBAL SYSTEM STATUS','ONLINE',`<div class="metric-grid"><div class="metric">TARGET<b>${esc(currentTarget.name)}</b></div><div class="metric">LOCAL TEMP<b>${wc?wc.temperature_2m+'°C':'--'}</b></div><div class="metric">NASA OPEN EVENTS<b>${ev}</b></div><div class="metric">USGS M2.5+ / 24H<b>${qc}</b></div><div class="metric">PLANETARY Kp<b>${esc(kp)}</b></div><div class="metric">NETWORK<b>LIVE</b></div></div>`);return;
@@ -1299,7 +1491,21 @@ async function renderMode(mode){currentMode=mode;syncFocusPanel();$('focusOpen')
     return;
   }
   if(mode==='summary'){
-    loading('SITUATION SYNTHESIS');const [w,e,q,s]=await Promise.allSettled([getWeather(),getEvents(),getQuakes(),getSpace()]);const lines=[];if(w.status==='fulfilled'){const c=w.value.current;lines.push(`目標 ${currentTarget.name}：${wmo(c.weather_code)}，${c.temperature_2m}°C，濕度 ${c.relative_humidity_2m}%，風速 ${c.wind_speed_10m} km/h。`)}if(e.status==='fulfilled')lines.push(`NASA EONET：目前取得 ${e.value.events.length} 個開放事件。`);if(q.status==='fulfilled')lines.push(`USGS：過去 24 小時 M2.5+ 地震 ${q.value.metadata.count} 起。`);if(s.status==='fulfilled'){const row=s.value.kp.at(-1);lines.push(`NOAA SWPC：最新行星 Kp 約 ${Array.isArray(row)?row[1]:(row?.Kp??'--')}。`)}setAnalysis('SITUATION SUMMARY','SYNTHESIZED',`<div style="line-height:1.7">${lines.map(x=>'• '+esc(x)).join('<br>')}</div><div style="margin-top:8px;color:var(--muted)">此摘要只是把各資料源目前回傳值整理在一起，不是災害預警或安全判斷。</div>`);return;
+    loading('PLANETARY INTELLIGENCE SYNTHESIS');
+    const brief=await buildPlanetaryBrief();
+    renderPlanetaryBrief(brief);
+    setAnalysis('AI SUMMARY // PLANETARY INTELLIGENCE BRIEF','SYNTHESIZED',`
+      <div class="metric-grid">
+        <div class="metric">ACTIVE TARGET<b>${esc(currentTarget.name)}</b></div>
+        <div class="metric">INTELLIGENCE CHANNELS<b>6</b></div>
+        <div class="metric">CHANNEL STATUS<b>${brief.unavailable.length?6-brief.unavailable.length+'/6':'6/6'}</b></div>
+        <div class="metric">SYNTHESIS ENGINE<b>RULE-BASED V1</b></div>
+        <div class="metric">OBSERVED DATA<b>SEPARATED</b></div>
+        <div class="metric">INTERPRETATION<b>NON-OFFICIAL</b></div>
+      </div>
+      <div style="margin-top:7px;color:var(--violet)">中央 Planetary Viewport 已建立跨來源 Intelligence Brief。Focus View 會繼承同一份摘要。</div>
+      <div style="margin-top:7px;color:var(--muted)">Phase 6 不在公開 GitHub Pages 內放置任何 LLM API key。Synthesis Engine V1 使用透明、可檢查的瀏覽器端規則；未來若接真正模型，必須經安全 server-side / serverless proxy。</div>`);
+    return;
   }
  }catch(e){fail(currentMode.toUpperCase(),e)}
 }
