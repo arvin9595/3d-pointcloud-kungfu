@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>STARSHIP COCKPIT // AI ROTATING RING HUD</title>
+    <title>STARSHIP COCKPIT // GLOBAL HUD</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         
@@ -14,13 +14,11 @@
             display: flex; justify-content: center; align-items: center;
         }
 
-        /* 外部太空深邃背景 */
         .space-bg {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0;
             background: radial-gradient(circle at center, #051329 0%, #01040a 100%);
         }
 
-        /* L型科技主控台螢幕外框 */
         .cockpit-screen-frame {
             position: relative; width: 96vw; height: 94vh; z-index: 5;
             border: 2px solid rgba(0, 242, 254, 0.4);
@@ -33,7 +31,6 @@
             clip-path: polygon(0 0, calc(100% - 25px) 0, 100% 25px, 100% 100%, 25px 100%, 0 calc(100% - 25px));
         }
 
-        /* 頂部狀態列 */
         .screen-top-bar {
             grid-column: 1 / 4;
             display: flex; justify-content: space-between; align-items: center;
@@ -41,7 +38,6 @@
             padding-bottom: 5px; font-size: 0.75rem; letter-spacing: 2px; color: #ffe600;
         }
 
-        /* 左側：觸控摺疊導航選單 */
         .mod-nav {
             grid-column: 1 / 2; grid-row: 2 / 3;
             background: rgba(2, 9, 20, 0.95);
@@ -58,7 +54,6 @@
         .tour-list::-webkit-scrollbar { width: 3px; }
         .tour-list::-webkit-scrollbar-thumb { background: #00f2fe; }
 
-        /* 摺疊清單 */
         .accordion-header {
             background: rgba(0, 242, 254, 0.06); border: 1px solid rgba(0, 242, 254, 0.3);
             color: #ffe600; padding: 6px 10px; font-size: 0.7rem; font-weight: bold;
@@ -71,9 +66,8 @@
             max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out;
             display: flex; flex-direction: column; gap: 4px; padding-left: 4px;
         }
-        .accordion-content.show { max-height: 400px; transition: max-height 0.3s ease-in; padding-top: 4px; }
+        .accordion-content.show { max-height: 500px; transition: max-height 0.3s ease-in; padding-top: 4px; }
 
-        /* 觸控按鈕與 AI 旋轉光環特效 */
         .btn-target {
             width: 100%; padding: 8px 10px; background: rgba(0, 242, 254, 0.03);
             border: 1px solid rgba(0, 242, 254, 0.25); color: #00f2fe;
@@ -83,7 +77,6 @@
         }
         .btn-target:hover { background: rgba(0, 242, 254, 0.15); border-color: #00f2fe; color: #fff; }
         
-        /* 當按鈕被點擊激活時，外圍產生 AI 般的旋轉光環邊框 */
         .btn-target.active { 
             background: rgba(255, 0, 85, 0.15); border-color: #ff0055; color: #ff0055; font-weight: bold; 
         }
@@ -101,7 +94,6 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* 中間：精巧的 3D 地球視窗 */
         #canvas-container {
             grid-column: 2 / 3; grid-row: 2 / 3;
             position: relative; width: 100%; height: 100%; overflow: hidden;
@@ -110,7 +102,6 @@
             box-shadow: inset 0 0 30px rgba(0, 242, 254, 0.1);
         }
 
-        /* 右側：副分析螢幕 */
         .mod-sub-screen {
             grid-column: 3 / 4; grid-row: 2 / 3;
             background: rgba(2, 9, 20, 0.95);
@@ -135,7 +126,6 @@
             flex: 1; overflow-y: auto;
         }
 
-        /* 底部狀態列 */
         .screen-bottom-bar {
             grid-column: 1 / 4; grid-row: 3 / 4;
             display: flex; justify-content: space-between; align-items: center;
@@ -143,7 +133,6 @@
             font-size: 0.65rem; color: rgba(0, 242, 254, 0.6);
         }
 
-        /* 點擊螢幕波紋 */
         .click-pulse {
             position: absolute; width: 12px; height: 12px; border: 2px solid #00f2fe;
             border-radius: 50%; pointer-events: none; z-index: 99;
@@ -159,28 +148,24 @@
 
     <div class="space-bg"></div>
 
-    <!-- 戰術螢幕主框體 -->
     <div class="cockpit-screen-frame">
         
         <div class="screen-top-bar">
-            <span>[SYS.VER // COCKPIT AI INTERFACE]</span>
+            <span>[SYS.VER // GLOBAL COCKPIT HUD]</span>
             <span style="color:#00f2fe;">TOUCH CONTROL: ACTIVE</span>
             <span>SECURE LINK: ONLINE</span>
         </div>
 
-        <!-- 左側選單 -->
         <div class="mod-nav">
             <div class="module-header">
-                <span>[NAV-TARGETS]</span>
-                <small style="color:#ffe600;">COLLAPSIBLE</small>
+                <span>[GLOBAL TARGETS]</span>
+                <small style="color:#ffe600;">FULL WORLD</small>
             </div>
             <div class="tour-list" id="accordionContainer"></div>
         </div>
 
-        <!-- 中間 3D 地球專屬視窗 -->
         <div id="canvas-container"></div>
 
-        <!-- 右側副螢幕 -->
         <div class="mod-sub-screen">
             <div class="module-header">
                 <span>[TARGET ANALYZER]</span>
@@ -199,13 +184,13 @@
             </div>
 
             <div class="desc-box" id="targetDesc">
-                >> 系統準備就緒。<br>點擊左側地標按鈕，將觸發 AI 戰術光環旋轉並鎖定目標。
+                >> 系統準備就緒。<br>點擊左側地標按鈕，將解鎖全球目標並載入詳細情資。
             </div>
         </div>
 
         <div class="screen-bottom-bar">
             <span>STATUS: ALL SYSTEMS NOMINAL</span>
-            <span>AI CORE: LISTENING // ROTATING RING READY</span>
+            <span>AI CORE: GLOBAL MAPPING ACTIVE</span>
         </div>
 
     </div>
@@ -245,33 +230,40 @@
             }
         }
 
+        // 全球完整地標資料庫 (包含非洲、亞洲、歐洲、美洲、大洋洲)
         const tourData = [
             {
-                category: "[01] 臺灣目標 (TAIWAN)",
+                category: "[01] 非洲大陸 (AFRICA)",
                 items: [
-                    { name: "台北 101", sub: "TAIPEI 101", lat: 25.0330, lon: 121.5645, era: "2004 年竣工", dist: "35,508 KM", desc: "曾為世界第一高樓（508 公尺），融合傳統竹節意象與風阻尼球防震科技。" },
-                    { name: "玉山主峰", sub: "YUSHAN PEAK", lat: 23.4700, lon: 120.9573, era: "300 萬年前造山", dist: "35,004 KM", desc: "海拔 3,952 公尺，東北亞第一高峰，板塊強烈擠壓隆起之雄偉地貌。" },
-                    { name: "高雄流行音樂中心", sub: "KAOHSIUNG MUSIC", lat: 22.6180, lon: 120.2930, era: "2021 年啟用", dist: "35,000 KM", desc: "座落於愛河灣，以蜂巢與浪花塔為特色之南方音樂文化地標。" }
+                    { name: "吉薩金字塔群", sub: "GIZA PYRAMIDS", lat: 29.9792, lon: 31.1342, era: "BC 2560年", dist: "36,450 KM", desc: "埃及尼羅河流域，古代世界七大奇蹟中唯一保存至今的偉大宏偉陵墓群。" },
+                    { name: "卡納克神廟", sub: "KARNAK TEMPLE", lat: 25.7188, lon: 32.6573, era: "BC 2000年", dist: "36,200 KM", desc: "埃及路克索龐大的古神廟遺址，以巨大的多柱廳與石雕壁畫聞名於世。" },
+                    { name: "桌山", sub: "TABLE MOUNTAIN", lat: -33.9628, lon: 18.4098, era: "遠古造山地貌", dist: "41,000 KM", desc: "南非開普敦的地標，擁有平坦如桌面的山頂，俯瞰大西洋與印度洋交會處。" },
+                    { name: "維多利亞瀑布", sub: "VICTORIA FALLS", lat: -17.9243, lon: 25.8572, era: "自然奇觀", dist: "39,500 KM", desc: "位於贊比西河上，世界最大瀑布群之一，水霧如煙霧般震撼壯麗。" }
                 ]
             },
             {
-                category: "[02] 亞洲目標 (ASIA)",
+                category: "[02] 亞洲大陸 (ASIA)",
                 items: [
-                    { name: "東京鐵塔", sub: "TOKYO TOWER", lat: 35.6586, lon: 139.7454, era: "1958 年建造", dist: "35,333 KM", desc: "高 332.9 公尺，以巴黎鐵塔為藍本，日本戰後經濟復興之象徵。" },
-                    { name: "富士山", sub: "MOUNT FUJI", lat: 35.3606, lon: 138.7274, era: "10 萬年前形成", dist: "35,377 KM", desc: "日本最高峰（3,776 公尺），錐形複式火山，信仰與藝術之精神象徵。" },
-                    { name: "萬里長城", sub: "GREAT WALL", lat: 40.4319, lon: 116.5704, era: "BC 7 世紀/明代", dist: "35,210 KM", desc: "總長超過 21,000 公里，人類歷史上規模最龐大之防禦工程。" },
-                    { name: "泰姬瑪哈陵", sub: "TAJ MAHAL", lat: 27.1751, lon: 78.0421, era: "1653 年竣工", dist: "35,800 KM", desc: "蒙兀兒帝國皇帝為紀念摯愛妻子所建之白色大理石陵寢。" }
+                    { name: "台北 101", sub: "TAIPEI 101", lat: 25.0330, lon: 121.5645, era: "2004 年竣工", dist: "35,508 KM", desc: "臺灣地標，融合竹節意象與風阻尼球抗震科技的高空摩天大樓。" },
+                    { name: "萬里長城 (八達嶺)", sub: "GREAT WALL", lat: 40.4319, lon: 116.5704, era: "明代修築", dist: "35,210 KM", desc: "橫亙中國北方崇山峻嶺間之宏偉防禦工事，人類文明歷史奇蹟。" },
+                    { name: "泰姬瑪哈陵", sub: "TAJ MAHAL", lat: 27.1751, lon: 78.0421, era: "1653 年竣工", dist: "35,800 KM", desc: "印度阿格拉的純白大理石陵寢，蒙兀兒帝國建築藝術的巔峰之作。" },
+                    { name: "東京晴空塔", sub: "TOKYO SKYTREE", lat: 35.7100, lon: 139.8107, era: "2012 年啟用", dist: "35,350 KM", desc: "高 634 公尺，融合日本傳統美學與現代鋼構技術的通訊塔。" }
                 ]
             },
             {
-                category: "[03] 歐美與中東 (GLOBAL)",
+                category: "[03] 歐洲大陸 (EUROPE)",
                 items: [
-                    { name: "巴黎 艾菲爾鐵塔", sub: "EIFFEL TOWER", lat: 48.8584, lon: 2.2945, era: "1889 年落成", dist: "37,100 KM", desc: "高 330 公尺，世博會與工業革命金屬結構建築之傑作。" },
-                    { name: "羅馬競技場", sub: "COLOSSEUM", lat: 41.8902, lon: 12.4922, era: "AD 80 年啟用", dist: "36,900 KM", desc: "古羅馬最大圓形角鬥場，展示古代混凝土拱門與地下機械構造。" },
-                    { name: "吉薩金字塔群", sub: "GIZA PYRAMIDS", lat: 29.9792, lon: 31.1342, era: "BC 2560 年", dist: "36,450 KM", desc: "古代世界七大奇蹟唯一完好保存者，由 230 萬塊精密巨石堆砌。" },
-                    { name: "杜拜 哈里發塔", sub: "BURJ KHALIFA", lat: 25.1972, lon: 55.2744, era: "2010 年啟用", dist: "36,100 KM", desc: "人類史上最高建築（828 公尺），沙漠花卉圖騰演變之 Y 字結構。" },
-                    { name: "印加 馬丘比丘", sub: "MACHU PICCHU", lat: -13.1631, lon: -72.5450, era: "AD 1450 年", dist: "38,200 KM", desc: "海拔 2,430 公尺山脊之天空之城，極高精密度乾砌石工藝。" },
-                    { name: "紐約 自由女神像", sub: "STATUE OF LIBERTY", lat: 40.6892, lon: -74.0445, era: "1886 年揭幕", dist: "37,800 KM", desc: "法國贈與美國建國百週年禮物，民主與自由之精神象徵。" }
+                    { name: "巴黎 艾菲爾鐵塔", sub: "EIFFEL TOWER", lat: 48.8584, lon: 2.2945, era: "1889 年落成", dist: "37,100 KM", desc: "法國巴黎標誌性鐵件建築，工業革命與現代設計的先驅。" },
+                    { name: "羅馬競技場", sub: "COLOSSEUM", lat: 41.8902, lon: 12.4922, era: "AD 80 年", dist: "36,900 KM", desc: "古羅馬帝國時期最大之圓形角鬥場，精湛的混凝土拱門工程。" },
+                    { name: "雅典帕德嫩神廟", sub: "PARTHENON", lat: 37.9715, lon: 23.7266, era: "BC 438 年", dist: "36,600 KM", desc: "希臘雅典衛城核心，古希臘古典建築與美學黃金比例的典範。" }
+                ]
+            },
+            {
+                category: "[04] 美洲與大洋洲 (AMERICA & OCEANIA)",
+                items: [
+                    { name: "紐約 自由女神像", sub: "STATUE OF LIBERTY", lat: 40.6892, lon: -74.0445, era: "1886 年揭幕", dist: "37,800 KM", desc: "美國紐約港的巨大銅像，象徵民主、自由與美法友誼。" },
+                    { name: "印加 馬丘比丘", sub: "MACHU PICCHU", lat: -13.1631, lon: -72.5450, era: "AD 1450 年", dist: "38,200 KM", desc: "秘魯安地斯山脈上的神祕天空之城，高精密度乾砌石工藝。" },
+                    { name: "雪梨歌劇院", sub: "SYDNEY OPERA HOUSE", lat: -33.8568, lon: 151.2153, era: "1973 年啟用", dist: "38,500 KM", desc: "澳洲雪梨港灣的貝殼造型現代主義建築傑作。" }
                 ]
             }
         ];
@@ -282,7 +274,7 @@
 
             const scene = new THREE.Scene();
             const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
-            camera.position.set(-2, 0, 22);
+            camera.position.set(0, 0, 22);
 
             const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(container.clientWidth, container.clientHeight);
@@ -297,7 +289,11 @@
 
             const geometry = new THREE.SphereGeometry(EARTH_RADIUS, 64, 64);
             const textureLoader = new THREE.TextureLoader();
-            const texture = textureLoader.load('https://upload.wikimedia.org/wikipedia/commons/8/83/Equirectangular_projection_SW.jpg');
+            // 使用標準等距柱狀世界地圖
+            const texture = textureLoader.load('https://upload.wikimedia.org/wikipedia/commons/8/83/Equirectangular_projection_SW.jpg', (tex) => {
+                // 載入成功後微調地球初始旋轉，讓非洲與歐亞大陸對準正前方
+                earth.rotation.y = -Math.PI / 2.2;
+            });
             const material = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.5 });
             const earth = new THREE.Mesh(geometry, material);
             scene.add(earth);
@@ -388,22 +384,13 @@
                     .to({ x: 2.2, y: 2.2, z: 2.2 }, 800)
                     .yoyo(true).repeat(Infinity).start();
 
-                const targetCameraPos = loc.targetPos.clone().multiplyScalar(1.8);
-                targetCameraPos.x -= 2;
-
-                new TWEEN.Tween(camera.position)
-                    .to({ x: targetCameraPos.x, y: targetCameraPos.y, z: targetCameraPos.z }, 1500)
-                    .easing(TWEEN.Easing.Cubic.Out)
-                    .onUpdate(() => controls.update())
-                    .start();
-
                 document.getElementById('targetStatus').innerText = "LOCKED";
                 document.getElementById('targetStatus').style.color = "#ff0055";
                 document.getElementById('targetName').innerText = loc.name;
                 document.getElementById('targetEra').innerText = loc.era;
                 document.getElementById('targetDist').innerText = loc.dist || "35,000 KM";
                 document.getElementById('targetCoords').innerText = `${loc.lat.toFixed(2)}° N, ${loc.lon.toFixed(2)}° E`;
-                document.getElementById('targetDesc').innerHTML = `>> <span style="color:#ff0055;">[AI 戰術鎖定]</span> 簡報：<br>${loc.desc}`;
+                document.getElementById('targetDesc').innerHTML = `>> <span style="color:#ff0055;">[AI 全球鎖定]</span> 情資：<br>${loc.desc}`;
 
                 const googleMapUrl = `https://maps.google.com/maps?q=${loc.lat},${loc.lon}&t=k&z=15&ie=UTF8&iwloc=&output=embed`;
                 document.getElementById('mapIframe').src = googleMapUrl;
@@ -422,7 +409,8 @@
             function animate() {
                 requestAnimationFrame(animate);
                 TWEEN.update();
-                earth.rotation.y += 0.0008;
+                // 如果沒有手動轉動地球，讓它微微自轉
+                earth.rotation.y += 0.0003;
                 controls.update();
                 renderer.render(scene, camera);
             }
