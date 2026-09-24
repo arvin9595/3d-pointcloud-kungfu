@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>STARSHIP EARTH SYSTEM V3.3 PHASE 3 // WEATHER & ATMOSPHERE INTELLIGENCE</title>
+<title>STARSHIP EARTH SYSTEM V3.3 PHASE 4 // SPACE WEATHER INTELLIGENCE</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 <style>
 :root{
@@ -130,6 +130,40 @@ button{font:inherit}
 .focus-wx-event{display:none}
 .focus-wx-event.show{display:block!important}
 
+
+/* V3.3 Phase 4 — NOAA SWPC Space Weather Intelligence */
+.space-intel{
+  position:absolute;left:50%;bottom:45px;z-index:13;width:min(430px,60%);
+  transform:translate(-50%,10px);padding:10px 11px;
+  border:1px solid rgba(139,92,255,.48);
+  background:linear-gradient(135deg,rgba(3,10,22,.97),rgba(16,5,29,.95));
+  box-shadow:0 0 34px rgba(139,92,255,.15),inset 0 0 24px rgba(53,242,255,.025);
+  opacity:0;visibility:hidden;transition:.22s;pointer-events:auto
+}
+.space-intel.show{opacity:1;visibility:visible;transform:translate(-50%,0)}
+.space-intel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--violet);font-size:.50rem;letter-spacing:1px}
+.space-intel-title{margin-top:4px;color:#fff;font-size:.67rem}
+.space-intel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:7px}
+.space-intel-cell{padding:5px;border:1px solid rgba(139,92,255,.17);font-size:.43rem;color:#718a9a}
+.space-intel-cell b{display:block;margin-top:2px;color:var(--amber);font-size:.55rem;font-weight:500}
+.space-intel-note{margin-top:6px;color:#7995a2;font-size:.43rem;line-height:1.45}
+.center.space-mode .viewport-frame{box-shadow:inset 0 0 55px rgba(139,92,255,.035)}
+.space-legend{
+  position:absolute;left:50%;bottom:15px;z-index:9;transform:translateX(-50%);
+  display:none;align-items:center;gap:9px;padding:5px 9px;
+  border:1px solid rgba(139,92,255,.26);background:rgba(3,2,12,.82);
+  backdrop-filter:blur(8px);font-size:.43rem;color:#8fa4b0;letter-spacing:.35px;
+  pointer-events:none;white-space:nowrap
+}
+.center.space-mode .space-legend{display:flex}
+.space-legend b{color:var(--violet);font-weight:500}
+.space-dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+.sd-cyan{background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+.sd-violet{background:var(--violet);box-shadow:0 0 8px var(--violet)}
+.sd-pink{background:var(--pink);box-shadow:0 0 8px var(--pink)}
+.focus-space-event{display:none}
+.focus-space-event.show{display:block!important}
+
 /* V3.3 Phase 1.5 — reusable Focus View */
 .focus-trigger{position:absolute;top:12px;right:108px;z-index:12;height:25px;padding:0 9px;border:1px solid rgba(53,242,255,.28);background:rgba(1,10,18,.72);color:var(--cyan);font-size:.48rem;letter-spacing:1px;cursor:pointer;box-shadow:inset 0 0 14px rgba(53,242,255,.03);transition:.2s}
 .focus-trigger:hover{border-color:rgba(139,92,255,.75);color:#fff;box-shadow:0 0 18px rgba(139,92,255,.18),inset 0 0 18px rgba(53,242,255,.06)}
@@ -158,7 +192,7 @@ body.focus-open .bridge{filter:brightness(.42) saturate(.72)}
 <div class="space-bg"></div>
 <main class="bridge">
   <header class="topbar">
-    <span>[SYS.SECURE // STARSHIP ORBITAL HUD // V3.3-P3]</span>
+    <span>[SYS.SECURE // STARSHIP ORBITAL HUD // V3.3-P4]</span>
     <span class="live">PLANETARY INTELLIGENCE NETWORK: ONLINE</span>
     <span id="utcClock">UTC --:--:--</span>
   </header>
@@ -234,6 +268,25 @@ body.focus-open .bridge{filter:brightness(.42) saturate(.72)}
         <span id="wxLegendB"><i class="wdot w-mild"></i> MILD</span>
         <span id="wxLegendC"><i class="wdot w-warm"></i> WARM</span>
         <span id="wxLegendD"><i class="wdot w-hot"></i> HOT</span>
+      </div>
+      <div class="space-intel" id="spaceIntel" role="status" aria-live="polite">
+        <div class="space-intel-head"><span>NOAA SWPC // SPACE WEATHER CONTACT</span><button class="wx-close" id="spaceClose" type="button" aria-label="關閉太空天氣情報">×</button></div>
+        <div class="space-intel-title" id="spaceIntelTitle">EARTH MAGNETOSPHERE // LIVE CONDITIONS</div>
+        <div class="space-intel-grid">
+          <div class="space-intel-cell">PLANETARY Kp<b id="spaceKp">--</b></div>
+          <div class="space-intel-cell">SOLAR WIND<b id="spaceWind">--</b></div>
+          <div class="space-intel-cell">IMF Bz<b id="spaceBz">--</b></div>
+          <div class="space-intel-cell">GEOMAGNETIC<b id="spaceG">G--</b></div>
+          <div class="space-intel-cell">RADIO BLACKOUT<b id="spaceR">R--</b></div>
+          <div class="space-intel-cell">LATEST X-RAY<b id="spaceXray">--</b></div>
+        </div>
+        <div class="space-intel-note" id="spaceStamp">NOAA SWPC operational data // timestamps loading...</div>
+      </div>
+      <div class="space-legend" id="spaceLegend">
+        <b>NOAA SWPC // EARTH-SPACE ENVIRONMENT</b>
+        <span><i class="space-dot sd-cyan"></i> MAGNETOSPHERE</span>
+        <span><i class="space-dot sd-violet"></i> SOLAR WIND</span>
+        <span><i class="space-dot sd-pink"></i> DISTURBANCE</span>
       </div>
       <div id="radarMap"></div>
     </div>
@@ -328,7 +381,20 @@ body.focus-open .bridge{filter:brightness(.42) saturate(.72)}
           <div><span id="focusWxL4">LAYER</span><b id="focusWxV4">OPEN-METEO</b></div>
         </div>
       </div>
-      <div class="focus-hint">拖曳地球可旋轉；滾輪可縮放。EARTHQUAKES 可短按 USGS 地震光點；EVENTS / STORMS 可短按 NASA EONET 事件光點。按 ESC 或右上角 × 返回艦橋總覽。</div>
+      <div class="focus-event focus-space-event" id="focusSpaceEvent">
+        <div class="label" style="color:var(--violet)">NOAA SWPC // SPACE WEATHER CONTACT</div>
+        <h3>EARTH MAGNETOSPHERE // LIVE CONDITIONS</h3>
+        <div class="focus-event-grid">
+          <div>PLANETARY Kp<b id="focusSpaceKp">--</b></div>
+          <div>SOLAR WIND<b id="focusSpaceWind">--</b></div>
+          <div>IMF Bz<b id="focusSpaceBz">--</b></div>
+          <div>GEOMAGNETIC<b id="focusSpaceG">G--</b></div>
+          <div>RADIO BLACKOUT<b id="focusSpaceR">R--</b></div>
+          <div>LATEST X-RAY<b id="focusSpaceXray">--</b></div>
+        </div>
+        <div style="margin-top:7px;color:#7896a2;font-size:.46rem;line-height:1.5" id="focusSpaceStamp">NOAA SWPC operational data</div>
+      </div>
+      <div class="focus-hint">拖曳地球可旋轉；滾輪可縮放。EARTHQUAKES 可短按 USGS 地震光點；EVENTS / STORMS 可短按 NASA EONET 事件光點；SPACE WX 顯示全球地球—太空環境狀態。按 ESC 或右上角 × 返回艦橋總覽。</div>
     </aside>
     <footer class="focus-footer"><span>BRIDGE VIEW</span> 總覽與監控　→　<span>FOCUS VIEW</span> 詳細分析與操作</footer>
   </section>
@@ -649,6 +715,132 @@ function hideWxIntel(){
   if(selectedWxMesh)selectedWxMesh.scale.setScalar(1);selectedWxMesh=null;wxSelectionRing.visible=false;
 }
 
+
+// ---------- V3.3 PHASE 4: NOAA SWPC SPACE WEATHER INTELLIGENCE ----------
+const spaceWxGroup=new THREE.Group();spaceWxGroup.name='NOAA_SWPC_SPACE_WEATHER_LAYER';earth.add(spaceWxGroup);
+let spaceWxActive=false;
+
+function clearSpaceWxLayer(){
+  while(spaceWxGroup.children.length){
+    const o=spaceWxGroup.children.pop();
+    o.geometry?.dispose?.();o.material?.dispose?.();
+  }
+  spaceWxActive=false;
+  $('spaceIntel')?.classList.remove('show');
+  $('focusSpaceEvent')?.classList.remove('show');
+}
+function buildSpaceWxLayer(kp=0,bz=0){
+  clearSpaceWxLayer();
+  const disturbance=Math.min(1,Math.max(0,Number(kp||0)/9));
+  const bzNum=Number(bz||0);
+  const ringColors=[0x35f2ff,0x8b5cff,bzNum<0?0xff3d9a:0x35f2ff];
+
+  [5.55,5.82,6.10].forEach((radius,i)=>{
+    const torus=new THREE.Mesh(
+      new THREE.TorusGeometry(radius,.022+i*.006,8,128),
+      new THREE.MeshBasicMaterial({color:ringColors[i],transparent:true,opacity:.28+i*.08,depthWrite:false})
+    );
+    torus.rotation.x=Math.PI/2+(i-1)*.22;
+    torus.rotation.y=(i-1)*.28;
+    spaceWxGroup.add(torus);
+  });
+
+  // A translucent shell communicates that this layer is global rather than a local ground node.
+  const shell=new THREE.Mesh(
+    new THREE.SphereGeometry(R+.34,40,28),
+    new THREE.MeshBasicMaterial({
+      color:disturbance>.55?0xff3d9a:0x35f2ff,
+      transparent:true,opacity:.025+disturbance*.025,
+      wireframe:true,depthWrite:false
+    })
+  );
+  spaceWxGroup.add(shell);
+
+  // Solar-wind stream traces: schematic, not a geographic vector map.
+  for(let i=-2;i<=2;i++){
+    const pts=[
+      new THREE.Vector3(8.4,i*.72,-1.5+i*.08),
+      new THREE.Vector3(7.2,i*.62,-1.0),
+      new THREE.Vector3(6.25,i*.48,-.55)
+    ];
+    const geo=new THREE.BufferGeometry().setFromPoints(pts);
+    const line=new THREE.Line(
+      geo,
+      new THREE.LineBasicMaterial({color:0x8b5cff,transparent:true,opacity:.22,depthWrite:false})
+    );
+    spaceWxGroup.add(line);
+  }
+  spaceWxActive=true;
+}
+function swpcLatestKp(rows){
+  if(!Array.isArray(rows)||!rows.length)return {kp:'--',time:'--',prev:'--'};
+  const data=Array.isArray(rows[0])&&String(rows[0][0]).toLowerCase().includes('time')?rows.slice(1):rows;
+  const last=data.at(-1),prev=data.at(-2);
+  const value=r=>Array.isArray(r)?r[1]:(r?.Kp??r?.kp??'--');
+  const time=r=>Array.isArray(r)?r[0]:(r?.time_tag??r?.TimeStamp??'--');
+  return {kp:value(last),time:time(last),prev:value(prev)};
+}
+function swpcWind(obj){
+  if(!obj)return {speed:'--',time:'--'};
+  if(Array.isArray(obj)){
+    if(Array.isArray(obj[0])){
+      const hdr=obj[0],row=obj.at(-1)||[];
+      const si=hdr.findIndex(x=>String(x).toLowerCase().includes('speed'));
+      return {speed:si>=0?row[si]:'--',time:row[0]||'--'};
+    }
+    obj=obj.at(-1)||{};
+  }
+  return {speed:obj.WindSpeed??obj.wind_speed??obj.proton_speed??obj.speed??'--',time:obj.TimeStamp??obj.time_tag??'--'};
+}
+function swpcMag(obj){
+  if(!obj)return {bt:'--',bz:'--',time:'--'};
+  if(Array.isArray(obj))obj=obj.at(-1)||{};
+  return {bt:obj.Bt??obj.bt??obj.total_field??'--',bz:obj.Bz??obj.bz_gsm??obj.bz??'--',time:obj.TimeStamp??obj.time_tag??'--'};
+}
+function swpcScales(obj){
+  const now=obj?.['0']||obj?.[0]||{};
+  const past=obj?.['-1']||{};
+  const val=(key)=>now?.[key]?.Scale??past?.[key]?.Scale??'0';
+  const txt=(key)=>now?.[key]?.Text??past?.[key]?.Text??'none';
+  return {G:val('G'),R:val('R'),S:val('S'),gText:txt('G'),rText:txt('R'),sText:txt('S'),time:(now.DateStamp&&now.TimeStamp)?`${now.DateStamp} ${now.TimeStamp} UTC`:'--'};
+}
+function swpcXray(obj){
+  const row=Array.isArray(obj)?(obj.at(-1)||{}):(obj||{});
+  return {
+    cls:row.max_class??row.class??row.flare_class??row.current_class??'--',
+    time:row.max_time??row.time_tag??row.begin_time??'--'
+  };
+}
+function showSpaceIntel(d){
+  const k=swpcLatestKp(d.kp),w=swpcWind(d.wind),m=swpcMag(d.mag),s=swpcScales(d.scales),x=swpcXray(d.xray);
+  buildSpaceWxLayer(k.kp,m.bz);
+
+  $('spaceKp').textContent=k.kp;
+  $('spaceWind').textContent=(w.speed==='--'?'--':w.speed+' km/s');
+  $('spaceBz').textContent=(m.bz==='--'?'--':m.bz+' nT');
+  $('spaceG').textContent='G'+s.G+' · '+String(s.gText).toUpperCase();
+  $('spaceR').textContent='R'+s.R+' · '+String(s.rText).toUpperCase();
+  $('spaceXray').textContent=x.cls;
+  $('spaceStamp').textContent=`Kp ${k.time} // Solar wind ${w.time} // NOAA scales ${s.time}`;
+  $('spaceIntel').classList.add('show');
+
+  $('focusSpaceKp').textContent=k.kp;
+  $('focusSpaceWind').textContent=(w.speed==='--'?'--':w.speed+' km/s');
+  $('focusSpaceBz').textContent=(m.bz==='--'?'--':m.bz+' nT');
+  $('focusSpaceG').textContent='G'+s.G+' · '+String(s.gText).toUpperCase();
+  $('focusSpaceR').textContent='R'+s.R+' · '+String(s.rText).toUpperCase();
+  $('focusSpaceXray').textContent=x.cls;
+  $('focusSpaceStamp').textContent=`NOAA SWPC // Kp ${k.time} // Solar wind ${w.time} // Scales ${s.time}`;
+  $('focusSpaceEvent').classList.add('show');
+
+  $('rightDesc').innerHTML=`<span style="color:var(--violet)">NOAA SWPC SPACE WEATHER CONTACT</span><br>Planetary Kp <b>${esc(k.kp)}</b> · Solar wind <b>${esc(w.speed)} km/s</b> · IMF Bz <b>${esc(m.bz)} nT</b><br>NOAA Scales: G${esc(s.G)} / R${esc(s.R)} / S${esc(s.S)}.`;
+  return {k,w,m,s,x};
+}
+function hideSpaceIntel(){
+  $('spaceIntel')?.classList.remove('show');
+  $('focusSpaceEvent')?.classList.remove('show');
+}
+
 let pulseTween=null;
 function resize3D(){const w=container.clientWidth,h=container.clientHeight;if(!w||!h)return;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false)}
 new ResizeObserver(resize3D).observe(container);resize3D();
@@ -673,6 +865,12 @@ function syncFocusPanel(){
   }else{
     $('focusWxEvent').style.display='none';
     $('focusWxEvent').classList.remove('show');
+  }
+  if(currentMode==='space'){
+    $('focusSpaceEvent').style.display='block';
+  }else{
+    $('focusSpaceEvent').style.display='none';
+    $('focusSpaceEvent').classList.remove('show');
   }
 }
 function openFocusView(){
@@ -775,6 +973,7 @@ renderer.domElement.addEventListener('pointerup',e=>{
 $('quakeClose').addEventListener('click',hideQuakeIntel);
 $('eventClose').addEventListener('click',hideEonetIntel);
 $('wxClose').addEventListener('click',hideWxIntel);
+$('spaceClose').addEventListener('click',hideSpaceIntel);
 (function animate(){requestAnimationFrame(animate);TWEEN.update();earth.rotation.y+=.00028;orbit1.rotation.z+=.00065;orbit2.rotation.z-=.00042;controls.update();renderer.render(scene,camera)})();
 
 // ---------- LEFT NAV ----------
@@ -816,7 +1015,29 @@ async function getWeather(){
 async function getEonet(category=''){const url='https://eonet.gsfc.nasa.gov/api/v3/events?status=open&limit=30&days=30'+(category?'&category='+encodeURIComponent(category):'');const r=await fetch(url);if(!r.ok)throw new Error('NASA EONET '+r.status);return r.json()}
 async function getEvents(){if(!eventsCache)eventsCache=await getEonet();return eventsCache}
 async function getQuakes(){if(quakesCache)return quakesCache;const r=await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson');if(!r.ok)throw new Error('USGS '+r.status);quakesCache=await r.json();return quakesCache}
-async function getSpace(){if(spaceCache)return spaceCache;const [kpR,windR]=await Promise.all([fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json'),fetch('https://services.swpc.noaa.gov/products/summary/solar-wind-speed.json')]);if(!kpR.ok||!windR.ok)throw new Error('NOAA SWPC unavailable');spaceCache={kp:await kpR.json(),wind:await windR.json()};return spaceCache}
+async function getSpace(){
+  if(spaceCache)return spaceCache;
+  const urls={
+    kp:'https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json',
+    wind:'https://services.swpc.noaa.gov/products/summary/solar-wind-speed.json',
+    mag:'https://services.swpc.noaa.gov/products/summary/solar-wind-mag-field.json',
+    scales:'https://services.swpc.noaa.gov/products/noaa-scales.json',
+    xray:'https://services.swpc.noaa.gov/json/goes/primary/xray-flares-latest.json'
+  };
+  const entries=await Promise.all(Object.entries(urls).map(async([key,url])=>{
+    try{
+      const r=await fetch(url,{cache:'no-store'});
+      if(!r.ok)throw new Error(key+' '+r.status);
+      return [key,await r.json()];
+    }catch(err){
+      console.warn('NOAA SWPC feed unavailable:',key,err);
+      return [key,null];
+    }
+  }));
+  spaceCache=Object.fromEntries(entries);
+  if(!spaceCache.kp&&!spaceCache.wind&&!spaceCache.mag&&!spaceCache.scales&&!spaceCache.xray)throw new Error('NOAA SWPC feeds unavailable');
+  return spaceCache;
+}
 function wmo(code){const m={0:'晴朗',1:'大致晴朗',2:'局部多雲',3:'陰天',45:'霧',48:'霧淞',51:'毛毛雨',53:'毛毛雨',55:'強毛毛雨',61:'小雨',63:'中雨',65:'大雨',71:'小雪',73:'中雪',75:'大雪',80:'陣雨',81:'陣雨',82:'強陣雨',95:'雷雨',96:'雷雨／冰雹',99:'強雷雨／冰雹'};return m[code]||'氣象代碼 '+code}
 function setAnalysis(title,state,html){$('analysisTitle').textContent=title;$('analysisState').textContent=state;$('analysisLog').innerHTML=html;$('dataTime').textContent=fmtTime()}
 function loading(title){setAnalysis(title,'LINKING','<div style="color:var(--cyan)">>> CONNECTING TO LIVE DATA NETWORK...</div>')}
@@ -828,7 +1049,7 @@ function ensureRadarMap(){if(radarMap)return;radarMap=L.map('radarMap',{zoomCont
 async function showRadar(){ensureRadarMap();radarMap.setView([currentTarget.lat,currentTarget.lon],5);setTimeout(()=>radarMap.invalidateSize(),100);const r=await fetch('https://api.rainviewer.com/public/weather-maps.json');if(!r.ok)throw new Error('RainViewer '+r.status);const d=await r.json();const frame=d.radar?.past?.at(-1);if(!frame)throw new Error('No radar frame');if(radarLayer)radarMap.removeLayer(radarLayer);radarLayer=L.tileLayer(`${d.host}${frame.path}/256/{z}/{x}/{y}/2/1_1.png`,{opacity:.72,zIndex:5,attribution:'Radar © RainViewer'}).addTo(radarMap);return {time:new Date(frame.time*1000),count:d.radar.past.length}}
 
 // ---------- MODES ----------
-async function renderMode(mode){currentMode=mode;syncFocusPanel();$('focusOpen').disabled=(mode==='radar');$('focusOpen').style.opacity=mode==='radar'?'.35':'1';$('focusOpen').title=mode==='radar'?'RADAR 將於後續版本加入專用放大模式':'放大中央地球分析區';document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));$('targetMode').textContent=mode.toUpperCase();$('modeChip').textContent=mode.toUpperCase()+' MODE';$('hudMode').textContent=mode.toUpperCase();$('centerViewport').classList.toggle('radar-mode',mode==='radar');$('centerViewport').classList.toggle('quake-mode',mode==='quakes');$('centerViewport').classList.toggle('event-mode',mode==='events'||mode==='storms');$('centerViewport').classList.toggle('wx-mode',mode==='weather'||mode==='atmosphere');if(mode!=='quakes'){clearQuakeLayer()}if(mode!=='events'&&mode!=='storms'){clearEonetLayer()}if(mode!=='weather'&&mode!=='atmosphere'){clearWxLayer()}$('rightDesc').innerHTML=`<span style="color:var(--cyan)">[${esc(currentTarget.name)}]</span><br>${esc(currentTarget.desc)}`;
+async function renderMode(mode){currentMode=mode;syncFocusPanel();$('focusOpen').disabled=(mode==='radar');$('focusOpen').style.opacity=mode==='radar'?'.35':'1';$('focusOpen').title=mode==='radar'?'RADAR 將於後續版本加入專用放大模式':'放大中央地球分析區';document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));$('targetMode').textContent=mode.toUpperCase();$('modeChip').textContent=mode.toUpperCase()+' MODE';$('hudMode').textContent=mode.toUpperCase();$('centerViewport').classList.toggle('radar-mode',mode==='radar');$('centerViewport').classList.toggle('quake-mode',mode==='quakes');$('centerViewport').classList.toggle('event-mode',mode==='events'||mode==='storms');$('centerViewport').classList.toggle('wx-mode',mode==='weather'||mode==='atmosphere');$('centerViewport').classList.toggle('space-mode',mode==='space');if(mode!=='quakes'){clearQuakeLayer()}if(mode!=='events'&&mode!=='storms'){clearEonetLayer()}if(mode!=='weather'&&mode!=='atmosphere'){clearWxLayer()}if(mode!=='space'){clearSpaceWxLayer()}$('rightDesc').innerHTML=`<span style="color:var(--cyan)">[${esc(currentTarget.name)}]</span><br>${esc(currentTarget.desc)}`;
  try{
   if(mode==='global'){
     loading('GLOBAL SYSTEM STATUS');const [w,e,q,s]=await Promise.allSettled([getWeather(),getEvents(),getQuakes(),getSpace()]);const wc=w.status==='fulfilled'?w.value.current:null,ev=e.status==='fulfilled'?e.value.events.length:'--',qc=q.status==='fulfilled'?q.value.metadata.count:'--';$('hudWeather').textContent=wc?`${wc.temperature_2m}°C · ${wmo(wc.weather_code)}`:'UNAVAILABLE';$('hudEvents').textContent=e.status==='fulfilled'?String(e.value.events.length):'--';let kp='--';if(s.status==='fulfilled'){const rows=s.value.kp;const last=rows[rows.length-1];kp=Array.isArray(last)?last[1]:last?.Kp??'--'}setAnalysis('GLOBAL SYSTEM STATUS','ONLINE',`<div class="metric-grid"><div class="metric">TARGET<b>${esc(currentTarget.name)}</b></div><div class="metric">LOCAL TEMP<b>${wc?wc.temperature_2m+'°C':'--'}</b></div><div class="metric">NASA OPEN EVENTS<b>${ev}</b></div><div class="metric">USGS M2.5+ / 24H<b>${qc}</b></div><div class="metric">PLANETARY Kp<b>${esc(kp)}</b></div><div class="metric">NETWORK<b>LIVE</b></div></div>`);return;
@@ -870,7 +1091,23 @@ async function renderMode(mode){currentMode=mode;syncFocusPanel();$('focusOpen')
     loading('PLANETARY EVENT SCAN');const d=await getEvents();const plotted=buildEonetLayer(d);$('hudEvents').textContent=String(d.events.length);const counts={};d.events.forEach(e=>(e.categories||[]).forEach(c=>counts[c.title]=(counts[c.title]||0)+1));const cats=Object.entries(counts).sort((a,b)=>b[1]-a[1]);const list=d.events.slice(0,9);setAnalysis('NASA EONET // NATURAL EVENTS','LIVE',`<div class="metric-grid"><div class="metric">OPEN EVENTS<b>${d.events.length}</b></div><div class="metric">3D MARKERS<b>${plotted}</b></div></div><div style="margin:6px 0;color:var(--cyan)">中央 3D 地球已投影可定位的 EONET 事件；滑鼠靠近光點約 30px 範圍會變成手指，點擊即可讀取詳細情報。</div><div class="mini-list">${list.map(e=>`<div class="mini-item event-list-item" data-eid="${esc(e.id)}"><span>${esc(e.title)}</span><span style="color:var(--amber)">${esc(eventCategoryTitle(e))}</span></div>`).join('')}</div><div style="margin-top:7px;color:var(--muted)">分類統計：${cats.slice(0,5).map(([k,v])=>`${esc(k)} ${v}`).join(' · ')}</div>`);document.querySelectorAll('.event-list-item').forEach(el=>el.addEventListener('click',()=>{const m=eonetMeshes.find(x=>x.userData.eonet.id===el.dataset.eid);if(m)showEonetIntel(m)}));$('rightDesc').innerHTML='<span style="color:var(--violet)">NASA EONET LIVE EVENT LAYER</span><br>中央地球顯示 EONET 近即時天然事件。顏色依事件類別區分；點擊光點讀取事件資料。';return;
   }
   if(mode==='space'){
-    loading('SPACE WEATHER LINK');const d=await getSpace();const rows=d.kp,last=rows[rows.length-1],prev=rows[rows.length-2];const kp=Array.isArray(last)?last[1]:(last?.Kp??'--');const kpPrev=Array.isArray(prev)?prev[1]:(prev?.Kp??'--');let wind='--',windTime='--';if(Array.isArray(d.wind)){if(Array.isArray(d.wind[0])){const hdr=d.wind[0],row=d.wind[d.wind.length-1];const si=hdr.findIndex(x=>String(x).toLowerCase().includes('speed'));wind=si>=0?row[si]:'--';windTime=row[0]||'--'}else{const row=d.wind[d.wind.length-1]||{};wind=row.proton_speed??row.WindSpeed??row.wind_speed??row.speed??'--';windTime=row.time_tag??row.TimeStamp??'--'}}setAnalysis('NOAA SWPC // SPACE WEATHER','LIVE',`<div class="metric-grid"><div class="metric">PLANETARY Kp<b>${esc(kp)}</b></div><div class="metric">PREVIOUS Kp<b>${esc(kpPrev)}</b></div><div class="metric">SOLAR WIND<b>${esc(wind)} km/s</b></div><div class="metric">SOURCE<b>NOAA SWPC</b></div></div><div style="margin-top:7px;color:var(--muted)">Solar wind timestamp: ${esc(windTime)}</div>`);return;
+    loading('NOAA SWPC // SPACE WEATHER INTELLIGENCE');
+    const d=await getSpace();
+    const v=showSpaceIntel(d);
+    setAnalysis('NOAA SWPC // SPACE WEATHER INTELLIGENCE','LIVE',`
+      <div class="metric-grid">
+        <div class="metric">PLANETARY Kp<b>${esc(v.k.kp)}</b></div>
+        <div class="metric">PREVIOUS Kp<b>${esc(v.k.prev)}</b></div>
+        <div class="metric">SOLAR WIND<b>${esc(v.w.speed)} km/s</b></div>
+        <div class="metric">IMF Bz<b>${esc(v.m.bz)} nT</b></div>
+        <div class="metric">NOAA G SCALE<b>G${esc(v.s.G)} · ${esc(String(v.s.gText).toUpperCase())}</b></div>
+        <div class="metric">NOAA R / S<b>R${esc(v.s.R)} / S${esc(v.s.S)}</b></div>
+        <div class="metric">LATEST X-RAY FLARE<b>${esc(v.x.cls)}</b></div>
+        <div class="metric">SOURCE<b>NOAA SWPC</b></div>
+      </div>
+      <div style="margin-top:7px;color:var(--violet)">中央地球已切換為 Earth–Space Environment 視覺層。環帶與太陽風線為資訊視覺化，不代表磁層真實比例或即時三維形狀。</div>
+      <div style="margin-top:6px;color:var(--muted)">Kp: ${esc(v.k.time)} · Solar wind: ${esc(v.w.time)} · NOAA scales: ${esc(v.s.time)}</div>`);
+    return;
   }
   if(mode==='radar'){
     loading('PRECIPITATION RADAR');const d=await showRadar();setAnalysis('RAINVIEWER // WEATHER RADAR','LIVE',`<div class="metric-grid"><div class="metric">LATEST FRAME<b>${fmtTime(d.time)}</b></div><div class="metric">PAST FRAMES<b>${d.count}</b></div></div><div style="margin-top:7px">中央主畫面已切換為降雨雷達。拖曳地圖可移動；滾輪或雙指可縮放。</div><div style="margin-top:7px;color:var(--muted)">RainViewer 免費公開 API 適用個人、教育與小型社群用途；本頁已保留資料來源標示。</div>`);return;
