@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>STARSHIP EARTH SYSTEM V3.3 PHASE 5 // RADAR INTELLIGENCE</title>
+<title>STARSHIP EARTH SYSTEM V3.3 PHASE 5.1 // RADAR STATE SYNC FIX</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 <style>
 :root{
@@ -212,7 +212,7 @@ body.focus-open .bridge{filter:brightness(.42) saturate(.72)}
 <div class="space-bg"></div>
 <main class="bridge">
   <header class="topbar">
-    <span>[SYS.SECURE // STARSHIP ORBITAL HUD // V3.3-P5]</span>
+    <span>[SYS.SECURE // STARSHIP ORBITAL HUD // V3.3-P5.1]</span>
     <span class="live">PLANETARY INTELLIGENCE NETWORK: ONLINE</span>
     <span id="utcClock">UTC --:--:--</span>
   </header>
@@ -1172,9 +1172,14 @@ function updateRadarHud(){
   $('focusRadarContactTime').textContent=radarTimeText(frame);
   $('focusRadarContactFrame').textContent=`${radarIndex+1} / ${radarFrames.length}`;
   $('focusRadarTarget').textContent=`TARGET RADAR // ${currentTarget.name}`;
+  const deckTime=$('radarDeckSelectedFrame');
+  const deckCount=$('radarDeckFrameCount');
+  if(deckTime)deckTime.textContent=radarTimeText(frame);
+  if(deckCount)deckCount.textContent=radarFrames.length;
   $('radarPrev').disabled=radarIndex<=0;$('focusRadarPrev').disabled=radarIndex<=0;
   $('radarNext').disabled=radarIndex>=max;$('focusRadarNext').disabled=radarIndex>=max;
 }
+// BUG-RADAR-001 FIX (P5.1): Timeline, Analyzer, Focus and Analysis Deck share one selected frame state.
 function applyRadarFrame(index){
   if(!radarMeta||!radarFrames.length)return;
   radarIndex=Math.max(0,Math.min(radarFrames.length-1,Number(index)||0));
@@ -1282,8 +1287,8 @@ async function renderMode(mode){currentMode=mode;syncFocusPanel();$('focusOpen')
     const d=await showRadar();
     setAnalysis('RAINVIEWER // RADAR INTELLIGENCE LAYER','LIVE',`
       <div class="metric-grid">
-        <div class="metric">SELECTED FRAME<b>${fmtTime(d.time)}</b></div>
-        <div class="metric">PAST FRAMES<b>${d.count}</b></div>
+        <div class="metric">SELECTED FRAME<b id="radarDeckSelectedFrame">${fmtTime(d.time)}</b></div>
+        <div class="metric">PAST FRAMES<b id="radarDeckFrameCount">${d.count}</b></div>
         <div class="metric">TIME WINDOW<b>PAST 2 HOURS</b></div>
         <div class="metric">COLOR SCHEME<b>UNIVERSAL BLUE</b></div>
         <div class="metric">MAX RADAR ZOOM<b>7</b></div>
