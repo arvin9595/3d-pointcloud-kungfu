@@ -3,99 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>STARSHIP TACTICAL DISPLAY // TARGET LOCK SYSTEM</title>
+    <title>STARSHIP COCKPIT CONSOLE // TACTICAL HUD</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         
         body { 
             width: 100vw; height: 100vh; overflow: hidden; 
-            background-color: #01040a; font-family: 'Courier New', Courier, monospace, sans-serif; 
+            background-color: #000205; font-family: 'Courier New', Courier, monospace, sans-serif; 
             color: #00f2fe; cursor: crosshair;
+            display: flex; justify-content: center; align-items: center;
         }
 
-        #canvas-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
-
-        /* 科幻網格與掃描線 */
-        .scanline {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 242, 254, 0.04) 50%);
-            background-size: 100% 4px;
+        /* 外部太空背景 */
+        .space-bg {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0;
+            background: radial-gradient(circle at center, #051329 0%, #01040a 100%);
         }
 
-        /* 星艦舷窗外框 */
-        .hud-corner {
-            position: absolute; z-index: 5; pointer-events: none;
-            border: 2px solid rgba(0, 242, 254, 0.5); box-shadow: 0 0 10px rgba(0, 242, 254, 0.3);
+        /* 核心戰術主螢幕外框（製造「這是一個螢幕」的感覺） */
+        .cockpit-screen-frame {
+            position: relative; width: 96vw; height: 94vh; z-index: 5;
+            border: 2px solid rgba(0, 242, 254, 0.4);
+            background: rgba(1, 5, 12, 0.7);
+            box-shadow: 0 0 30px rgba(0, 242, 254, 0.15), inset 0 0 50px rgba(0, 242, 254, 0.08);
+            display: grid;
+            grid-template-columns: 320px 1fr 380px;
+            grid-template-rows: 40px 1fr 30px;
+            padding: 12px; gap: 12px;
+            clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
         }
-        .c-tl { top: 20px; left: 20px; width: 35px; height: 35px; border-right: none; border-bottom: none; }
-        .c-tr { top: 20px; right: 20px; width: 35px; height: 35px; border-left: none; border-bottom: none; }
-        .c-bl { bottom: 20px; left: 20px; width: 35px; height: 35px; border-right: none; border-top: none; }
-        .c-br { bottom: 20px; right: 20px; width: 35px; height: 35px; border-left: none; border-top: none; }
 
-        /* 通用星艦模組視窗 */
-        .module-window {
-            position: absolute; z-index: 10;
-            background: rgba(4, 12, 24, 0.85); backdrop-filter: blur(10px);
-            border: 1px solid #00f2fe;
-            box-shadow: inset 0 0 15px rgba(0, 242, 254, 0.15), 0 10px 30px rgba(0,0,0,0.8);
-            clip-path: polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%);
+        /* 螢幕頂部狀態列 */
+        .screen-top-bar {
+            grid-column: 1 / 4;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid rgba(0, 242, 254, 0.3);
+            padding-bottom: 5px; font-size: 0.75rem; letter-spacing: 2px; color: #ffe600;
+        }
+
+        /* 3D 地球容器（縮小並完美嵌在中間） */
+        #canvas-container {
+            grid-column: 2 / 3; grid-row: 2 / 3;
+            position: relative; width: 100%; height: 100%; overflow: hidden;
+            border: 1px dashed rgba(0, 242, 254, 0.2);
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        /* 左側：戰術目標摺疊選單 */
+        .mod-nav {
+            grid-column: 1 / 2; grid-row: 2 / 3;
+            background: rgba(2, 9, 20, 0.9);
+            border: 1px solid rgba(0, 242, 254, 0.4);
+            display: flex; flex-direction: column; overflow: hidden;
         }
         .module-header {
-            padding: 8px 12px; background: rgba(0, 242, 254, 0.15);
-            border-bottom: 1px solid rgba(0, 242, 254, 0.4);
-            font-size: 0.75rem; font-weight: 900; letter-spacing: 1.5px;
-            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 10px; background: rgba(0, 242, 254, 0.15);
+            border-bottom: 1px solid rgba(0, 242, 254, 0.3);
+            font-size: 0.7rem; font-weight: bold; letter-spacing: 1.5px;
+            display: flex; justify-content: space-between; color: #00f2fe;
         }
-
-        /* 螢幕 1：左側導航選單 */
-        .mod-nav { top: 40px; left: 40px; width: 260px; max-height: calc(100vh - 80px); display: flex; flex-direction: column; }
-        .tour-list { overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 6px; max-height: 70vh; }
+        .tour-list { overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
         .tour-list::-webkit-scrollbar { width: 3px; }
         .tour-list::-webkit-scrollbar-thumb { background: #00f2fe; }
-        
-        .cat-title { font-size: 0.65rem; color: #ffe600; font-weight: bold; margin-top: 8px; border-left: 2px solid #ffe600; padding-left: 5px; }
+
+        /* 摺疊標題與按鈕 */
+        .accordion-header {
+            background: rgba(0, 242, 254, 0.06); border: 1px solid rgba(0, 242, 254, 0.3);
+            color: #ffe600; padding: 6px 10px; font-size: 0.7rem; font-weight: bold;
+            cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+        }
+        .accordion-header::after { content: '►'; font-size: 0.55rem; transition: transform 0.3s; }
+        .accordion-header.active::after { transform: rotate(90deg); color: #ff0055; }
+
+        .accordion-content {
+            max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out;
+            display: flex; flex-direction: column; gap: 4px; padding-left: 4px;
+        }
+        .accordion-content.show { max-height: 400px; transition: max-height 0.3s ease-in; padding-top: 4px; }
+
         .btn-target {
-            width: 100%; padding: 8px; background: rgba(0, 242, 254, 0.05);
-            border: 1px solid rgba(0, 242, 254, 0.25); color: #00f2fe;
-            font-family: inherit; font-size: 0.78rem; font-weight: bold; cursor: pointer;
-            transition: all 0.2s ease; display: flex; justify-content: space-between;
+            width: 100%; padding: 6px 8px; background: rgba(0, 242, 254, 0.03);
+            border: 1px solid rgba(0, 242, 254, 0.2); color: #00f2fe;
+            font-family: inherit; font-size: 0.7rem; cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center;
+            transition: all 0.2s;
         }
-        .btn-target:hover, .btn-target.active { 
-            background: rgba(255, 0, 85, 0.2); border-color: #ff0055; color: #ff0055; 
-            box-shadow: 0 0 12px rgba(255, 0, 85, 0.6); 
-        }
+        .btn-target:hover { background: rgba(0, 242, 254, 0.2); border-color: #00f2fe; color: #fff; }
+        .btn-target.active { background: rgba(255, 0, 85, 0.25); border-color: #ff0055; color: #ff0055; font-weight: bold; }
 
-        /* 螢幕 2：右側副螢幕 */
+        /* 右側：副分析螢幕 */
         .mod-sub-screen {
-            top: 40px; right: 40px; width: 380px; height: calc(100vh - 80px);
-            display: flex; flex-direction: column; padding: 12px; gap: 10px;
+            grid-column: 3 / 4; grid-row: 2 / 3;
+            background: rgba(2, 9, 20, 0.9);
+            border: 1px solid rgba(0, 242, 254, 0.4);
+            display: flex; flex-direction: column; padding: 8px; gap: 8px; overflow-y: auto;
         }
-        .data-card {
-            background: rgba(0, 242, 254, 0.05); border: 1px solid rgba(0, 242, 254, 0.2);
-            padding: 10px; font-size: 0.75rem; display: flex; flex-direction: column; gap: 6px;
-        }
-        .data-row { display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(0, 242, 254, 0.2); padding-bottom: 4px; }
-        .data-val { color: #ffe600; font-weight: bold; }
-
-        /* 衛星視窗框 */
         .map-frame-box {
-            width: 100%; height: 220px; border: 1px solid #00f2fe;
-            background: #000; position: relative; overflow: hidden;
+            width: 100%; height: 160px; border: 1px solid #00f2fe; background: #000; position: relative;
         }
         .map-iframe { width: 100%; height: 100%; border: none; }
 
-        /* 文字介紹區塊 */
+        .data-card {
+            background: rgba(0, 242, 254, 0.04); border: 1px solid rgba(0, 242, 254, 0.2);
+            padding: 8px; font-size: 0.7rem; display: flex; flex-direction: column; gap: 4px;
+        }
+        .data-row { display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(0, 242, 254, 0.2); padding-bottom: 3px; }
+        .data-val { color: #ffe600; font-weight: bold; }
+
         .desc-box {
-            font-size: 0.75rem; line-height: 1.5; color: #cbd5e1;
-            background: rgba(0, 0, 0, 0.4); padding: 8px; border-left: 2px solid #00f2fe;
-            overflow-y: auto; max-height: 120px;
+            font-size: 0.7rem; line-height: 1.4; color: #cbd5e1;
+            background: rgba(0, 0, 0, 0.5); padding: 8px; border-left: 2px solid #00f2fe;
+            flex: 1; overflow-y: auto;
         }
 
-        /* 點擊螢幕能量水波紋 */
+        /* 螢幕底部列 */
+        .screen-bottom-bar {
+            grid-column: 1 / 4; grid-row: 3 / 4;
+            display: flex; justify-content: space-between; align-items: center;
+            border-top: 1px solid rgba(0, 242, 254, 0.3);
+            font-size: 0.65rem; color: rgba(0, 242, 254, 0.6);
+        }
+
+        /* 點擊波紋 */
         .click-pulse {
-            position: absolute; width: 20px; height: 20px; border: 2px solid #00f2fe;
+            position: absolute; width: 12px; height: 12px; border: 2px solid #00f2fe;
             border-radius: 50%; pointer-events: none; z-index: 99;
-            animation: pulse-anim 0.6s ease-out forwards;
+            animation: pulse-anim 0.4s ease-out forwards;
         }
         @keyframes pulse-anim {
             0% { transform: scale(0.5); opacity: 1; }
@@ -105,46 +138,57 @@
 </head>
 <body>
 
-    <div class="scanline"></div>
+    <div class="space-bg"></div>
 
-    <div class="hud-corner c-tl"></div>
-    <div class="hud-corner c-tr"></div>
-    <div class="hud-corner c-bl"></div>
-    <div class="hud-corner c-br"></div>
-
-    <div id="canvas-container"></div>
-
-    <!-- 左顯示器：戰術選單 -->
-    <div class="module-window mod-nav">
-        <div class="module-header">
-            <span>[NAV-TARGETS]</span>
-            <small style="color:#00f2fe;">SYS: READY</small>
-        </div>
-        <div class="tour-list" id="tourList"></div>
-    </div>
-
-    <!-- 右顯示器：星艦副分析螢幕 -->
-    <div class="module-window mod-sub-screen">
-        <div class="module-header">
-            <span>[SECONDARY DISPLAY // TARGET TACTICAL]</span>
-            <span style="color:#ffe600;" id="targetStatus">STANDBY</span>
+    <!-- 戰術螢幕主框體 -->
+    <div class="cockpit-screen-frame">
+        
+        <div class="screen-top-bar">
+            <span>[SYS.VER // 4.05 COCKPIT MODE]</span>
+            <span style="color:#00f2fe;">TACTICAL DISPLAY: ONLINE</span>
+            <span>SECURE LINK: ACTIVE</span>
         </div>
 
-        <div class="map-frame-box">
-            <iframe class="map-iframe" id="mapIframe" src="about:blank"></iframe>
+        <!-- 左側選單 -->
+        <div class="mod-nav">
+            <div class="module-header">
+                <span>[NAV-TARGETS]</span>
+                <small style="color:#ffe600;">COLLAPSIBLE</small>
+            </div>
+            <div class="tour-list" id="accordionContainer"></div>
         </div>
 
-        <div class="data-card">
-            <div class="data-row"><span>目標名稱 TARGET:</span><span class="data-val" id="targetName" style="color:#ff0055;">請選擇地標</span></div>
-            <div class="data-row"><span>建立/歷史年代 ERA:</span><span class="data-val" id="targetEra">--</span></div>
-            <div class="data-row"><span>星艦軌道距離 DISTANCE:</span><span class="data-val" id="targetDist">35,000 KM</span></div>
-            <div class="data-row"><span>地理座標 COORDINATES:</span><span class="data-val" id="targetCoords">0.00° N, 0.00° E</span></div>
+        <!-- 中間 3D 地球（已縮小便於在畫面內觀看） -->
+        <div id="canvas-container"></div>
+
+        <!-- 右側副螢幕 -->
+        <div class="mod-sub-screen">
+            <div class="module-header">
+                <span>[TARGET ANALYZER]</span>
+                <span style="color:#ffe600;" id="targetStatus">STANDBY</span>
+            </div>
+
+            <div class="map-frame-box">
+                <iframe class="map-iframe" id="mapIframe" src="about:blank"></iframe>
+            </div>
+
+            <div class="data-card">
+                <div class="data-row"><span>目標地標:</span><span class="data-val" id="targetName" style="color:#ff0055;">請選擇目標</span></div>
+                <div class="data-row"><span>歷史年代:</span><span class="data-val" id="targetEra">--</span></div>
+                <div class="data-row"><span>軌道距離:</span><span class="data-val" id="targetDist">35,000 KM</span></div>
+                <div class="data-row"><span>座標位置:</span><span class="data-val" id="targetCoords">0.00° N, 0.00° E</span></div>
+            </div>
+
+            <div class="desc-box" id="targetDesc">
+                >> 系統準備就緒。<br>請從左側點擊地標，地球將自動旋轉至該目標，右側同步載入高解析衛星視窗。
+            </div>
         </div>
 
-        <div class="desc-box" id="targetDesc">
-            >> 戰術系統待命...<br>
-            請點擊左側地標，星艦將自動定向座標，並觸發紅色紅色戰術雷達鎖定發光圈。
+        <div class="screen-bottom-bar">
+            <span>STATUS: ALL SYSTEMS NOMINAL</span>
+            <span>FRAME RATE: 60 FPS // GPU ACCELERATED</span>
         </div>
+
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -152,16 +196,77 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
 
     <script>
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playSound(type) {
+            initAudio();
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+
+            if (type === 'lock') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime); 
+                osc.frequency.exponentialRampToValueAtTime(1760, audioCtx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'expand') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.08);
+            }
+        }
+
+        const tourData = [
+            {
+                category: "[01] 臺灣目標 (TAIWAN)",
+                items: [
+                    { name: "台北 101", sub: "TAIPEI 101", lat: 25.0330, lon: 121.5645, era: "2004 年竣工", dist: "35,508 KM", desc: "曾為世界第一高樓（508 公尺），融合傳統竹節意象與風阻尼球防震科技。" },
+                    { name: "玉山主峰", sub: "YUSHAN PEAK", lat: 23.4700, lon: 120.9573, era: "300 萬年前造山", dist: "35,004 KM", desc: "海拔 3,952 公尺，東北亞第一高峰，板塊強烈擠壓隆起之雄偉地貌。" },
+                    { name: "高雄流行音樂中心", sub: "KAOHSIUNG MUSIC", lat: 22.6180, lon: 120.2930, era: "2021 年啟用", dist: "35,000 KM", desc: "座落於愛河灣，以蜂巢與浪花塔為特色之南方音樂文化地標。" }
+                ]
+            },
+            {
+                category: "[02] 亞洲目標 (ASIA)",
+                items: [
+                    { name: "東京鐵塔", sub: "TOKYO TOWER", lat: 35.6586, lon: 139.7454, era: "1958 年建造", dist: "35,333 KM", desc: "高 332.9 公尺，以巴黎鐵塔為藍本，日本戰後經濟復興之象徵。" },
+                    { name: "富士山", sub: "MOUNT FUJI", lat: 35.3606, lon: 138.7274, era: "10 萬年前形成", dist: "35,377 KM", desc: "日本最高峰（3,776 公尺），錐形複式火山，信仰與藝術之精神象徵。" },
+                    { name: "萬里長城", sub: "GREAT WALL", lat: 40.4319, lon: 116.5704, era: "BC 7 世紀/明代", dist: "35,210 KM", desc: "總長超過 21,000 公里，人類歷史上規模最龐大之防禦工程。" },
+                    { name: "泰姬瑪哈陵", sub: "TAJ MAHAL", lat: 27.1751, lon: 78.0421, era: "1653 年竣工", dist: "35,800 KM", desc: "蒙兀兒帝國皇帝為紀念摯愛妻子所建之白色大理石陵寢。" }
+                ]
+            },
+            {
+                category: "[03] 歐美與中東 (GLOBAL)",
+                items: [
+                    { name: "巴黎 艾菲爾鐵塔", sub: "EIFFEL TOWER", lat: 48.8584, lon: 2.2945, era: "1889 年落成", dist: "37,100 KM", desc: "高 330 公尺，世博會與工業革命金屬結構建築之傑作。" },
+                    { name: "羅馬競技場", sub: "COLOSSEUM", lat: 41.8902, lon: 12.4922, era: "AD 80 年啟用", dist: "36,900 KM", desc: "古羅馬最大圓形角鬥場，展示古代混凝土拱門與地下機械構造。" },
+                    { name: "吉薩金字塔群", sub: "GIZA PYRAMIDS", lat: 29.9792, lon: 31.1342, era: "BC 2560 年", dist: "36,450 KM", desc: "古代世界七大奇蹟唯一完好保存者，由 230 萬塊精密巨石堆砌。" },
+                    { name: "杜拜 哈里發塔", sub: "BURJ KHALIFA", lat: 25.1972, lon: 55.2744, era: "2010 年啟用", dist: "36,100 KM", desc: "人類史上最高建築（828 公尺），沙漠花卉圖騰演變之 Y 字結構。" },
+                    { name: "印加 馬丘比丘", sub: "MACHU PICCHU", lat: -13.1631, lon: -72.5450, era: "AD 1450 年", dist: "38,200 KM", desc: "海拔 2,430 公尺山脊之天空之城，極高精密度乾砌石工藝。" },
+                    { name: "紐約 自由女神像", sub: "STATUE OF LIBERTY", lat: 40.6892, lon: -74.0445, era: "1886 年揭幕", dist: "37,800 KM", desc: "法國贈與美國建國百週年禮物，民主與自由之精神象徵。" }
+                ]
+            }
+        ];
+
         window.addEventListener('load', () => {
             const container = document.getElementById('canvas-container');
             const EARTH_RADIUS = 5;
 
             const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
             camera.position.set(-2, 0, 22);
 
-            const renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
             renderer.setPixelRatio(window.devicePixelRatio);
             container.appendChild(renderer.domElement);
 
@@ -173,9 +278,7 @@
 
             const geometry = new THREE.SphereGeometry(EARTH_RADIUS, 64, 64);
             const textureLoader = new THREE.TextureLoader();
-            const nasaTextureUrl = 'https://upload.wikimedia.org/wikipedia/commons/8/83/Equirectangular_projection_SW.jpg';
-            const texture = textureLoader.load(nasaTextureUrl);
-
+            const texture = textureLoader.load('https://upload.wikimedia.org/wikipedia/commons/8/83/Equirectangular_projection_SW.jpg');
             const material = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.5 });
             const earth = new THREE.Mesh(geometry, material);
             scene.add(earth);
@@ -189,58 +292,43 @@
                 return new THREE.Vector3(x, y, z);
             }
 
-            const tourData = [
-                {
-                    category: "TARGET: TAIWAN",
-                    items: [
-                        { name: "台北 101", sub: "TAIPEI 101", lat: 25.0330, lon: 121.5645, era: "2004 年竣工", dist: "35,508 KM", desc: "曾為世界第一高樓，總高度 508 公尺，為臺灣現代化與竹節建築結構之代表作。" },
-                        { name: "玉山主峰", sub: "YUSHAN PEAK", lat: 23.4700, lon: 120.9573, era: "約 300 萬年前造山運動", dist: "35,004 KM", desc: "東北亞第一高峰，海拔 3,952 公尺，為造山運動形成之雄偉板塊地貌。" },
-                        { name: "高雄流行音樂中心", sub: "KAOHSIUNG MUSIC", lat: 22.6180, lon: 120.2930, era: "2021 年啟用", dist: "35,000 KM", desc: "座落於高雄港愛河灣，以海洋元素為設計靈感之港灣新地標。" }
-                    ]
-                },
-                {
-                    category: "TARGET: ASIA",
-                    items: [
-                        { name: "東京鐵塔", sub: "TOKYO TOWER", lat: 35.6586, lon: 139.7454, era: "1958 年建造", dist: "35,333 KM", desc: "以巴黎艾菲爾鐵塔為藍本打造，高 332.9 公尺，為東京戰後復興之象徵。" },
-                        { name: "富士山", sub: "MOUNT FUJI", lat: 35.3606, lon: 138.7274, era: "約 10 萬年前形成", dist: "35,377 KM", desc: "日本最高峰（3,776 公尺），為標準的複式火山，山頂終年積雪景緻極佳。" }
-                    ]
-                },
-                {
-                    category: "TARGET: GLOBAL HISTORIC",
-                    items: [
-                        { name: "吉薩金字塔", sub: "GIZA PYRAMIDS", lat: 29.9792, lon: 31.1342, era: "西元前 2560 年", dist: "36,450 KM", desc: "古代世界七大奇蹟唯一尚存者，胡夫金字塔由約 230 萬塊巨石堆砌而成。" },
-                        { name: "巴黎 艾菲爾鐵塔", sub: "EIFFEL TOWER", lat: 48.8584, lon: 2.2945, era: "1889 年落成", dist: "37,100 KM", desc: "為慶祝法國大革命百週年與世界博覽會所建，高 330 公尺之鍛鐵鏤空結構塔。" }
-                    ]
-                }
-            ];
-
-            const tourListContainer = document.getElementById('tourList');
+            const accordionContainer = document.getElementById('accordionContainer');
             let globalLocations = [];
             let locIndex = 0;
-            let activeMarkerGroup = null; // 當前鎖定的 3D 紅光標記組
 
-            tourData.forEach(group => {
-                const catHeader = document.createElement('div');
-                catHeader.className = 'cat-title';
-                catHeader.innerText = group.category;
-                tourListContainer.appendChild(catHeader);
+            tourData.forEach((group, gIdx) => {
+                const head = document.createElement('div');
+                head.className = 'accordion-header';
+                head.innerText = group.category;
+
+                const content = document.createElement('div');
+                content.className = 'accordion-content';
+
+                if (gIdx === 0) {
+                    head.classList.add('active');
+                    content.classList.add('show');
+                }
+
+                head.onclick = () => {
+                    playSound('expand');
+                    head.classList.toggle('active');
+                    content.classList.toggle('show');
+                };
 
                 group.items.forEach(item => {
                     const pos = latLonToVector3(item.lat, item.lon, EARTH_RADIUS + 0.02);
 
-                    // 建立基礎藍色小點
                     const dotGeo = new THREE.SphereGeometry(0.06, 16, 16);
                     const dotMat = new THREE.MeshBasicMaterial({ color: 0x00f2fe });
                     const dotMesh = new THREE.Mesh(dotGeo, dotMat);
                     dotMesh.position.copy(pos);
                     earth.add(dotMesh);
 
-                    // 建立紅色鎖定發光光圈 (隱藏預設)
                     const ringGeo = new THREE.RingGeometry(0.08, 0.15, 32);
                     const ringMat = new THREE.MeshBasicMaterial({ color: 0xff0055, side: THREE.DoubleSide, transparent: true, opacity: 0.9 });
                     const ringMesh = new THREE.Mesh(ringGeo, ringMat);
                     ringMesh.position.copy(pos.clone().multiplyScalar(1.01));
-                    ringMesh.lookAt(pos.clone().multiplyScalar(2)); // 面向外側
+                    ringMesh.lookAt(pos.clone().multiplyScalar(2));
                     ringMesh.visible = false;
                     earth.add(ringMesh);
 
@@ -249,44 +337,38 @@
                     const idx = locIndex;
                     btn.id = `btn-${idx}`;
                     btn.onclick = () => updateSubScreen(idx);
-                    btn.innerHTML = `<span>${item.name}</span><small>${item.sub}</small>`;
-                    tourListContainer.appendChild(btn);
+                    btn.innerHTML = `<span>${item.name}</span><small style="color:#64748b;">${item.sub}</small>`;
+                    content.appendChild(btn);
 
-                    globalLocations.push({ 
-                        ...item, 
-                        targetPos: pos, 
-                        dotMesh: dotMesh, 
-                        ringMesh: ringMesh 
-                    });
+                    globalLocations.push({ ...item, targetPos: pos, dotMesh: dotMesh, ringMesh: ringMesh });
                     locIndex++;
                 });
+
+                accordionContainer.appendChild(head);
+                accordionContainer.appendChild(content);
             });
 
-            // 更新選擇狀態：地標點瞬間變紅 + 光效動畫
             window.updateSubScreen = function(index) {
+                playSound('lock');
                 const loc = globalLocations[index];
 
-                // 1. 清除上一個目標的紅色鎖定狀態
                 globalLocations.forEach((item, i) => {
-                    item.dotMesh.material.color.setHex(0x00f2fe); // 恢復藍點
-                    item.ringMesh.visible = false; // 隱藏紅圈
-                    document.getElementById(`btn-${i}`).classList.remove('active');
+                    item.dotMesh.material.color.setHex(0x00f2fe);
+                    item.ringMesh.visible = false;
+                    const b = document.getElementById(`btn-${i}`);
+                    if (b) b.classList.remove('active');
                 });
 
-                // 2. 啟動當前目標的「紅色戰術發光光圈」
-                loc.dotMesh.material.color.setHex(0xff0055); // 點切換成亮紅
-                loc.ringMesh.visible = true; // 顯示紅色戰術環
-                document.getElementById(`btn-${index}`).classList.add('active');
+                loc.dotMesh.material.color.setHex(0xff0055);
+                loc.ringMesh.visible = true;
+                const activeBtn = document.getElementById(`btn-${index}`);
+                if (activeBtn) activeBtn.classList.add('active');
 
-                // 紅色光環脈衝放大動畫 (Pulse Animate)
                 loc.ringMesh.scale.set(1, 1, 1);
                 new TWEEN.Tween(loc.ringMesh.scale)
                     .to({ x: 2.2, y: 2.2, z: 2.2 }, 800)
-                    .yoyo(true)
-                    .repeat(Infinity)
-                    .start();
+                    .yoyo(true).repeat(Infinity).start();
 
-                // 3. 地球轉向目標
                 const targetCameraPos = loc.targetPos.clone().multiplyScalar(1.8);
                 targetCameraPos.x -= 2;
 
@@ -296,43 +378,41 @@
                     .onUpdate(() => controls.update())
                     .start();
 
-                // 4. 更新右側副螢幕數據
-                document.getElementById('targetStatus').innerText = "TARGET LOCKED";
+                document.getElementById('targetStatus').innerText = "LOCKED";
                 document.getElementById('targetStatus').style.color = "#ff0055";
                 document.getElementById('targetName').innerText = loc.name;
                 document.getElementById('targetEra').innerText = loc.era;
                 document.getElementById('targetDist').innerText = loc.dist || "35,000 KM";
                 document.getElementById('targetCoords').innerText = `${loc.lat.toFixed(2)}° N, ${loc.lon.toFixed(2)}° E`;
-                document.getElementById('targetDesc').innerHTML = `>> <span style="color:#ff0055;">[鎖定成功]</span> 戰術分析簡報：<br>${loc.desc}`;
+                document.getElementById('targetDesc').innerHTML = `>> <span style="color:#ff0055;">[戰術鎖定]</span> 簡報：<br>${loc.desc}`;
 
                 const googleMapUrl = `https://maps.google.com/maps?q=${loc.lat},${loc.lon}&t=k&z=15&ie=UTF8&iwloc=&output=embed`;
                 document.getElementById('mapIframe').src = googleMapUrl;
             };
 
-            // 全螢幕點擊能量波紋
             window.addEventListener('click', (e) => {
+                initAudio();
                 const pulse = document.createElement('div');
                 pulse.className = 'click-pulse';
-                pulse.style.left = `${e.clientX - 10}px`;
-                pulse.style.top = `${e.clientY - 10}px`;
+                pulse.style.left = `${e.clientX - 6}px`;
+                pulse.style.top = `${e.clientY - 6}px`;
                 document.body.appendChild(pulse);
-                setTimeout(() => pulse.remove(), 600);
+                setTimeout(() => pulse.remove(), 400);
             });
 
             function animate() {
                 requestAnimationFrame(animate);
                 TWEEN.update();
-                earth.rotation.y += 0.0008; // 保持自轉
+                earth.rotation.y += 0.0008;
                 controls.update();
                 renderer.render(scene, camera);
             }
-
             animate();
 
             window.addEventListener('resize', () => {
-                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.aspect = container.clientWidth / container.clientHeight;
                 camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setSize(container.clientWidth, container.clientHeight);
             });
         });
     </script>
