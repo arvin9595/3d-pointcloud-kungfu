@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D 地球與實景導覽系統 (Next-Gen Earth 3D)</title>
+    <title>3D 地球與天文實景導覽系統 (Earth 3D Sci-System)</title>
     <!-- CesiumJS CSS -->
     <link href="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
     <style>
@@ -21,27 +21,27 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         }
 
-        /* 導覽主控制面板 */
+        /* 1. 左側控制與景點導覽面板 */
         .hud-panel {
             position: absolute;
             top: 20px;
             left: 20px;
             z-index: 10;
-            width: 340px;
+            width: 320px;
             max-height: calc(100vh - 40px);
-            padding: 20px;
-            background: rgba(10, 15, 30, 0.85);
+            padding: 18px;
+            background: rgba(10, 15, 30, 0.88);
             backdrop-filter: blur(16px);
-            border: 1px solid rgba(0, 242, 254, 0.3);
-            border-radius: 16px;
+            border: 1px solid rgba(0, 242, 254, 0.35);
+            border-radius: 14px;
             color: #fff;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
             display: flex;
             flex-direction: column;
         }
 
         .hud-title {
-            font-size: 1.2rem;
+            font-size: 1.15rem;
             font-weight: 700;
             letter-spacing: 1px;
             background: linear-gradient(135deg, #00f2fe, #4facfe);
@@ -67,13 +67,14 @@
             box-shadow: 0 0 8px #00f2fe;
         }
 
-        /* 選單分類與按鈕容器（支援滾動） */
+        /* 景點滾動列表 */
         .tour-list {
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
             padding-right: 4px;
+            max-height: 50vh;
         }
 
         .tour-list::-webkit-scrollbar {
@@ -87,85 +88,133 @@
         .category-title {
             font-size: 0.75rem;
             color: #94a3b8;
-            margin-top: 8px;
+            margin-top: 10px;
             margin-bottom: 2px;
             font-weight: 600;
             letter-spacing: 0.5px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 2px;
         }
 
         .btn-tour {
             width: 100%;
-            padding: 10px 12px;
+            padding: 8px 10px;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(0, 242, 254, 0.2);
-            border-radius: 8px;
+            border-radius: 6px;
             color: #ffffff;
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.25s ease;
+            transition: all 0.2s ease;
             display: flex;
             align-items: center;
             justify-content: space-between;
         }
 
         .btn-tour:hover {
-            background: rgba(0, 242, 254, 0.15);
+            background: rgba(0, 242, 254, 0.2);
             border-color: #00f2fe;
-            transform: translateX(4px);
+            transform: translateX(3px);
         }
 
         .btn-orbit {
-            margin-top: 10px;
-            background: linear-gradient(135deg, rgba(0, 242, 254, 0.2), rgba(79, 172, 254, 0.2));
+            margin-top: 12px;
+            padding: 10px;
+            background: linear-gradient(135deg, rgba(0, 242, 254, 0.25), rgba(79, 172, 254, 0.25));
             border-color: #00f2fe;
             flex-shrink: 0;
         }
 
-        /* 地標資訊卡片 */
+        /* 2. 右側天文與科學監控數據面板 */
+        .telemetry-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 10;
+            width: 280px;
+            padding: 16px;
+            background: rgba(10, 15, 30, 0.88);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(0, 242, 254, 0.35);
+            border-radius: 14px;
+            color: #e2e8f0;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
+            font-size: 0.8rem;
+        }
+
+        .telemetry-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #00f2fe;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid rgba(0, 242, 254, 0.3);
+            padding-bottom: 4px;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .data-label {
+            color: #94a3b8;
+        }
+
+        .data-value {
+            color: #38bdf8;
+            font-family: monospace;
+            font-weight: 600;
+        }
+
+        /* 3. 底部景點詳細介紹卡片 */
         .story-card {
             position: absolute;
-            bottom: 30px;
-            right: 30px;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
             z-index: 10;
-            width: 360px;
-            padding: 20px;
-            background: rgba(10, 15, 30, 0.85);
+            width: 420px;
+            max-width: 90vw;
+            padding: 16px 20px;
+            background: rgba(10, 15, 30, 0.9);
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(0, 242, 254, 0.3);
-            border-radius: 16px;
+            border: 1px solid rgba(0, 242, 254, 0.35);
+            border-radius: 14px;
             color: #f8fafc;
             opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.5s ease;
+            transition: all 0.4s ease;
             pointer-events: none;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
         }
 
         .story-card.active {
             opacity: 1;
-            transform: translateY(0);
+            transform: translateX(-50%) translateY(0);
             pointer-events: auto;
         }
 
         .story-tag {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             padding: 2px 6px;
             background: rgba(0, 242, 254, 0.2);
             color: #00f2fe;
             border-radius: 4px;
             display: inline-block;
-            margin-bottom: 8px;
-        }
-
-        .story-title {
-            font-size: 1.3rem;
-            font-weight: 700;
             margin-bottom: 6px;
         }
 
+        .story-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
         .story-desc {
-            font-size: 0.85rem;
-            line-height: 1.5;
+            font-size: 0.82rem;
+            line-height: 1.4;
             color: #cbd5e1;
         }
     </style>
@@ -174,38 +223,79 @@
 
     <div id="cesiumContainer"></div>
 
-    <!-- 主選單面板 -->
+    <!-- 左側導覽面板 -->
     <div class="hud-panel">
-        <div class="hud-title">SATELLITE & GROUND TOUR</div>
+        <div class="hud-title">EARTH EXPLORER</div>
         <div class="hud-status">
             <span class="status-dot"></span>
-            <span id="statusText">太空中：衛星軌道運轉中</span>
+            <span id="statusText">太空中：軌道運轉中</span>
         </div>
 
         <div class="tour-list" id="tourList">
-            <!-- 動態生成地標列表 -->
+            <!-- 動態生成景點列表 -->
         </div>
 
         <button class="btn-tour btn-orbit" onclick="returnToOrbit()">
-            <span>🚀 返回太空軌道運行</span>
+            <span>🚀 返回太空軌道俯瞰</span>
             <small>Orbit View</small>
         </button>
     </div>
 
-    <!-- 介紹卡片 -->
+    <!-- 右側科學與天文參數面板 -->
+    <div class="telemetry-panel">
+        <div class="telemetry-title">🌐 地球與即時數據 (Data)</div>
+        
+        <div class="data-row">
+            <span class="data-label">視角高度 / 距離:</span>
+            <span class="data-value" id="valAltitude">15,000 km</span>
+        </div>
+        <div class="data-row">
+            <span class="data-label">中心緯度:</span>
+            <span class="data-value" id="valLat">23.500° N</span>
+        </div>
+        <div class="data-row">
+            <span class="data-label">中心經度:</span>
+            <span class="data-value" id="valLon">121.000° E</span>
+        </div>
+
+        <div class="telemetry-title" style="margin-top: 12px;">🪐 天文常數 (Constants)</div>
+        
+        <div class="data-row">
+            <span class="data-label">自轉週期 (赤道):</span>
+            <span class="data-value">23小時 56分 4秒</span>
+        </div>
+        <div class="data-row">
+            <span class="data-label">赤道自轉線速度:</span>
+            <span class="data-value">1,670 km/h</span>
+        </div>
+        <div class="data-row">
+            <span class="data-label">公轉平均速度:</span>
+            <span class="data-value">29.78 km/s</span>
+        </div>
+        <div class="data-row">
+            <span class="data-label">平均赤道半徑:</span>
+            <span class="data-value">6,378.137 km</span>
+        </div>
+        <div class="data-row">
+            <span class="data-label">大氣層卡門線:</span>
+            <span class="data-value">100 km</span>
+        </div>
+    </div>
+
+    <!-- 景點介紹卡片 -->
     <div id="storyCard" class="story-card">
         <div id="storyTag" class="story-tag">LOCATION</div>
-        <div id="storyTitle" class="story-title">地標名稱</div>
-        <div id="storyDesc" class="story-desc">地標詳細敘述...</div>
+        <div id="storyTitle" class="story-title">景點名稱</div>
+        <div id="storyDesc" class="story-desc">景點詳細說明...</div>
     </div>
 
     <!-- CesiumJS Library -->
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Cesium.js"></script>
     <script>
-        // 🔑 1. 設定 Cesium Ion Access Token (使用您提供的金鑰)
+        // 🔑 1. Cesium Ion Access Token
         Cesium.Ion.defaultAccessToken = 'EyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IklhNEdrRkZmYzZaWTNZaVUiLCJqdGkiOiI2NmI4ZmY4NC01NjY0LTRlZDYtYTJiYS1jZjk0NmYzMWNjMzYiLCJpZCI6NTA2NDI4LCJpc3MiOiJodHRwczovL2FwaS5jZXNpdW0uY29tIiwiYXVkIjoidW5kZWZpbmVkX2RlZmF1bHQiLCJpYXQiOjE3OTAyMzg3MzR9.fnoc-A5kVV2LJFmyvvtLvt_UkAeporC6Q6azntIZqgw';
 
-        // 2. 初始化 Cesium 視圖 (加載 Bing / Cesium 衛星地圖與地形)
+        // 2. 初始化 Cesium 3D 視圖
         const viewer = new Cesium.Viewer('cesiumContainer', {
             terrainProvider: Cesium.createWorldTerrain({ requestWaterMask: true }),
             animation: false,
@@ -222,23 +312,23 @@
         });
 
         const scene = viewer.scene;
-        scene.globe.enableLighting = true; // 開啟光照
-        scene.highDynamicRange = true;     // HDR 畫面
+        scene.globe.enableLighting = true; // 開啟太陽光照效果
+        scene.highDynamicRange = true;
 
-        // 3. 自動載入 3D 建築 (OSM 3D Buildings)
+        // 載入 3D 建築網格 (OSM 3D Buildings)
         async function load3DBuildings() {
             try {
                 const buildings = await Cesium.createOsmBuildingsAsync();
                 scene.primitives.add(buildings);
             } catch (e) {
-                console.log("3D 建築載入提示: ", e);
+                console.log("3D Building loading note:", e);
             }
         }
         load3DBuildings();
 
-        // 4. 太空軌道運轉邏輯
+        // 3. 自轉與即時數據更新
         let isOrbiting = true;
-        const orbitAltitude = 15000000; // 太空高度 (米)
+        const orbitAltitude = 15000000;
         let lastTime = Date.now();
 
         viewer.clock.onTick.addEventListener(() => {
@@ -246,57 +336,77 @@
                 const now = Date.now();
                 const delta = (now - lastTime) / 1000;
                 lastTime = now;
-                scene.camera.rotate(Cesium.Cartesian3.UNIT_Z, -0.05 * delta);
+                scene.camera.rotate(Cesium.Cartesian3.UNIT_Z, -0.04 * delta);
+            }
+
+            // 即時計算相機距離與經緯度
+            const cameraPosition = viewer.camera.positionCartographic;
+            if (cameraPosition) {
+                const alt = (cameraPosition.height / 1000).toFixed(0);
+                const lat = (Cesium.Math.toDegrees(cameraPosition.latitude)).toFixed(3);
+                const lon = (Cesium.Math.toDegrees(cameraPosition.longitude)).toFixed(3);
+
+                document.getElementById('valAltitude').innerText = Number(alt).toLocaleString() + " km";
+                document.getElementById('valLat').innerText = Math.abs(lat) + "° " + (lat >= 0 ? 'N' : 'S');
+                document.getElementById('valLon').innerText = Math.abs(lon) + "° " + (lon >= 0 ? 'E' : 'W');
             }
         });
 
-        // 5. 擴充版地標資料庫 (台灣 + 全球熱門景點)
+        // 4. 完整的景點選單資料（臺灣景點 + 全球地標）
         const tourData = [
             {
-                category: "臺灣經典地標",
+                category: "臺灣經典名勝",
                 items: [
                     {
                         name: "台北 101",
                         sub: "Taipei 101",
                         tag: "TAIPEI / URBAN 3D",
-                        desc: "臺灣第一高樓，高度 508 公尺。搭配 3D 建築模型，可精細俯瞰信義區整體現代都市景觀。",
+                        desc: "臺灣第一高樓，高度 508 公尺。搭配 3D 建築網格，可完整呈現信義區都市天際線。",
                         destination: Cesium.Cartesian3.fromDegrees(121.5645, 25.0330, 700),
                         orientation: { heading: Cesium.Math.toRadians(330), pitch: Cesium.Math.toRadians(-25), roll: 0 }
                     },
                     {
                         name: "玉山主峰",
-                        sub: "3,952 m",
+                        sub: "Yushan Peak (3,952m)",
                         tag: "TAIWAN / MOUNTAIN",
-                        desc: "東北亞第一高峰。高精度地形數據精準呈現陡峭的脊樑山脈與磅礡的百岳地貌。",
+                        desc: "東北亞第一高峰。利用地形高程數據精準還原雄偉的中央山脈主脊地貌。",
                         destination: Cesium.Cartesian3.fromDegrees(120.9573, 23.4700, 4800),
                         orientation: { heading: Cesium.Math.toRadians(25), pitch: Cesium.Math.toRadians(-20), roll: 0 }
                     },
                     {
                         name: "高雄流行音樂中心",
-                        sub: "Kaohsiung Harbor",
+                        sub: "Kaohsiung Music Center",
                         tag: "KAOHSIUNG / HARBOR",
-                        desc: "座落於高雄港 11-15 號碼頭，具備獨特的海浪與蜂巢建築外觀，展現港灣城市的沉浸視野。",
-                        destination: Cesium.Cartesian3.fromDegrees(120.2930, 22.6180, 600),
+                        desc: "座落於高雄愛河灣與高雄港區，獨特的海洋元素建築，俯瞰南臺灣港灣新地標。",
+                        destination: Cesium.Cartesian3.fromDegrees(120.2930, 22.6180, 650),
                         orientation: { heading: Cesium.Math.toRadians(45), pitch: Cesium.Math.toRadians(-30), roll: 0 }
                     },
                     {
                         name: "日月潭",
                         sub: "Sun Moon Lake",
                         tag: "NANTOU / LAKE",
-                        desc: "台灣最大的半天然湖泊，四周群山環抱，提供絕佳的高空水岸視野與湖光山色。",
+                        desc: "臺灣最大半天然湖泊，群山環抱，提供高空極佳的水岸地形視野。",
                         destination: Cesium.Cartesian3.fromDegrees(120.9159, 23.8517, 2200),
                         orientation: { heading: Cesium.Math.toRadians(180), pitch: Cesium.Math.toRadians(-35), roll: 0 }
+                    },
+                    {
+                        name: "太魯閣國家公園",
+                        sub: "Taroko Gorge",
+                        tag: "HUALIEN / GORGE",
+                        desc: "立霧溪切割出近乎垂直的大理岩峽谷，展現臺灣造山運動的壯麗地質風貌。",
+                        destination: Cesium.Cartesian3.fromDegrees(121.5500, 24.1600, 2500),
+                        orientation: { heading: Cesium.Math.toRadians(210), pitch: Cesium.Math.toRadians(-25), roll: 0 }
                     }
                 ]
             },
             {
-                category: "全球國際名勝",
+                category: "全球指標建築與地貌",
                 items: [
                     {
                         name: "日本 東京塔",
                         sub: "Tokyo Tower",
                         tag: "JAPAN / TOKYO",
-                        desc: "位於東京都港區的紅白色地標塔，周邊結合豐富的 3D 建築網格，展現繁華的東京都市圈。",
+                        desc: "東京著名地標塔，結合周邊 3D 建築群，展現繁華的東京都心風貌。",
                         destination: Cesium.Cartesian3.fromDegrees(139.7454, 35.6586, 650),
                         orientation: { heading: Cesium.Math.toRadians(140), pitch: Cesium.Math.toRadians(-25), roll: 0 }
                     },
@@ -304,7 +414,7 @@
                         name: "法國 艾菲爾鐵塔",
                         sub: "Eiffel Tower",
                         tag: "FRANCE / PARIS",
-                        desc: "巴黎最具代表性的標誌性建築，可俯瞰塞納河畔與巴黎平原的典雅城市規劃。",
+                        desc: "巴黎最具代表性的標誌建築，俯瞰塞納河畔與古典巴黎城區規劃。",
                         destination: Cesium.Cartesian3.fromDegrees(2.2945, 48.8584, 550),
                         orientation: { heading: Cesium.Math.toRadians(50), pitch: Cesium.Math.toRadians(-20), roll: 0 }
                     },
@@ -312,15 +422,15 @@
                         name: "美國 大峽谷",
                         sub: "Grand Canyon",
                         tag: "USA / NATURE",
-                        desc: "科羅拉多河數百萬年切割出的壯麗峽谷，展現出極致的地層層次與大氣霞光效果。",
+                        desc: "科羅拉多河數百萬年切割出的深邃峽谷，展示地殼層次與壯麗的自然奇觀。",
                         destination: Cesium.Cartesian3.fromDegrees(-112.1129, 36.1069, 3200),
                         orientation: { heading: Cesium.Math.toRadians(290), pitch: Cesium.Math.toRadians(-18), roll: 0 }
                     },
                     {
-                        name: "埃及 金字塔群",
+                        name: "埃及 吉薩金字塔",
                         sub: "Giza Pyramids",
                         tag: "EGYPT / HERITAGE",
-                        desc: "位於開羅吉薩高原的古代世界七大奇蹟，呈現沙漠地形與千年前宏偉陵墓的歷史沉浸感。",
+                        desc: "開羅吉薩高原的千年古文明遺跡，展現沙漠地形與浩瀚古建築群。",
                         destination: Cesium.Cartesian3.fromDegrees(31.1342, 29.9792, 900),
                         orientation: { heading: Cesium.Math.toRadians(70), pitch: Cesium.Math.toRadians(-25), roll: 0 }
                     }
@@ -328,7 +438,7 @@
             }
         ];
 
-        // 6. 動態渲染選單
+        // 5. 動態產生左側選單
         const tourListContainer = document.getElementById('tourList');
         let globalLocations = [];
         let locIndex = 0;
@@ -344,7 +454,7 @@
                 btn.className = 'btn-tour';
                 const currentIndex = locIndex;
                 btn.onclick = () => flyToLocation(currentIndex);
-                btn.innerHTML = `<span>${item.name}</span><small>${item.sub}</small>`;
+                btn.innerHTML = `<span>${item.name}</span><small style="color:#00f2fe">${item.sub}</small>`;
                 tourListContainer.appendChild(btn);
 
                 globalLocations.push(item);
@@ -352,17 +462,17 @@
             });
         });
 
-        // 7. 飛行與運鏡邏輯
+        // 6. 鏡頭飛行控制
         function flyToLocation(index) {
             isOrbiting = false;
-            document.getElementById('statusText').innerText = "地面模式：實景導覽中";
+            document.getElementById('statusText').innerText = "地面模式：景點對焦中";
             hideCard();
 
             const loc = globalLocations[index];
             viewer.camera.flyTo({
                 destination: loc.destination,
                 orientation: loc.orientation,
-                duration: 4.0,
+                duration: 3.5,
                 easingFunction: Cesium.EasingFunction.CUBIC_IN_OUT,
                 complete: () => {
                     showCard(loc);
@@ -372,7 +482,7 @@
 
         function returnToOrbit() {
             hideCard();
-            document.getElementById('statusText').innerText = "太空中：衛星軌道運轉中";
+            document.getElementById('statusText').innerText = "太空中：軌道運轉中";
 
             viewer.camera.flyTo({
                 destination: Cesium.Cartesian3.fromDegrees(121.0, 23.5, orbitAltitude),
@@ -381,7 +491,7 @@
                     pitch: Cesium.Math.toRadians(-90),
                     roll: 0
                 },
-                duration: 3.5,
+                duration: 3.0,
                 easingFunction: Cesium.EasingFunction.QUINTIC_OUT,
                 complete: () => {
                     lastTime = Date.now();
@@ -390,7 +500,7 @@
             });
         }
 
-        // 8. 卡片顯示
+        // 7. 卡片顯示控制
         const card = document.getElementById('storyCard');
         function showCard(data) {
             document.getElementById('storyTag').innerText = data.tag;
