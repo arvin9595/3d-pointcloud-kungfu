@@ -1,403 +1,2813 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>STARSHIP COCKPIT // CLEAN HUD</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-        
-        body { 
-            width: 100vw; height: 100vh; overflow: hidden; 
-            background-color: #000103; font-family: 'Courier New', Courier, monospace, sans-serif; 
-            color: #00f2fe; cursor: crosshair;
-            display: flex; justify-content: center; align-items: center;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        .space-bg {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0;
-            background: radial-gradient(circle at center, #030a17 0%, #000104 100%);
-        }
+<title>STARSHIP EARTH SYSTEM V2</title>
 
-        .cockpit-frame {
-            position: relative; width: 98vw; height: 96vh; z-index: 5;
-            border: 2px solid rgba(0, 242, 254, 0.5);
-            background: rgba(1, 4, 10, 0.94);
-            box-shadow: 0 0 40px rgba(0, 242, 254, 0.25), inset 0 0 80px rgba(0, 242, 254, 0.05);
-            display: grid;
-            grid-template-columns: 280px 1fr 340px;
-            grid-template-rows: 35px 1fr 70px;
-            padding: 10px; gap: 10px;
-            clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
-        }
+<style>
 
-        .top-status-bar {
-            grid-column: 1 / 4;
-            display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px solid rgba(0, 242, 254, 0.3);
-            padding-bottom: 3px; font-size: 0.7rem; letter-spacing: 2px; color: #ffe600;
-        }
+/* =========================================================
+   STARSHIP EARTH SYSTEM V2
+   Web Native Bridge Prototype
+   ========================================================= */
 
-        .left-nav-panel {
-            grid-column: 1 / 2; grid-row: 2 / 3;
-            background: rgba(1, 7, 16, 0.95);
-            border: 1px solid rgba(0, 242, 254, 0.4);
-            display: flex; flex-direction: column; overflow: hidden;
-        }
-        .panel-header {
-            padding: 6px 8px; background: rgba(0, 242, 254, 0.15);
-            border-bottom: 1px solid rgba(0, 242, 254, 0.3);
-            font-size: 0.65rem; font-weight: bold; letter-spacing: 1px;
-            display: flex; justify-content: space-between; color: #00f2fe;
-        }
-        .tour-list { overflow-y: auto; padding: 6px; display: flex; flex-direction: column; gap: 5px; flex: 1; }
-        .tour-list::-webkit-scrollbar { width: 3px; }
-        .tour-list::-webkit-scrollbar-thumb { background: #00f2fe; }
+:root {
+    --cyan: #00f2fe;
+    --cyan2: #38dfff;
+    --cyan-soft: rgba(0,242,254,.24);
+    --cyan-dim: rgba(0,242,254,.08);
 
-        .accordion-header {
-            background: rgba(0, 242, 254, 0.05); border: 1px solid rgba(0, 242, 254, 0.25);
-            color: #ffe600; padding: 5px 8px; font-size: 0.65rem; font-weight: bold;
-            cursor: pointer; display: flex; justify-content: space-between; align-items: center;
-        }
-        .accordion-header::after { content: '►'; font-size: 0.5rem; transition: transform 0.3s; }
-        .accordion-header.active::after { transform: rotate(90deg); color: #ff0055; }
+    --amber: #ffe600;
+    --alert: #ff0055;
 
-        .accordion-content {
-            max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out;
-            display: flex; flex-direction: column; gap: 3px; padding-left: 2px;
-        }
-        .accordion-content.show { max-height: 400px; transition: max-height 0.3s ease-in; padding-top: 3px; }
+    --space: #01040a;
+    --panel: rgba(2,10,20,.76);
 
-        .btn-target {
-            width: 100%; padding: 6px 8px; background: rgba(0, 242, 254, 0.03);
-            border: 1px solid rgba(0, 242, 254, 0.2); color: #00f2fe;
-            font-family: inherit; font-size: 0.65rem; cursor: pointer;
-            display: flex; justify-content: space-between; align-items: center;
-            transition: all 0.2s;
-        }
-        .btn-target:hover { background: rgba(0, 242, 254, 0.15); border-color: #00f2fe; color: #fff; }
-        .btn-target.active { background: rgba(255, 0, 85, 0.2); border-color: #ff0055; color: #ff0055; font-weight: bold; }
+    --text: #d6f7ff;
+    --muted: #698b99;
+}
 
-        /* 中央：小型全息地球視窗 */
-        .center-viewport {
-            grid-column: 2 / 3; grid-row: 2 / 3;
-            position: relative; display: flex; justify-content: center; align-items: center;
-            border: 1px solid rgba(0, 242, 254, 0.3);
-            background: radial-gradient(circle at center, rgba(0,20,40,0.6) 0%, rgba(0,2,5,0.9) 100%);
-            overflow: hidden;
-        }
-        #earth-canvas-box {
-            width: 300px; height: 300px;
-            position: relative;
-            border-radius: 50%;
-            border: 2px dashed rgba(0, 242, 254, 0.4);
-            box-shadow: 0 0 25px rgba(0, 242, 254, 0.2), inset 0 0 20px rgba(0, 242, 254, 0.3);
-            overflow: hidden;
-            background: #000;
-        }
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
-        .right-info-panel {
-            grid-column: 3 / 4; grid-row: 2 / 3;
-            background: rgba(1, 7, 16, 0.95);
-            border: 1px solid rgba(0, 242, 254, 0.4);
-            display: flex; flex-direction: column; padding: 6px; gap: 6px; overflow-y: auto;
-        }
-        .map-frame-box {
-            width: 100%; height: 130px; border: 1px solid #00f2fe; background: #000; position: relative;
-        }
-        .map-iframe { width: 100%; height: 100%; border: none; }
+html,
+body {
+    width: 100%;
+    min-height: 100%;
+}
 
-        .data-card {
-            background: rgba(0, 242, 254, 0.04); border: 1px solid rgba(0, 242, 254, 0.2);
-            padding: 6px; font-size: 0.65rem; display: flex; flex-direction: column; gap: 3px;
-        }
-        .data-row { display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(0, 242, 254, 0.2); padding-bottom: 2px; }
-        .data-val { color: #ffe600; font-weight: bold; }
+body {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
 
-        .desc-box {
-            font-size: 0.65rem; line-height: 1.3; color: #cbd5e1;
-            background: rgba(0, 0, 0, 0.6); padding: 6px; border-left: 2px solid #00f2fe;
-            flex: 1; overflow-y: auto;
-        }
+    background: #000;
 
-        .bottom-cockpit-dashboard {
-            grid-column: 1 / 4; grid-row: 3 / 4;
-            border-top: 1px solid rgba(0, 242, 254, 0.4);
-            background: rgba(0, 10, 25, 0.9);
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px; padding: 6px 10px;
-            align-items: center;
-        }
-        .dash-gauge {
-            border: 1px solid rgba(0, 242, 254, 0.25);
-            background: rgba(0, 242, 254, 0.03);
-            padding: 4px 8px; font-size: 0.65rem;
-            display: flex; flex-direction: column; justify-content: space-between;
-        }
-        .gauge-bar {
-            width: 100%; height: 4px; background: rgba(0, 242, 254, 0.2); margin-top: 3px; position: relative; overflow: hidden;
-        }
-        .gauge-fill {
-            position: absolute; top: 0; left: 0; height: 100%; background: #00f2fe; width: 68%;
-        }
-        .gauge-fill.red { background: #ff0055; width: 42%; }
-    </style>
+    font-family:
+        "Courier New",
+        Courier,
+        monospace;
+
+    color: var(--cyan);
+}
+
+/* =========================================================
+   SPACE BACKGROUND
+   ========================================================= */
+
+.space-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+
+    background:
+
+        radial-gradient(
+            circle at 15% 30%,
+            rgba(255,255,255,.28) 0 1px,
+            transparent 1.5px
+        ),
+
+        radial-gradient(
+            circle at 72% 22%,
+            rgba(0,242,254,.22) 0 1px,
+            transparent 1.5px
+        ),
+
+        radial-gradient(
+            circle at 82% 68%,
+            rgba(255,255,255,.20) 0 1px,
+            transparent 1.5px
+        ),
+
+        radial-gradient(
+            ellipse at center,
+            #061523 0%,
+            #020711 45%,
+            #000 100%
+        );
+
+    background-size:
+        210px 210px,
+        290px 290px,
+        370px 370px,
+        auto;
+}
+
+/* subtle atmospheric glow */
+
+.space-bg::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+
+    background:
+        radial-gradient(
+            ellipse at 50% 46%,
+            rgba(0,180,255,.09),
+            transparent 43%
+        );
+
+    pointer-events: none;
+}
+
+
+/* =========================================================
+   BRIDGE FRAME
+   ========================================================= */
+
+.bridge {
+    position: relative;
+    z-index: 5;
+
+    width: 98vw;
+    height: 96vh;
+
+    margin: 2vh auto;
+
+    display: grid;
+
+    grid-template-columns:
+        clamp(210px, 17vw, 290px)
+        minmax(0,1fr)
+        clamp(250px, 20vw, 350px);
+
+    grid-template-rows:
+        38px
+        minmax(0,1fr)
+        clamp(170px, 24vh, 255px);
+
+    gap: 10px;
+
+    padding:
+        10px
+        14px
+        0;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(1,8,16,.96),
+            rgba(0,5,12,.84) 65%,
+            rgba(0,1,4,.98)
+        );
+
+    border:
+        1px solid rgba(0,242,254,.26);
+
+    box-shadow:
+        0 0 60px rgba(0,242,254,.12),
+        inset 0 0 90px rgba(0,242,254,.035);
+
+    clip-path:
+        polygon(
+            0 0,
+            calc(100% - 22px) 0,
+            100% 22px,
+            100% 100%,
+            22px 100%,
+            0 calc(100% - 22px)
+        );
+
+    overflow: hidden;
+}
+
+
+/* =========================================================
+   TOP STATUS
+   ========================================================= */
+
+.top-status {
+    grid-column: 1 / 4;
+    grid-row: 1;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 4px 5px;
+
+    border-bottom:
+        1px solid rgba(0,242,254,.22);
+
+    font-size: .68rem;
+    letter-spacing: 2px;
+
+    color: var(--amber);
+}
+
+.top-status .center-status {
+    color: var(--cyan);
+}
+
+
+/* =========================================================
+   PANEL COMMON
+   ========================================================= */
+
+.panel-header {
+    padding: 8px 9px;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    font-size: .65rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+
+    color: var(--cyan);
+
+    background:
+        linear-gradient(
+            90deg,
+            rgba(0,242,254,.12),
+            transparent
+        );
+
+    border-bottom:
+        1px solid rgba(0,242,254,.18);
+}
+
+
+/* =========================================================
+   LEFT TARGET PANEL
+   ========================================================= */
+
+.left-panel {
+    grid-column: 1;
+    grid-row: 2;
+
+    min-height: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    overflow: hidden;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(0,242,254,.045),
+            rgba(0,5,12,.70)
+        );
+
+    border-left:
+        1px solid rgba(0,242,254,.32);
+
+    border-top:
+        1px solid rgba(0,242,254,.12);
+}
+
+.target-list {
+    flex: 1;
+
+    padding: 7px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+
+    overflow-y: auto;
+}
+
+.target-list::-webkit-scrollbar {
+    width: 3px;
+}
+
+.target-list::-webkit-scrollbar-thumb {
+    background: var(--cyan);
+}
+
+
+/* =========================================================
+   ACCORDION
+   ========================================================= */
+
+.accordion-header {
+    padding: 7px 9px;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    cursor: pointer;
+
+    color: var(--amber);
+
+    font-size: .63rem;
+    font-weight: bold;
+
+    border:
+        1px solid rgba(0,242,254,.18);
+
+    background:
+        rgba(0,242,254,.035);
+
+    transition: .2s;
+}
+
+.accordion-header:hover {
+    background:
+        rgba(0,242,254,.08);
+}
+
+.accordion-header::after {
+    content: "►";
+
+    font-size: .5rem;
+
+    transition: transform .25s;
+}
+
+.accordion-header.active::after {
+    transform: rotate(90deg);
+    color: var(--alert);
+}
+
+.accordion-content {
+    max-height: 0;
+
+    overflow: hidden;
+
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+
+    transition:
+        max-height .3s ease;
+}
+
+.accordion-content.show {
+    max-height: 500px;
+    padding-top: 3px;
+}
+
+
+/* =========================================================
+   TARGET BUTTON
+   ========================================================= */
+
+.target-button {
+    width: 100%;
+
+    padding: 7px 8px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    cursor: pointer;
+
+    color: var(--cyan);
+
+    font-family: inherit;
+    font-size: .63rem;
+
+    background:
+        rgba(0,242,254,.025);
+
+    border:
+        1px solid rgba(0,242,254,.14);
+
+    transition:
+        background .2s,
+        border-color .2s,
+        color .2s,
+        transform .2s;
+}
+
+.target-button small {
+    color: #617886;
+    font-size: .48rem;
+}
+
+.target-button:hover {
+    transform: translateX(2px);
+
+    background:
+        rgba(0,242,254,.10);
+
+    border-color:
+        rgba(0,242,254,.55);
+
+    color: white;
+}
+
+.target-button.active {
+    color: var(--alert);
+
+    border-color:
+        var(--alert);
+
+    background:
+        rgba(255,0,85,.11);
+
+    box-shadow:
+        inset 3px 0 0 var(--alert);
+}
+
+
+/* =========================================================
+   CENTRAL HOLOGRAPHIC VIEWPORT
+   ========================================================= */
+
+.center-viewport {
+    grid-column: 2;
+    grid-row: 2;
+
+    position: relative;
+
+    min-width: 0;
+    min-height: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+
+    background:
+        radial-gradient(
+            ellipse at center,
+            rgba(0,160,220,.10) 0%,
+            rgba(0,50,80,.04) 40%,
+            transparent 72%
+        );
+}
+
+
+/* tactical corner brackets */
+
+.center-viewport::before {
+    content: "";
+
+    position: absolute;
+
+    inset:
+        7%
+        5%;
+
+    z-index: 2;
+
+    pointer-events: none;
+
+    background:
+
+        linear-gradient(var(--cyan),var(--cyan))
+        left top / 80px 1px no-repeat,
+
+        linear-gradient(var(--cyan),var(--cyan))
+        left top / 1px 80px no-repeat,
+
+        linear-gradient(var(--cyan),var(--cyan))
+        right top / 80px 1px no-repeat,
+
+        linear-gradient(var(--cyan),var(--cyan))
+        right top / 1px 80px no-repeat,
+
+        linear-gradient(var(--cyan),var(--cyan))
+        left bottom / 80px 1px no-repeat,
+
+        linear-gradient(var(--cyan),var(--cyan))
+        left bottom / 1px 80px no-repeat,
+
+        linear-gradient(var(--cyan),var(--cyan))
+        right bottom / 80px 1px no-repeat,
+
+        linear-gradient(var(--cyan),var(--cyan))
+        right bottom / 1px 80px no-repeat;
+
+    opacity: .28;
+}
+
+
+/* vertical hologram beam */
+
+.hologram-beam {
+    position: absolute;
+
+    width: 48%;
+    height: 92%;
+
+    top: 4%;
+    left: 26%;
+
+    pointer-events: none;
+
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(0,242,254,.025),
+            rgba(0,242,254,.07),
+            rgba(0,242,254,.025),
+            transparent
+        );
+
+    clip-path:
+        polygon(
+            42% 0,
+            58% 0,
+            100% 100%,
+            0 100%
+        );
+
+    opacity: .65;
+
+    filter: blur(3px);
+}
+
+
+/* =========================================================
+   VIEWPORT LABELS
+   ========================================================= */
+
+.viewport-title {
+    position: absolute;
+
+    top: 18px;
+    left: 24px;
+
+    z-index: 4;
+
+    font-size: .58rem;
+    letter-spacing: 2px;
+
+    color:
+        rgba(0,242,254,.60);
+}
+
+.viewport-subtitle {
+    position: absolute;
+
+    top: 38px;
+    left: 24px;
+
+    z-index: 4;
+
+    font-size: .48rem;
+    letter-spacing: 1px;
+
+    color:
+        rgba(120,180,200,.45);
+}
+
+
+/* =========================================================
+   EARTH HOLOGRAM
+   ========================================================= */
+
+.earth-stage {
+    position: relative;
+
+    z-index: 5;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 22px;
+}
+
+#earth-canvas-box {
+    position: relative;
+
+    width:
+        clamp(190px,22vw,340px);
+
+    aspect-ratio: 1;
+
+    border-radius: 50%;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(0,242,254,.08),
+            rgba(0,20,35,.04) 58%,
+            transparent 73%
+        );
+
+    border:
+        1px solid rgba(0,242,254,.18);
+
+    box-shadow:
+        0 0 25px rgba(0,242,254,.18),
+        0 0 90px rgba(0,242,254,.09);
+
+    transition:
+        width .65s cubic-bezier(.2,.8,.2,1),
+        filter .65s;
+}
+
+#earth-canvas-box.expanded {
+    width:
+        min(52vh,47vw);
+
+    filter:
+        drop-shadow(
+            0 0 24px rgba(0,242,254,.30)
+        );
+}
+
+
+/* rotating outer ring */
+
+#earth-canvas-box::before {
+    content: "";
+
+    position: absolute;
+
+    inset: -9%;
+
+    z-index: 10;
+
+    border-radius: 50%;
+
+    border:
+        1px dashed rgba(0,242,254,.32);
+
+    box-shadow:
+        0 0 30px rgba(0,242,254,.10);
+
+    animation:
+        ringRotate 18s linear infinite;
+
+    pointer-events: none;
+}
+
+@keyframes ringRotate {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+
+/* holographic scan */
+
+#earth-canvas-box::after {
+    content: "";
+
+    position: absolute;
+
+    left: -12%;
+    right: -12%;
+
+    top: 18%;
+
+    z-index: 12;
+
+    height: 2px;
+
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(0,242,254,.9),
+            transparent
+        );
+
+    box-shadow:
+        0 0 14px var(--cyan);
+
+    opacity: .4;
+
+    animation:
+        earthScan 4.8s ease-in-out infinite;
+
+    pointer-events: none;
+}
+
+@keyframes earthScan {
+
+    0%,
+    100% {
+        top: 18%;
+        opacity: .12;
+    }
+
+    50% {
+        top: 82%;
+        opacity: .62;
+    }
+}
+
+
+/* =========================================================
+   PROJECTION BUTTON
+   ========================================================= */
+
+.projection-button {
+    padding:
+        8px
+        20px;
+
+    cursor: pointer;
+
+    font-family: inherit;
+
+    font-size: .56rem;
+    letter-spacing: 2px;
+
+    color: var(--cyan);
+
+    background:
+        rgba(0,10,20,.66);
+
+    border:
+        1px solid rgba(0,242,254,.35);
+
+    transition: .2s;
+}
+
+.projection-button:hover {
+    color: white;
+
+    border-color:
+        var(--cyan);
+
+    background:
+        rgba(0,242,254,.09);
+
+    box-shadow:
+        0 0 20px rgba(0,242,254,.16);
+}
+
+
+/* =========================================================
+   RIGHT ANALYZER
+   ========================================================= */
+
+.right-panel {
+    grid-column: 3;
+    grid-row: 2;
+
+    min-height: 0;
+
+    padding: 0 7px 7px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+
+    overflow-y: auto;
+
+    background:
+        linear-gradient(
+            225deg,
+            rgba(0,242,254,.045),
+            rgba(0,5,12,.72)
+        );
+
+    border-right:
+        1px solid rgba(0,242,254,.32);
+
+    border-top:
+        1px solid rgba(0,242,254,.12);
+}
+
+.right-panel .panel-header {
+    margin:
+        0
+        -7px;
+}
+
+
+/* =========================================================
+   MAP
+   ========================================================= */
+
+.map-frame {
+    position: relative;
+
+    width: 100%;
+    height: 135px;
+
+    overflow: hidden;
+
+    border:
+        1px solid rgba(0,242,254,.36);
+
+    background:
+        #000;
+}
+
+.map-frame::after {
+    content: "SATELLITE SURFACE FEED";
+
+    position: absolute;
+
+    left: 6px;
+    bottom: 5px;
+
+    padding:
+        2px
+        5px;
+
+    pointer-events: none;
+
+    font-size: .45rem;
+    letter-spacing: 1px;
+
+    color:
+        rgba(0,242,254,.8);
+
+    background:
+        rgba(0,0,0,.72);
+}
+
+.map-iframe {
+    width: 100%;
+    height: 100%;
+
+    border: 0;
+
+    filter:
+        saturate(.75)
+        contrast(1.1)
+        brightness(.75);
+}
+
+
+/* =========================================================
+   DATA CARD
+   ========================================================= */
+
+.data-card {
+    padding: 8px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+
+    font-size: .61rem;
+
+    background:
+        rgba(0,242,254,.025);
+
+    border-left:
+        1px solid rgba(0,242,254,.28);
+}
+
+.data-row {
+    padding-bottom: 4px;
+
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+
+    border-bottom:
+        1px dashed rgba(0,242,254,.14);
+}
+
+.data-value {
+    color: var(--amber);
+    font-weight: bold;
+    text-align: right;
+}
+
+
+/* =========================================================
+   DESCRIPTION
+   ========================================================= */
+
+.description {
+    flex: 1;
+
+    min-height: 80px;
+
+    padding: 9px;
+
+    overflow-y: auto;
+
+    font-size: .61rem;
+    line-height: 1.55;
+
+    color: #b8ced7;
+
+    background:
+        rgba(0,0,0,.35);
+
+    border-left:
+        2px solid rgba(0,242,254,.40);
+}
+
+
+/* =========================================================
+   L-SHAPED TOUCH CONSOLE
+   ========================================================= */
+
+.touch-console {
+    grid-column: 1 / 4;
+    grid-row: 3;
+
+    position: relative;
+
+    margin:
+        0
+        clamp(8px,4vw,90px);
+
+    padding:
+        45px
+        6%
+        20px;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(4,minmax(0,1fr));
+
+    gap: 12px;
+
+    align-items: center;
+
+    clip-path:
+        polygon(
+            8% 0,
+            92% 0,
+            100% 100%,
+            0 100%
+        );
+
+    background:
+
+        linear-gradient(
+            115deg,
+            transparent 0 18%,
+            rgba(0,242,254,.035) 18.2%,
+            transparent 18.4% 81%,
+            rgba(0,242,254,.035) 81.2%,
+            transparent 81.4%
+        ),
+
+        linear-gradient(
+            180deg,
+            rgba(6,29,43,.95),
+            rgba(1,9,18,.99)
+        );
+
+    border-top:
+        1px solid rgba(0,242,254,.60);
+
+    box-shadow:
+        0 -14px 45px rgba(0,242,254,.09),
+        inset 0 1px rgba(255,255,255,.07),
+        inset 0 30px 70px rgba(0,242,254,.035);
+}
+
+
+/* console label */
+
+.touch-console::before {
+    content:
+        "TACTICAL TOUCH INTERFACE // ACTIVE";
+
+    position: absolute;
+
+    top: 12px;
+    left: 50%;
+
+    transform:
+        translateX(-50%);
+
+    color:
+        rgba(0,242,254,.65);
+
+    font-size: .58rem;
+    letter-spacing: 3px;
+
+    white-space: nowrap;
+}
+
+
+/* physical front edge */
+
+.touch-console::after {
+    content: "";
+
+    position: absolute;
+
+    left: 4%;
+    right: 4%;
+    bottom: 0;
+
+    height: 13px;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(0,242,254,.13),
+            rgba(0,0,0,.96)
+        );
+
+    border-top:
+        1px solid rgba(0,242,254,.28);
+
+    pointer-events: none;
+}
+
+
+/* =========================================================
+   TOUCH MODULES
+   ========================================================= */
+
+.console-module {
+    position: relative;
+
+    min-height: 82px;
+
+    padding: 12px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    border:
+        1px solid rgba(0,242,254,.15);
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(0,242,254,.045),
+            rgba(0,0,0,.18)
+        );
+
+    font-size: .62rem;
+
+    transition:
+        transform .2s,
+        border-color .2s,
+        background .2s,
+        box-shadow .2s;
+}
+
+.console-module:hover {
+    transform:
+        translateY(-3px);
+
+    border-color:
+        rgba(0,242,254,.65);
+
+    background:
+        rgba(0,242,254,.075);
+
+    box-shadow:
+        0 0 20px rgba(0,242,254,.10);
+}
+
+.module-title {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.module-value {
+    color: var(--amber);
+}
+
+
+/* =========================================================
+   GAUGES
+   ========================================================= */
+
+.gauge {
+    position: relative;
+
+    width: 100%;
+    height: 5px;
+
+    margin-top: 10px;
+
+    overflow: hidden;
+
+    background:
+        rgba(0,242,254,.12);
+}
+
+.gauge-fill {
+    height: 100%;
+
+    background:
+        linear-gradient(
+            90deg,
+            #00a9c7,
+            var(--cyan)
+        );
+
+    box-shadow:
+        0 0 10px var(--cyan);
+}
+
+.gauge-fill.alert {
+    background:
+        var(--alert);
+
+    box-shadow:
+        0 0 10px rgba(255,0,85,.8);
+}
+
+
+/* =========================================================
+   ENGAGE BUTTON
+   ========================================================= */
+
+.engage-module {
+    align-items: center;
+    text-align: center;
+
+    cursor: pointer;
+
+    color: var(--amber);
+}
+
+.engage-module strong {
+    display: block;
+
+    margin-bottom: 6px;
+
+    letter-spacing: 2px;
+}
+
+.engage-module small {
+    color:
+        rgba(0,242,254,.6);
+}
+
+
+/* =========================================================
+   MOBILE / TABLET
+   ========================================================= */
+
+@media (max-width: 950px) {
+
+    body {
+        height: auto;
+        overflow: auto;
+    }
+
+    .bridge {
+        width: 100%;
+        height: auto;
+        min-height: 100vh;
+
+        margin: 0;
+
+        grid-template-columns: 1fr;
+
+        grid-template-rows:
+            42px
+            minmax(420px,62vh)
+            auto
+            auto
+            auto;
+
+        padding:
+            8px;
+
+        clip-path: none;
+    }
+
+    .top-status {
+        grid-column: 1;
+        grid-row: 1;
+
+        font-size: .52rem;
+    }
+
+    .top-status span:first-child,
+    .top-status span:last-child {
+        display: none;
+    }
+
+    .center-viewport {
+        grid-column: 1;
+        grid-row: 2;
+    }
+
+    .left-panel {
+        grid-column: 1;
+        grid-row: 3;
+
+        max-height: 420px;
+    }
+
+    .right-panel {
+        grid-column: 1;
+        grid-row: 4;
+
+        max-height: none;
+    }
+
+    .touch-console {
+        grid-column: 1;
+        grid-row: 5;
+
+        margin: 0;
+
+        clip-path: none;
+
+        grid-template-columns:
+            repeat(2,minmax(0,1fr));
+
+        padding:
+            45px
+            10px
+            22px;
+    }
+
+    #earth-canvas-box {
+        width:
+            min(62vw,300px);
+    }
+
+    #earth-canvas-box.expanded {
+        width:
+            min(80vw,390px);
+    }
+}
+
+
+@media (max-width: 520px) {
+
+    .touch-console {
+        grid-template-columns: 1fr;
+    }
+
+    .viewport-title {
+        left: 14px;
+    }
+
+    .viewport-subtitle {
+        display: none;
+    }
+
+}
+
+</style>
 </head>
+
+
 <body>
 
-    <div class="space-bg"></div>
+<div class="space-bg"></div>
 
-    <div class="cockpit-frame">
-        <div class="top-status-bar">
-            <span>[SYS.SECURE // STARSHIP ORBITAL HUD]</span>
-            <span style="color:#00f2fe;">HOLOGRAPHIC PROJECTION: ACTIVE</span>
-            <span>CORE TEMP: 28.4°C</span>
+
+<main class="bridge">
+
+
+    <!-- =====================================================
+         TOP SYSTEM BAR
+         ===================================================== -->
+
+    <header class="top-status">
+
+        <span>
+            [SYS.SECURE // STARSHIP ORBITAL HUD]
+        </span>
+
+        <span class="center-status">
+            HOLOGRAPHIC PROJECTION: ACTIVE
+        </span>
+
+        <span>
+            CORE TEMP: 28.4°C
+        </span>
+
+    </header>
+
+
+
+    <!-- =====================================================
+         LEFT TARGET NAVIGATION
+         ===================================================== -->
+
+    <aside class="left-panel">
+
+        <div class="panel-header">
+
+            <span>
+                [GLOBAL TARGETS]
+            </span>
+
+            <small style="color:#ffe600;">
+                FULL WORLD
+            </small>
+
         </div>
 
-        <div class="left-nav-panel">
-            <div class="panel-header">
-                <span>[GLOBAL TARGETS]</span>
-                <small style="color:#ffe600;">FULL WORLD</small>
-            </div>
-            <div class="tour-list" id="accordionContainer"></div>
+        <div
+            class="target-list"
+            id="accordionContainer">
         </div>
 
-        <div class="center-viewport">
-            <div style="position: absolute; top: 8px; left: 10px; font-size: 0.6rem; color: rgba(0,242,254,0.7); letter-spacing: 1px;">
-                [TACTICAL HOLOGRAPHIC EARTH // VIEWPORT]
-            </div>
+    </aside>
+
+
+
+    <!-- =====================================================
+         CENTRAL HOLOGRAPHIC VIEWPORT
+         ===================================================== -->
+
+    <section class="center-viewport">
+
+        <div class="hologram-beam"></div>
+
+        <div class="viewport-title">
+            [TACTICAL HOLOGRAPHIC EARTH // VIEWPORT]
+        </div>
+
+        <div class="viewport-subtitle">
+            ORBITAL RECONNAISSANCE SYSTEM // THREE.JS LIVE PROJECTION
+        </div>
+
+
+        <div class="earth-stage">
+
             <div id="earth-canvas-box"></div>
+
+            <button
+                class="projection-button"
+                id="projectionToggle">
+
+                EXPAND PROJECTION
+
+            </button>
+
         </div>
 
-        <div class="right-info-panel">
-            <div class="panel-header">
-                <span>[TARGET ANALYZER]</span>
-                <span style="color:#ffe600;" id="targetStatus">STANDBY</span>
-            </div>
+    </section>
 
-            <div class="map-frame-box">
-                <iframe class="map-iframe" id="mapIframe" src="about:blank"></iframe>
-            </div>
 
-            <div class="data-card">
-                <div class="data-row"><span>目標地標:</span><span class="data-val" id="targetName" style="color:#ff0055;">請選擇目標</span></div>
-                <div class="data-row"><span>歷史年代:</span><span class="data-val" id="targetEra">--</span></div>
-                <div class="data-row"><span>軌道距離:</span><span class="data-val" id="targetDist">35,000 KM</span></div>
-                <div class="data-row"><span>座標位置:</span><span class="data-val" id="targetCoords">0.00° N, 0.00° E</span></div>
-            </div>
 
-            <div class="desc-box" id="targetDesc">
-                >> 系統就緒。<br>點擊左側地標，鎖定目標並載入情資。
-            </div>
+    <!-- =====================================================
+         RIGHT TARGET ANALYZER
+         ===================================================== -->
+
+    <aside class="right-panel">
+
+        <div class="panel-header">
+
+            <span>
+                [TARGET ANALYZER]
+            </span>
+
+            <span
+                id="targetStatus"
+                style="color:#ffe600;">
+
+                STANDBY
+
+            </span>
+
         </div>
 
-        <div class="bottom-cockpit-dashboard">
-            <div class="dash-gauge">
-                <div style="display:flex; justify-content:space-between;"><span>主推進器 (MAIN THRUSTER)</span><span style="color:#ffe600;">84%</span></div>
-                <div class="gauge-bar"><div class="gauge-fill" style="width:84%;"></div></div>
-            </div>
-            <div class="dash-gauge">
-                <div style="display:flex; justify-content:space-between;"><span>重力盾調節 (GRAVITY SHIELD)</span><span style="color:#ffe600;">68%</span></div>
-                <div class="gauge-bar"><div class="gauge-fill" style="width:68%;"></div></div>
-            </div>
-            <div class="dash-gauge">
-                <div style="display:flex; justify-content:space-between;"><span>量子通訊頻寬 (QUANTUM LINK)</span><span style="color:#ff0055;">42%</span></div>
-                <div class="gauge-bar"><div class="gauge-fill red" style="width:42%;"></div></div>
-            </div>
-            <div class="dash-gauge" style="justify-content: center; align-items: center; text-align: center; color: #ffe600; font-weight: bold;">
-                [STATUS: ALL SYSTEMS NOMINAL]
-            </div>
+
+        <div class="map-frame">
+
+            <iframe
+                class="map-iframe"
+                id="mapIframe"
+                src="about:blank"
+                loading="lazy">
+            </iframe>
+
         </div>
-    </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
 
-    <script>
-        const tourData = [
-            {
-                category: "[01] 亞洲精選 (ASIA)",
-                items: [
-                    { name: "日本 富士山", sub: "MOUNT FUJI", lat: 35.3606, lon: 138.7274, era: "火山地貌", dist: "35,200 KM", desc: "日本最高峰（3,776公尺），橫跨靜岡與山梨縣的錐形複式火山，日本精神象徵。" },
-                    { name: "台北 101", sub: "TAIPEI 101", lat: 25.0330, lon: 121.5645, era: "2004 年竣工", dist: "35,508 KM", desc: "臺灣地標，竹節意象與風阻尼球抗震科技高空摩天大樓。" },
-                    { name: "東京晴空塔", sub: "TOKYO SKYTREE", lat: 35.7100, lon: 139.8107, era: "2012 年啟用", dist: "35,350 KM", desc: "高 634 公尺，融合日本傳統美學與現代鋼構技術的通訊塔。" },
-                    { name: "萬里長城 (八達嶺)", sub: "GREAT WALL", lat: 40.4319, lon: 116.5704, era: "明代修築", dist: "35,210 KM", desc: "橫亙中國北方崇山峻嶺間之宏偉防禦工事，人類文明歷史奇蹟。" }
-                ]
-            },
-            {
-                category: "[02] 非洲大陸 (AFRICA)",
-                items: [
-                    { name: "吉薩金字塔群", sub: "GIZA PYRAMIDS", lat: 29.9792, lon: 31.1342, era: "BC 2560年", dist: "36,450 KM", desc: "埃及尼羅河流域，古代世界七大奇蹟中唯一保存至今的偉大宏偉陵墓群。" },
-                    { name: "南非 桌山", sub: "TABLE MOUNTAIN", lat: -33.9628, lon: 18.4098, era: "遠古造山地貌", dist: "41,000 KM", desc: "開普敦地標，擁有平坦如桌面的山頂，俯瞰大西洋與印度洋交會處。" },
-                    { name: "維多利亞瀑布", sub: "VICTORIA FALLS", lat: -17.9243, lon: 25.8572, era: "自然奇觀", dist: "39,500 KM", desc: "贊比西河上世界最大瀑布群之一，水霧如煙霧般震撼壯麗。" }
-                ]
-            },
-            {
-                category: "[03] 歐洲大陸 (EUROPE)",
-                items: [
-                    { name: "巴黎 艾菲爾鐵塔", sub: "EIFFEL TOWER", lat: 48.8584, lon: 2.2945, era: "1889 年落成", dist: "37,100 KM", desc: "法國巴黎標誌性鐵件建築，工業革命與現代設計的先驅。" },
-                    { name: "羅馬競技場", sub: "COLOSSEUM", lat: 41.8902, lon: 12.4922, era: "AD 80 年", dist: "36,900 KM", desc: "古羅馬帝國時期最大之圓形角鬥場，精湛的混凝土拱門工程。" }
-                ]
-            },
-            {
-                category: "[04] 美洲與馬雅 (AMERICA & MAYA)",
-                items: [
-                    { name: "墨西哥 奇琴伊察", sub: "CHICHEN ITZA", lat: 20.6843, lon: -88.5678, era: "AD 600 年", dist: "38,100 KM", desc: "馬雅文明核心遺址，庫庫爾坎金字塔蘊含精密的春分巨蛇光影曆法天文學。" },
-                    { name: "瓜地馬拉 蒂卡爾", sub: "TIKAL RUINS", lat: 17.2220, lon: -89.6237, era: "BC 4 世紀", dist: "38,400 KM", desc: "馬雅古典期最大城邦與宗教中心，神廟高聳穿透熱帶雨林樹冠。" },
-                    { name: "紐約 自由女神像", sub: "STATUE OF LIBERTY", lat: 40.6892, lon: -74.0445, era: "1886 年揭幕", dist: "37,800 KM", desc: "美國紐約港的巨大銅像，象徵民主、自由與美法友誼。" },
-                    { name: "秘魯 馬丘比丘", sub: "MACHU PICCHU", lat: -13.1631, lon: -72.5450, era: "AD 1450 年", dist: "38,200 KM", desc: "安地斯山脈上的神祕天空之城，高精密度乾砌石工藝。" }
-                ]
-            },
-            {
-                category: "[05] 極地科考站 (POLAR STATIONS)",
-                items: [
-                    { name: "南極 麥克默多站", sub: "MCMURDO STATION", lat: -77.8419, lon: 166.6863, era: "1956 年建立", dist: "45,000 KM", desc: "南極洲規模最大的科學考察站與物流樞紐，羅斯島極地小鎮。" },
-                    { name: "南極 東方站", sub: "VOSTOK STATION", lat: -78.4645, lon: 106.8340, era: "1957 年建立", dist: "46,200 KM", desc: "俄羅斯內陸科考站，曾測得地球最低自然氣溫 (-89.2°C) 的極端地標。" }
-                ]
-            }
-        ];
+        <div class="data-card">
 
-        window.addEventListener('load', () => {
-            const container = document.getElementById('earth-canvas-box');
-            const EARTH_RADIUS = 5;
+            <div class="data-row">
 
-            const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
-            camera.position.set(0, 0, 22);
+                <span>
+                    目標地標
+                </span>
 
-            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(container.clientWidth, container.clientHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
-            container.appendChild(renderer.domElement);
+                <span
+                    class="data-value"
+                    id="targetName"
+                    style="color:#ff0055;">
 
-            const controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
+                    請選擇目標
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 1.3);
-            scene.add(ambientLight);
+                </span>
 
-            const geometry = new THREE.SphereGeometry(EARTH_RADIUS, 64, 64);
-            const textureLoader = new THREE.TextureLoader();
-            const texture = textureLoader.load('https://upload.wikimedia.org/wikipedia/commons/8/83/Equirectangular_projection_SW.jpg', () => {
-                earth.rotation.y = -Math.PI / 2.2;
-            });
-            const material = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.5 });
-            const earth = new THREE.Mesh(geometry, material);
-            scene.add(earth);
+            </div>
 
-            function latLonToVector3(lat, lon, radius) {
-                const phi = (90 - lat) * (Math.PI / 180);
-                const theta = (lon + 180) * (Math.PI / 180);
-                const x = -(radius * Math.sin(phi) * Math.cos(theta));
-                const z = (radius * Math.sin(phi) * Math.sin(theta));
-                const y = (radius * Math.cos(phi));
-                return new THREE.Vector3(x, y, z);
-            }
 
-            const accordionContainer = document.getElementById('accordionContainer');
-            let globalLocations = [];
-            let locIndex = 0;
+            <div class="data-row">
 
-            tourData.forEach((group, gIdx) => {
-                const head = document.createElement('div');
-                head.className = 'accordion-header';
-                head.innerText = group.category;
+                <span>
+                    歷史年代
+                </span>
 
-                const content = document.createElement('div');
-                content.className = 'accordion-content';
+                <span
+                    class="data-value"
+                    id="targetEra">
 
-                if (gIdx === 0) {
-                    head.classList.add('active');
-                    content.classList.add('show');
-                }
+                    --
 
-                head.onclick = () => {
-                    head.classList.toggle('active');
-                    content.classList.toggle('show');
-                };
+                </span>
 
-                group.items.forEach(item => {
-                    const pos = latLonToVector3(item.lat, item.lon, EARTH_RADIUS + 0.02);
+            </div>
 
-                    const dotGeo = new THREE.SphereGeometry(0.06, 16, 16);
-                    const dotMat = new THREE.MeshBasicMaterial({ color: 0x00f2fe });
-                    const dotMesh = new THREE.Mesh(dotGeo, dotMat);
-                    dotMesh.position.copy(pos);
-                    earth.add(dotMesh);
 
-                    const ringGeo = new THREE.RingGeometry(0.08, 0.15, 32);
-                    const ringMat = new THREE.MeshBasicMaterial({ color: 0xff0055, side: THREE.DoubleSide, transparent: true, opacity: 0.9 });
-                    const ringMesh = new THREE.Mesh(ringGeo, ringMat);
-                    ringMesh.position.copy(pos.clone().multiplyScalar(1.01));
-                    ringMesh.lookAt(pos.clone().multiplyScalar(2));
-                    ringMesh.visible = false;
-                    earth.add(ringMesh);
+            <div class="data-row">
 
-                    const btn = document.createElement('button');
-                    btn.className = 'btn-target';
-                    const idx = locIndex;
-                    btn.id = `btn-${idx}`;
-                    btn.onclick = () => updateSubScreen(idx);
-                    btn.innerHTML = `<span>${item.name}</span><small style="color:#64748b;">${item.sub}</small>`;
-                    content.appendChild(btn);
+                <span>
+                    軌道距離
+                </span>
 
-                    globalLocations.push({ ...item, targetPos: pos, dotMesh: dotMesh, ringMesh: ringMesh });
-                    locIndex++;
-                });
+                <span
+                    class="data-value"
+                    id="targetDist">
 
-                accordionContainer.appendChild(head);
-                accordionContainer.appendChild(content);
-            });
+                    35,000 KM
 
-            window.updateSubScreen = function(index) {
-                const loc = globalLocations[index];
+                </span>
 
-                globalLocations.forEach((item, i) => {
-                    item.dotMesh.material.color.setHex(0x00f2fe);
-                    item.ringMesh.visible = false;
-                    const b = document.getElementById(`btn-${i}`);
-                    if (b) b.classList.remove('active');
-                });
+            </div>
 
-                loc.dotMesh.material.color.setHex(0xff0055);
-                loc.ringMesh.visible = true;
-                const activeBtn = document.getElementById(`btn-${index}`);
-                if (activeBtn) activeBtn.classList.add('active');
 
-                loc.ringMesh.scale.set(1, 1, 1);
-                new TWEEN.Tween(loc.ringMesh.scale)
-                    .to({ x: 2.2, y: 2.2, z: 2.2 }, 800)
-                    .yoyo(true).repeat(Infinity).start();
+            <div class="data-row">
 
-                document.getElementById('targetStatus').innerText = "LOCKED";
-                document.getElementById('targetStatus').style.color = "#ff0055";
-                document.getElementById('targetName').innerText = loc.name;
-                document.getElementById('targetEra').innerText = loc.era;
-                document.getElementById('targetDist').innerText = loc.dist || "35,000 KM";
-                document.getElementById('targetCoords').innerText = `${loc.lat.toFixed(2)}° N, ${loc.lon.toFixed(2)}° E`;
-                document.getElementById('targetDesc').innerHTML = `>> <span style="color:#ff0055;">[AI 全息鎖定]</span> 情資：<br>${loc.desc}`;
+                <span>
+                    座標位置
+                </span>
 
-                const googleMapUrl = `https://maps.google.com/maps?q=${loc.lat},${loc.lon}&t=k&z=15&ie=UTF8&iwloc=&output=embed`;
-                document.getElementById('mapIframe').src = googleMapUrl;
-            };
+                <span
+                    class="data-value"
+                    id="targetCoords">
 
-            function animate() {
-                requestAnimationFrame(animate);
-                TWEEN.update();
-                earth.rotation.y += 0.0003;
-                controls.update();
-                renderer.render(scene, camera);
-            }
-            animate();
+                    --
 
-            window.addEventListener('resize', () => {
-                camera.aspect = container.clientWidth / container.clientHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(container.clientWidth, container.clientHeight);
-            });
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div
+            class="description"
+            id="targetDesc">
+
+            &gt;&gt; 系統就緒。<br><br>
+
+            請由左側 GLOBAL TARGETS
+            選擇地標。<br><br>
+
+            系統將旋轉全息地球、
+            鎖定目標並載入地面情報。
+
+        </div>
+
+    </aside>
+
+
+
+    <!-- =====================================================
+         LOWER L-SHAPED TOUCH CONSOLE
+         ===================================================== -->
+
+    <section class="touch-console">
+
+
+        <div class="console-module">
+
+            <div class="module-title">
+
+                <span>
+                    MAIN THRUSTER
+                </span>
+
+                <span class="module-value">
+                    84%
+                </span>
+
+            </div>
+
+            <div class="gauge">
+
+                <div
+                    class="gauge-fill"
+                    style="width:84%;">
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="console-module">
+
+            <div class="module-title">
+
+                <span>
+                    GRAVITY SHIELD
+                </span>
+
+                <span class="module-value">
+                    68%
+                </span>
+
+            </div>
+
+            <div class="gauge">
+
+                <div
+                    class="gauge-fill"
+                    style="width:68%;">
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="console-module">
+
+            <div class="module-title">
+
+                <span>
+                    QUANTUM LINK
+                </span>
+
+                <span
+                    style="color:#ff0055;">
+
+                    42%
+
+                </span>
+
+            </div>
+
+            <div class="gauge">
+
+                <div
+                    class="gauge-fill alert"
+                    style="width:42%;">
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <div
+            class="console-module engage-module"
+            id="engageConsole">
+
+            <strong>
+                ENGAGE PROJECTION
+            </strong>
+
+            <small>
+                TOUCH CONTROL READY
+            </small>
+
+        </div>
+
+
+    </section>
+
+
+</main>
+
+
+
+<!-- =========================================================
+     LIBRARIES
+     ========================================================= -->
+
+<script
+src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js">
+</script>
+
+<script
+src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js">
+</script>
+
+<script
+src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js">
+</script>
+
+
+
+<script>
+
+/* =========================================================
+   TARGET DATABASE
+   ========================================================= */
+
+const tourData = [
+
+{
+    category: "[01] 亞洲精選 (ASIA)",
+
+    items: [
+
+        {
+            name: "日本 富士山",
+            sub: "MOUNT FUJI",
+            lat: 35.3606,
+            lon: 138.7274,
+            era: "火山地貌",
+            dist: "35,200 KM",
+
+            desc:
+            "日本最高峰（3,776 公尺），橫跨靜岡與山梨縣的錐形複式火山，也是日本重要文化與自然象徵。"
+        },
+
+        {
+            name: "台北 101",
+            sub: "TAIPEI 101",
+            lat: 25.0330,
+            lon: 121.5645,
+            era: "2004 年竣工",
+            dist: "35,508 KM",
+
+            desc:
+            "臺灣代表性城市地標，以竹節意象、高層建築工程與大型調諧質量阻尼器聞名。"
+        },
+
+        {
+            name: "東京晴空塔",
+            sub: "TOKYO SKYTREE",
+            lat: 35.7100,
+            lon: 139.8107,
+            era: "2012 年啟用",
+            dist: "35,350 KM",
+
+            desc:
+            "高 634 公尺的東京通訊與觀景塔，結合現代鋼構工程與日本傳統美學。"
+        },
+
+        {
+            name: "萬里長城（八達嶺）",
+            sub: "GREAT WALL",
+            lat: 40.4319,
+            lon: 116.5704,
+            era: "明代修築",
+            dist: "35,210 KM",
+
+            desc:
+            "中國北方重要歷史防禦工程。八達嶺是現今最知名且保存較完整的長城段落之一。"
+        }
+
+    ]
+},
+
+
+{
+    category: "[02] 非洲大陸 (AFRICA)",
+
+    items: [
+
+        {
+            name: "吉薩金字塔群",
+            sub: "GIZA PYRAMIDS",
+            lat: 29.9792,
+            lon: 31.1342,
+            era: "古埃及古王國時期",
+            dist: "36,450 KM",
+
+            desc:
+            "位於埃及吉薩高原的大型古代墓葬建築群，其中包括胡夫金字塔等重要遺址。"
+        },
+
+        {
+            name: "南非 桌山",
+            sub: "TABLE MOUNTAIN",
+            lat: -33.9628,
+            lon: 18.4098,
+            era: "自然地貌",
+            dist: "41,000 KM",
+
+            desc:
+            "南非開普敦的重要自然地標，以大面積平坦山頂與壯觀海岸景觀聞名。"
+        },
+
+        {
+            name: "維多利亞瀑布",
+            sub: "VICTORIA FALLS",
+            lat: -17.9243,
+            lon: 25.8572,
+            era: "自然奇觀",
+            dist: "39,500 KM",
+
+            desc:
+            "位於尚比亞與辛巴威交界的贊比西河，是世界著名大型瀑布景觀之一。"
+        }
+
+    ]
+},
+
+
+{
+    category: "[03] 歐洲大陸 (EUROPE)",
+
+    items: [
+
+        {
+            name: "巴黎 艾菲爾鐵塔",
+            sub: "EIFFEL TOWER",
+            lat: 48.8584,
+            lon: 2.2945,
+            era: "1889 年落成",
+            dist: "37,100 KM",
+
+            desc:
+            "法國巴黎代表性鐵構建築，為十九世紀大型金屬工程與世界博覽會的重要象徵。"
+        },
+
+        {
+            name: "羅馬競技場",
+            sub: "COLOSSEUM",
+            lat: 41.8902,
+            lon: 12.4922,
+            era: "西元 1 世紀",
+            dist: "36,900 KM",
+
+            desc:
+            "古羅馬大型圓形競技場，是羅馬帝國公共建築、拱券與混凝土工程的重要代表。"
+        }
+
+    ]
+},
+
+
+{
+    category: "[04] 美洲與馬雅 (AMERICA & MAYA)",
+
+    items: [
+
+        {
+            name: "墨西哥 奇琴伊察",
+            sub: "CHICHEN ITZA",
+            lat: 20.6843,
+            lon: -88.5678,
+            era: "馬雅文明",
+            dist: "38,100 KM",
+
+            desc:
+            "位於墨西哥猶加敦半島的重要馬雅城市遺址，庫庫爾坎金字塔是其代表建築。"
+        },
+
+        {
+            name: "瓜地馬拉 蒂卡爾",
+            sub: "TIKAL RUINS",
+            lat: 17.2220,
+            lon: -89.6237,
+            era: "馬雅古典期",
+            dist: "38,400 KM",
+
+            desc:
+            "馬雅文明重要古代城市之一，大型神廟建築群矗立於今日瓜地馬拉熱帶雨林之中。"
+        },
+
+        {
+            name: "紐約 自由女神像",
+            sub: "STATUE OF LIBERTY",
+            lat: 40.6892,
+            lon: -74.0445,
+            era: "1886 年揭幕",
+            dist: "37,800 KM",
+
+            desc:
+            "位於美國紐約港自由島的巨型雕像，是紐約與美國最具代表性的城市地標之一。"
+        },
+
+        {
+            name: "秘魯 馬丘比丘",
+            sub: "MACHU PICCHU",
+            lat: -13.1631,
+            lon: -72.5450,
+            era: "15 世紀",
+            dist: "38,200 KM",
+
+            desc:
+            "位於秘魯安地斯山區的重要印加遺址，以山地城市規劃與精密石造工程聞名。"
+        }
+
+    ]
+},
+
+
+{
+    category: "[05] 極地科考站 (POLAR STATIONS)",
+
+    items: [
+
+        {
+            name: "南極 麥克默多站",
+            sub: "MCMURDO STATION",
+            lat: -77.8419,
+            lon: 166.6863,
+            era: "1950 年代建立",
+            dist: "45,000 KM",
+
+            desc:
+            "位於南極羅斯島的大型科學研究與後勤基地，是南極研究的重要樞紐之一。"
+        },
+
+        {
+            name: "南極 東方站",
+            sub: "VOSTOK STATION",
+            lat: -78.4645,
+            lon: 106.8340,
+            era: "1957 年建立",
+            dist: "46,200 KM",
+
+            desc:
+            "位於南極內陸的俄羅斯研究站，以極端低溫環境與冰下湖研究聞名。"
+        }
+
+    ]
+}
+
+];
+
+
+
+/* =========================================================
+   APPLICATION
+   ========================================================= */
+
+window.addEventListener(
+    "load",
+    () => {
+
+    const container =
+        document.getElementById(
+            "earth-canvas-box"
+        );
+
+
+    const EARTH_RADIUS = 5;
+
+
+    /* =====================================================
+       THREE.JS
+       ===================================================== */
+
+    const scene =
+        new THREE.Scene();
+
+
+    const camera =
+        new THREE.PerspectiveCamera(
+            42,
+            1,
+            .1,
+            1000
+        );
+
+
+    camera.position.set(
+        0,
+        0,
+        22
+    );
+
+
+    const renderer =
+        new THREE.WebGLRenderer({
+
+            antialias: true,
+            alpha: true
+
         });
-    </script>
+
+
+    renderer.setPixelRatio(
+        Math.min(
+            window.devicePixelRatio,
+            2
+        )
+    );
+
+
+    container.appendChild(
+        renderer.domElement
+    );
+
+
+    /* =====================================================
+       ORBIT CONTROL
+       ===================================================== */
+
+    const controls =
+        new THREE.OrbitControls(
+            camera,
+            renderer.domElement
+        );
+
+
+    controls.enableDamping = true;
+
+    controls.dampingFactor = .055;
+
+    controls.enablePan = false;
+
+    controls.minDistance = 13;
+
+    controls.maxDistance = 30;
+
+
+
+    /* =====================================================
+       LIGHTS
+       ===================================================== */
+
+    const ambient =
+        new THREE.AmbientLight(
+            0xffffff,
+            1.15
+        );
+
+
+    scene.add(
+        ambient
+    );
+
+
+    const keyLight =
+        new THREE.DirectionalLight(
+            0x8eefff,
+            1.0
+        );
+
+
+    keyLight.position.set(
+        8,
+        5,
+        12
+    );
+
+
+    scene.add(
+        keyLight
+    );
+
+
+
+    /* =====================================================
+       EARTH
+       ===================================================== */
+
+    const earthGeometry =
+        new THREE.SphereGeometry(
+            EARTH_RADIUS,
+            64,
+            64
+        );
+
+
+    const textureLoader =
+        new THREE.TextureLoader();
+
+
+    const earthTexture =
+        textureLoader.load(
+            "https://upload.wikimedia.org/wikipedia/commons/8/83/Equirectangular_projection_SW.jpg"
+        );
+
+
+    const earthMaterial =
+        new THREE.MeshStandardMaterial({
+
+            map: earthTexture,
+
+            roughness: .55,
+
+            metalness: .02
+
+        });
+
+
+    const earth =
+        new THREE.Mesh(
+            earthGeometry,
+            earthMaterial
+        );
+
+
+    earth.rotation.y =
+        -Math.PI / 2.2;
+
+
+    scene.add(
+        earth
+    );
+
+
+
+    /* =====================================================
+       HOLOGRAPHIC ATMOSPHERE
+       ===================================================== */
+
+    const atmosphereGeometry =
+        new THREE.SphereGeometry(
+            EARTH_RADIUS * 1.035,
+            64,
+            64
+        );
+
+
+    const atmosphereMaterial =
+        new THREE.MeshBasicMaterial({
+
+            color: 0x00dfff,
+
+            transparent: true,
+
+            opacity: .055,
+
+            side: THREE.BackSide
+
+        });
+
+
+    const atmosphere =
+        new THREE.Mesh(
+            atmosphereGeometry,
+            atmosphereMaterial
+        );
+
+
+    scene.add(
+        atmosphere
+    );
+
+
+
+    /* =====================================================
+       HOLOGRAPHIC ORBIT RINGS
+       ===================================================== */
+
+    function makeOrbitRing(
+        radius,
+        rotationX,
+        rotationY
+    ) {
+
+        const geometry =
+            new THREE.TorusGeometry(
+                radius,
+                .012,
+                8,
+                128
+            );
+
+
+        const material =
+            new THREE.MeshBasicMaterial({
+
+                color: 0x00f2fe,
+
+                transparent: true,
+
+                opacity: .20
+
+            });
+
+
+        const ring =
+            new THREE.Mesh(
+                geometry,
+                material
+            );
+
+
+        ring.rotation.x =
+            rotationX;
+
+
+        ring.rotation.y =
+            rotationY;
+
+
+        scene.add(
+            ring
+        );
+
+
+        return ring;
+
+    }
+
+
+    const orbit1 =
+        makeOrbitRing(
+            6.1,
+            Math.PI / 2.2,
+            .2
+        );
+
+
+    const orbit2 =
+        makeOrbitRing(
+            6.5,
+            Math.PI / 2.8,
+            1.1
+        );
+
+
+
+    /* =====================================================
+       LAT / LON
+       ===================================================== */
+
+    function latLonToVector3(
+        lat,
+        lon,
+        radius
+    ) {
+
+        const phi =
+            (90 - lat) *
+            Math.PI / 180;
+
+
+        const theta =
+            (lon + 180) *
+            Math.PI / 180;
+
+
+        const x =
+            -radius *
+            Math.sin(phi) *
+            Math.cos(theta);
+
+
+        const z =
+            radius *
+            Math.sin(phi) *
+            Math.sin(theta);
+
+
+        const y =
+            radius *
+            Math.cos(phi);
+
+
+        return new THREE.Vector3(
+            x,
+            y,
+            z
+        );
+
+    }
+
+
+
+    /* =====================================================
+       BUILD TARGET DATABASE UI
+       ===================================================== */
+
+    const accordionContainer =
+        document.getElementById(
+            "accordionContainer"
+        );
+
+
+    const globalLocations = [];
+
+
+    let locationIndex = 0;
+
+
+    tourData.forEach(
+        (group,groupIndex) => {
+
+
+        const header =
+            document.createElement(
+                "div"
+            );
+
+
+        header.className =
+            "accordion-header";
+
+
+        header.textContent =
+            group.category;
+
+
+
+        const content =
+            document.createElement(
+                "div"
+            );
+
+
+        content.className =
+            "accordion-content";
+
+
+        if(groupIndex === 0) {
+
+            header.classList.add(
+                "active"
+            );
+
+
+            content.classList.add(
+                "show"
+            );
+
+        }
+
+
+
+        header.addEventListener(
+            "click",
+            () => {
+
+            header.classList.toggle(
+                "active"
+            );
+
+
+            content.classList.toggle(
+                "show"
+            );
+
+        });
+
+
+
+        group.items.forEach(
+            item => {
+
+
+            const position =
+                latLonToVector3(
+                    item.lat,
+                    item.lon,
+                    EARTH_RADIUS + .03
+                );
+
+
+
+            /* marker */
+
+            const markerGeometry =
+                new THREE.SphereGeometry(
+                    .065,
+                    16,
+                    16
+                );
+
+
+            const markerMaterial =
+                new THREE.MeshBasicMaterial({
+
+                    color: 0x00f2fe
+
+                });
+
+
+            const marker =
+                new THREE.Mesh(
+                    markerGeometry,
+                    markerMaterial
+                );
+
+
+            marker.position.copy(
+                position
+            );
+
+
+            earth.add(
+                marker
+            );
+
+
+
+            /* target ring */
+
+            const ringGeometry =
+                new THREE.RingGeometry(
+                    .10,
+                    .19,
+                    32
+                );
+
+
+            const ringMaterial =
+                new THREE.MeshBasicMaterial({
+
+                    color: 0xff0055,
+
+                    side:
+                        THREE.DoubleSide,
+
+                    transparent: true,
+
+                    opacity: .95
+
+                });
+
+
+            const targetRing =
+                new THREE.Mesh(
+                    ringGeometry,
+                    ringMaterial
+                );
+
+
+            targetRing.position.copy(
+                position.clone()
+                    .multiplyScalar(1.012)
+            );
+
+
+            targetRing.lookAt(
+                position.clone()
+                    .multiplyScalar(2)
+            );
+
+
+            targetRing.visible =
+                false;
+
+
+            earth.add(
+                targetRing
+            );
+
+
+
+            /* button */
+
+            const button =
+                document.createElement(
+                    "button"
+                );
+
+
+            button.className =
+                "target-button";
+
+
+            const currentIndex =
+                locationIndex;
+
+
+            button.id =
+                `target-${currentIndex}`;
+
+
+            button.innerHTML =
+                `<span>${item.name}</span>
+                 <small>${item.sub}</small>`;
+
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                selectTarget(
+                    currentIndex
+                );
+
+            });
+
+
+            content.appendChild(
+                button
+            );
+
+
+            globalLocations.push({
+
+                ...item,
+
+                position,
+
+                marker,
+
+                targetRing
+
+            });
+
+
+            locationIndex++;
+
+        });
+
+
+        accordionContainer.appendChild(
+            header
+        );
+
+
+        accordionContainer.appendChild(
+            content
+        );
+
+    });
+
+
+
+    /* =====================================================
+       COORDINATE FORMATTER
+       ===================================================== */
+
+    function coordinateText(
+        lat,
+        lon
+    ) {
+
+        const ns =
+            lat >= 0
+            ? "N"
+            : "S";
+
+
+        const ew =
+            lon >= 0
+            ? "E"
+            : "W";
+
+
+        return (
+            `${Math.abs(lat).toFixed(2)}° ${ns}, ` +
+            `${Math.abs(lon).toFixed(2)}° ${ew}`
+        );
+
+    }
+
+
+
+    /* =====================================================
+       TARGET SELECTION
+       ===================================================== */
+
+    let activeTween = null;
+
+
+    function selectTarget(
+        index
+    ) {
+
+        const location =
+            globalLocations[index];
+
+
+        globalLocations.forEach(
+            (item,i) => {
+
+            item.marker.material
+                .color
+                .setHex(
+                    0x00f2fe
+                );
+
+
+            item.targetRing.visible =
+                false;
+
+
+            item.targetRing.scale.set(
+                1,
+                1,
+                1
+            );
+
+
+            const button =
+                document.getElementById(
+                    `target-${i}`
+                );
+
+
+            if(button) {
+
+                button.classList.remove(
+                    "active"
+                );
+
+            }
+
+        });
+
+
+
+        location.marker.material
+            .color
+            .setHex(
+                0xff0055
+            );
+
+
+        location.targetRing.visible =
+            true;
+
+
+        document
+            .getElementById(
+                `target-${index}`
+            )
+            ?.classList
+            .add(
+                "active"
+            );
+
+
+
+        /* pulse */
+
+        if(activeTween) {
+
+            activeTween.stop();
+
+        }
+
+
+        activeTween =
+            new TWEEN.Tween(
+                location.targetRing.scale
+            )
+            .to(
+                {
+                    x: 2.2,
+                    y: 2.2,
+                    z: 2.2
+                },
+                800
+            )
+            .yoyo(true)
+            .repeat(Infinity)
+            .start();
+
+
+
+        /* UI */
+
+        const status =
+            document.getElementById(
+                "targetStatus"
+            );
+
+
+        status.textContent =
+            "LOCKED";
+
+
+        status.style.color =
+            "#ff0055";
+
+
+        document.getElementById(
+            "targetName"
+        ).textContent =
+            location.name;
+
+
+        document.getElementById(
+            "targetEra"
+        ).textContent =
+            location.era;
+
+
+        document.getElementById(
+            "targetDist"
+        ).textContent =
+            location.dist;
+
+
+        document.getElementById(
+            "targetCoords"
+        ).textContent =
+            coordinateText(
+                location.lat,
+                location.lon
+            );
+
+
+        document.getElementById(
+            "targetDesc"
+        ).innerHTML =
+
+            `&gt;&gt;
+             <span style="color:#ff0055;">
+             [TARGET LOCKED]
+             </span>
+             <br><br>
+             ${location.desc}`;
+
+
+
+        /* Google satellite map */
+
+        const mapURL =
+
+            `https://maps.google.com/maps` +
+            `?q=${location.lat},${location.lon}` +
+            `&t=k` +
+            `&z=15` +
+            `&ie=UTF8` +
+            `&iwloc=` +
+            `&output=embed`;
+
+
+        document.getElementById(
+            "mapIframe"
+        ).src =
+            mapURL;
+
+    }
+
+
+
+    /* =====================================================
+       PROJECTION EXPAND
+       ===================================================== */
+
+    const projectionButton =
+        document.getElementById(
+            "projectionToggle"
+        );
+
+
+    projectionButton.addEventListener(
+        "click",
+        () => {
+
+        container.classList.toggle(
+            "expanded"
+        );
+
+
+        const expanded =
+            container.classList.contains(
+                "expanded"
+            );
+
+
+        projectionButton.textContent =
+            expanded
+            ? "REDUCE PROJECTION"
+            : "EXPAND PROJECTION";
+
+
+        setTimeout(
+            resizeRenderer,
+            680
+        );
+
+    });
+
+
+
+    /* lower touch console also toggles */
+
+    document.getElementById(
+        "engageConsole"
+    ).addEventListener(
+        "click",
+        () => {
+
+        projectionButton.click();
+
+    });
+
+
+
+    /* =====================================================
+       RESPONSIVE THREE.JS
+       ===================================================== */
+
+    function resizeRenderer() {
+
+        const width =
+            container.clientWidth;
+
+
+        const height =
+            container.clientHeight;
+
+
+        if(
+            width === 0 ||
+            height === 0
+        ) {
+
+            return;
+
+        }
+
+
+        camera.aspect =
+            width / height;
+
+
+        camera.updateProjectionMatrix();
+
+
+        renderer.setSize(
+            width,
+            height,
+            false
+        );
+
+    }
+
+
+
+    const resizeObserver =
+        new ResizeObserver(
+            resizeRenderer
+        );
+
+
+    resizeObserver.observe(
+        container
+    );
+
+
+    window.addEventListener(
+        "resize",
+        resizeRenderer
+    );
+
+
+    resizeRenderer();
+
+
+
+    /* =====================================================
+       ANIMATION
+       ===================================================== */
+
+    function animate() {
+
+        requestAnimationFrame(
+            animate
+        );
+
+
+        TWEEN.update();
+
+
+        earth.rotation.y +=
+            .00035;
+
+
+        atmosphere.rotation.y -=
+            .00012;
+
+
+        orbit1.rotation.z +=
+            .0007;
+
+
+        orbit2.rotation.z -=
+            .00045;
+
+
+        controls.update();
+
+
+        renderer.render(
+            scene,
+            camera
+        );
+
+    }
+
+
+    animate();
+
+
+
+    /* initial target */
+
+    setTimeout(
+        () => {
+
+        selectTarget(1);
+
+    },
+    500
+    );
+
+});
+
+</script>
+
 </body>
 </html>
