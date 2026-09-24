@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>STARSHIP COCKPIT CONSOLE // TACTICAL HUD</title>
+    <title>STARSHIP COCKPIT // AI ROTATING RING HUD</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         
@@ -14,26 +14,26 @@
             display: flex; justify-content: center; align-items: center;
         }
 
-        /* 外部太空背景 */
+        /* 外部太空深邃背景 */
         .space-bg {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0;
             background: radial-gradient(circle at center, #051329 0%, #01040a 100%);
         }
 
-        /* 核心戰術主螢幕外框（製造「這是一個螢幕」的感覺） */
+        /* L型科技主控台螢幕外框 */
         .cockpit-screen-frame {
             position: relative; width: 96vw; height: 94vh; z-index: 5;
             border: 2px solid rgba(0, 242, 254, 0.4);
-            background: rgba(1, 5, 12, 0.7);
-            box-shadow: 0 0 30px rgba(0, 242, 254, 0.15), inset 0 0 50px rgba(0, 242, 254, 0.08);
+            background: rgba(1, 5, 12, 0.82);
+            box-shadow: 0 0 35px rgba(0, 242, 254, 0.2), inset 0 0 60px rgba(0, 242, 254, 0.08);
             display: grid;
             grid-template-columns: 320px 1fr 380px;
             grid-template-rows: 40px 1fr 30px;
             padding: 12px; gap: 12px;
-            clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
+            clip-path: polygon(0 0, calc(100% - 25px) 0, 100% 25px, 100% 100%, 25px 100%, 0 calc(100% - 25px));
         }
 
-        /* 螢幕頂部狀態列 */
+        /* 頂部狀態列 */
         .screen-top-bar {
             grid-column: 1 / 4;
             display: flex; justify-content: space-between; align-items: center;
@@ -41,18 +41,10 @@
             padding-bottom: 5px; font-size: 0.75rem; letter-spacing: 2px; color: #ffe600;
         }
 
-        /* 3D 地球容器（縮小並完美嵌在中間） */
-        #canvas-container {
-            grid-column: 2 / 3; grid-row: 2 / 3;
-            position: relative; width: 100%; height: 100%; overflow: hidden;
-            border: 1px dashed rgba(0, 242, 254, 0.2);
-            background: rgba(0, 0, 0, 0.3);
-        }
-
-        /* 左側：戰術目標摺疊選單 */
+        /* 左側：觸控摺疊導航選單 */
         .mod-nav {
             grid-column: 1 / 2; grid-row: 2 / 3;
-            background: rgba(2, 9, 20, 0.9);
+            background: rgba(2, 9, 20, 0.95);
             border: 1px solid rgba(0, 242, 254, 0.4);
             display: flex; flex-direction: column; overflow: hidden;
         }
@@ -66,7 +58,7 @@
         .tour-list::-webkit-scrollbar { width: 3px; }
         .tour-list::-webkit-scrollbar-thumb { background: #00f2fe; }
 
-        /* 摺疊標題與按鈕 */
+        /* 摺疊清單 */
         .accordion-header {
             background: rgba(0, 242, 254, 0.06); border: 1px solid rgba(0, 242, 254, 0.3);
             color: #ffe600; padding: 6px 10px; font-size: 0.7rem; font-weight: bold;
@@ -81,20 +73,47 @@
         }
         .accordion-content.show { max-height: 400px; transition: max-height 0.3s ease-in; padding-top: 4px; }
 
+        /* 觸控按鈕與 AI 旋轉光環特效 */
         .btn-target {
-            width: 100%; padding: 6px 8px; background: rgba(0, 242, 254, 0.03);
-            border: 1px solid rgba(0, 242, 254, 0.2); color: #00f2fe;
+            width: 100%; padding: 8px 10px; background: rgba(0, 242, 254, 0.03);
+            border: 1px solid rgba(0, 242, 254, 0.25); color: #00f2fe;
             font-family: inherit; font-size: 0.7rem; cursor: pointer;
             display: flex; justify-content: space-between; align-items: center;
-            transition: all 0.2s;
+            position: relative; overflow: hidden; transition: all 0.2s;
         }
-        .btn-target:hover { background: rgba(0, 242, 254, 0.2); border-color: #00f2fe; color: #fff; }
-        .btn-target.active { background: rgba(255, 0, 85, 0.25); border-color: #ff0055; color: #ff0055; font-weight: bold; }
+        .btn-target:hover { background: rgba(0, 242, 254, 0.15); border-color: #00f2fe; color: #fff; }
+        
+        /* 當按鈕被點擊激活時，外圍產生 AI 般的旋轉光環邊框 */
+        .btn-target.active { 
+            background: rgba(255, 0, 85, 0.15); border-color: #ff0055; color: #ff0055; font-weight: bold; 
+        }
+        .btn-target.active::before {
+            content: '';
+            position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: conic-gradient(transparent, rgba(255, 0, 85, 0.8), transparent 30%);
+            animation: ai-ring-spin 1.5s linear infinite;
+            z-index: 1; pointer-events: none;
+        }
+        .btn-target.active span, .btn-target.active small { position: relative; z-index: 2; }
+
+        @keyframes ai-ring-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 中間：精巧的 3D 地球視窗 */
+        #canvas-container {
+            grid-column: 2 / 3; grid-row: 2 / 3;
+            position: relative; width: 100%; height: 100%; overflow: hidden;
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            background: rgba(0, 0, 0, 0.4);
+            box-shadow: inset 0 0 30px rgba(0, 242, 254, 0.1);
+        }
 
         /* 右側：副分析螢幕 */
         .mod-sub-screen {
             grid-column: 3 / 4; grid-row: 2 / 3;
-            background: rgba(2, 9, 20, 0.9);
+            background: rgba(2, 9, 20, 0.95);
             border: 1px solid rgba(0, 242, 254, 0.4);
             display: flex; flex-direction: column; padding: 8px; gap: 8px; overflow-y: auto;
         }
@@ -116,7 +135,7 @@
             flex: 1; overflow-y: auto;
         }
 
-        /* 螢幕底部列 */
+        /* 底部狀態列 */
         .screen-bottom-bar {
             grid-column: 1 / 4; grid-row: 3 / 4;
             display: flex; justify-content: space-between; align-items: center;
@@ -124,7 +143,7 @@
             font-size: 0.65rem; color: rgba(0, 242, 254, 0.6);
         }
 
-        /* 點擊波紋 */
+        /* 點擊螢幕波紋 */
         .click-pulse {
             position: absolute; width: 12px; height: 12px; border: 2px solid #00f2fe;
             border-radius: 50%; pointer-events: none; z-index: 99;
@@ -144,9 +163,9 @@
     <div class="cockpit-screen-frame">
         
         <div class="screen-top-bar">
-            <span>[SYS.VER // 4.05 COCKPIT MODE]</span>
-            <span style="color:#00f2fe;">TACTICAL DISPLAY: ONLINE</span>
-            <span>SECURE LINK: ACTIVE</span>
+            <span>[SYS.VER // COCKPIT AI INTERFACE]</span>
+            <span style="color:#00f2fe;">TOUCH CONTROL: ACTIVE</span>
+            <span>SECURE LINK: ONLINE</span>
         </div>
 
         <!-- 左側選單 -->
@@ -158,7 +177,7 @@
             <div class="tour-list" id="accordionContainer"></div>
         </div>
 
-        <!-- 中間 3D 地球（已縮小便於在畫面內觀看） -->
+        <!-- 中間 3D 地球專屬視窗 -->
         <div id="canvas-container"></div>
 
         <!-- 右側副螢幕 -->
@@ -180,13 +199,13 @@
             </div>
 
             <div class="desc-box" id="targetDesc">
-                >> 系統準備就緒。<br>請從左側點擊地標，地球將自動旋轉至該目標，右側同步載入高解析衛星視窗。
+                >> 系統準備就緒。<br>點擊左側地標按鈕，將觸發 AI 戰術光環旋轉並鎖定目標。
             </div>
         </div>
 
         <div class="screen-bottom-bar">
             <span>STATUS: ALL SYSTEMS NOMINAL</span>
-            <span>FRAME RATE: 60 FPS // GPU ACCELERATED</span>
+            <span>AI CORE: LISTENING // ROTATING RING READY</span>
         </div>
 
     </div>
@@ -384,7 +403,7 @@
                 document.getElementById('targetEra').innerText = loc.era;
                 document.getElementById('targetDist').innerText = loc.dist || "35,000 KM";
                 document.getElementById('targetCoords').innerText = `${loc.lat.toFixed(2)}° N, ${loc.lon.toFixed(2)}° E`;
-                document.getElementById('targetDesc').innerHTML = `>> <span style="color:#ff0055;">[戰術鎖定]</span> 簡報：<br>${loc.desc}`;
+                document.getElementById('targetDesc').innerHTML = `>> <span style="color:#ff0055;">[AI 戰術鎖定]</span> 簡報：<br>${loc.desc}`;
 
                 const googleMapUrl = `https://maps.google.com/maps?q=${loc.lat},${loc.lon}&t=k&z=15&ie=UTF8&iwloc=&output=embed`;
                 document.getElementById('mapIframe').src = googleMapUrl;
