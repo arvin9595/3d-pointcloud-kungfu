@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>STARSHIP EARTH SYSTEM V3.3 PHASE 2 // NASA EONET LIVE EVENTS</title>
+<title>STARSHIP EARTH SYSTEM V3.3 PHASE 2.1 // EONET MARKER INTERACTION FIX</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 <style>
 :root{
@@ -117,7 +117,7 @@ body.focus-open .bridge{filter:brightness(.42) saturate(.72)}
 <div class="space-bg"></div>
 <main class="bridge">
   <header class="topbar">
-    <span>[SYS.SECURE // STARSHIP ORBITAL HUD // V3.3-P2]</span>
+    <span>[SYS.SECURE // STARSHIP ORBITAL HUD // V3.3-P2.1]</span>
     <span class="live">PLANETARY INTELLIGENCE NETWORK: ONLINE</span>
     <span id="utcClock">UTC --:--:--</span>
   </header>
@@ -319,7 +319,7 @@ function hideQuakeIntel(){$('quakeIntel')?.classList.remove('show');if(selectedQ
 
 // ---------- V3.3 PHASE 2: NASA EONET 3D EVENT LAYER ----------
 const eonetGroup=new THREE.Group(); eonetGroup.name='NASA_EONET_LAYER'; earth.add(eonetGroup);
-let eonetMeshes=[],selectedEonetMesh=null;
+let eonetMeshes=[],eonetHitMeshes=[],selectedEonetMesh=null;
 const eonetSelectionRing=new THREE.Mesh(
   new THREE.RingGeometry(.15,.27,36),
   new THREE.MeshBasicMaterial({color:0x8b5cff,side:THREE.DoubleSide,transparent:true,opacity:.98})
@@ -357,7 +357,7 @@ function clearEonetLayer(){
   while(eonetGroup.children.length){
     const o=eonetGroup.children.pop(); o.geometry?.dispose?.(); o.material?.dispose?.();
   }
-  eonetMeshes=[];selectedEonetMesh=null;eonetSelectionRing.visible=false;
+  eonetMeshes=[];eonetHitMeshes=[];selectedEonetMesh=null;eonetSelectionRing.visible=false;
   $('eventIntel')?.classList.remove('show');$('focusNasaEvent')?.classList.remove('show');
 }
 function buildEonetLayer(data){
@@ -370,7 +370,26 @@ function buildEonetLayer(data){
       new THREE.MeshBasicMaterial({color:eventColor(ev),transparent:true,opacity:.98})
     );
     mesh.position.copy(p);mesh.userData={eonet:ev,point,baseScale:1};
-    eonetGroup.add(mesh);eonetMeshes.push(mesh);
+
+    // Phase 2.1: invisible hit sphere is ~2.8x larger than the visible marker.
+    // It remains fully transparent, so the HUD appearance does not change.
+    const hit=new THREE.Mesh(
+      new THREE.SphereGeometry(.295,12,12),
+      new THREE.MeshBasicMaterial({
+        color:0xffffff,
+        transparent:true,
+        opacity:0,
+        depthWrite:false,
+        depthTest:false
+      })
+    );
+    hit.position.copy(p);
+    hit.userData={eonet:ev,point,visual:mesh,isEonetHitTarget:true};
+
+    eonetGroup.add(mesh);
+    eonetGroup.add(hit);
+    eonetMeshes.push(mesh);
+    eonetHitMeshes.push(hit);
   });
   return eonetMeshes.length;
 }
@@ -385,12 +404,15 @@ function eonetMagnitude(ev,geometry){
 }
 function showEonetIntel(mesh){
   if(!mesh?.userData?.eonet)return;
-  selectedEonetMesh=mesh;eonetMeshes.forEach(m=>m.scale.setScalar(1));mesh.scale.setScalar(1.75);
+  const visual=mesh.userData.visual||mesh;
+  selectedEonetMesh=visual;
+  eonetMeshes.forEach(m=>m.scale.setScalar(1));
+  visual.scale.setScalar(1.75);
   const ev=mesh.userData.eonet,g=mesh.userData.point.geometry||{},cat=eventCategoryTitle(ev);
   const date=(g.date||'').slice(0,10)||'OPEN',mag=eonetMagnitude(ev,g),url=eonetEventUrl(ev);
   eonetSelectionRing.material.color.setHex(eventColor(ev));
-  eonetSelectionRing.position.copy(mesh.position.clone().multiplyScalar(1.006));
-  eonetSelectionRing.lookAt(mesh.position.clone().multiplyScalar(2));eonetSelectionRing.visible=true;
+  eonetSelectionRing.position.copy(visual.position.clone().multiplyScalar(1.006));
+  eonetSelectionRing.lookAt(visual.position.clone().multiplyScalar(2));eonetSelectionRing.visible=true;
   $('eventTitle').textContent=ev.title||'Natural event';$('eventCategory').textContent=cat;$('eventDate').textContent=date;$('eventMagnitude').textContent=mag;$('eventLink').href=url;
   $('focusNasaTitle').textContent=ev.title||'Natural event';$('focusNasaCategory').textContent=cat;$('focusNasaDate').textContent=date;$('focusNasaMagnitude').textContent=mag;$('focusNasaLink').href=url;$('focusNasaEvent').classList.add('show');
   $('eventIntel').classList.add('show');
@@ -439,6 +461,15 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&focusOpen)closeFocu
 
 const quakeRaycaster=new THREE.Raycaster(),quakePointer=new THREE.Vector2();let pointerDownPos=null;
 renderer.domElement.addEventListener('pointerdown',e=>{pointerDownPos={x:e.clientX,y:e.clientY}});
+renderer.domElement.addEventListener('pointermove',e=>{
+  if(!['events','storms'].includes(currentMode)){renderer.domElement.style.cursor='grab';return}
+  const rect=renderer.domElement.getBoundingClientRect();
+  quakePointer.x=((e.clientX-rect.left)/rect.width)*2-1;
+  quakePointer.y=-((e.clientY-rect.top)/rect.height)*2+1;
+  quakeRaycaster.setFromCamera(quakePointer,camera);
+  const hit=quakeRaycaster.intersectObjects(eonetHitMeshes,false)[0];
+  renderer.domElement.style.cursor=hit?'pointer':'grab';
+});
 renderer.domElement.addEventListener('pointerup',e=>{
   if(!pointerDownPos)return;
   const moved=Math.hypot(e.clientX-pointerDownPos.x,e.clientY-pointerDownPos.y);pointerDownPos=null;if(moved>6)return;
@@ -451,7 +482,7 @@ renderer.domElement.addEventListener('pointerup',e=>{
     const hit=quakeRaycaster.intersectObjects(quakeMeshes,false).find(h=>!earthHit||h.distance<=earthHit.distance+.20);
     if(hit)showQuakeIntel(hit.object);
   }else{
-    const hit=quakeRaycaster.intersectObjects(eonetMeshes,false).find(h=>!earthHit||h.distance<=earthHit.distance+.22);
+    const hit=quakeRaycaster.intersectObjects(eonetHitMeshes,false).find(h=>!earthHit||h.distance<=earthHit.distance+.34);
     if(hit)showEonetIntel(hit.object);
   }
 });
@@ -512,13 +543,13 @@ async function renderMode(mode){currentMode=mode;syncFocusPanel();$('focusOpen')
     loading('ATMOSPHERIC ANALYSIS');const d=await getWeather(),c=d.current,u=d.current_units;const dir=c.wind_direction_10m;setAnalysis('ATMOSPHERE // LOCAL COLUMN','LIVE',`<div class="metric-grid"><div class="metric">CLOUD COVER<b>${c.cloud_cover}%</b></div><div class="metric">PRESSURE<b>${c.surface_pressure} hPa</b></div><div class="metric">HUMIDITY<b>${c.relative_humidity_2m}%</b></div><div class="metric">WIND DIR<b>${dir}°</b></div><div class="metric">GUSTS<b>${c.wind_gusts_10m} ${u.wind_gusts_10m}</b></div><div class="metric">DAY/NIGHT<b>${c.is_day?'DAY':'NIGHT'}</b></div></div>`);return;
   }
   if(mode==='storms'){
-    loading('GLOBAL STORM SCAN');const d=await getEonet('severeStorms');const plotted=buildEonetLayer(d);$('hudEvents').textContent=d.events.length+' STORMS';const list=d.events.slice(0,8);setAnalysis('NASA EONET // SEVERE STORMS','LIVE',`<div class="metric-grid"><div class="metric">OPEN STORMS<b>${d.events.length}</b></div><div class="metric">3D MARKERS<b>${plotted}</b></div></div><div style="margin:6px 0;color:var(--cyan)">點擊中央 3D 地球上的粉紅光點，可讀取 NASA EONET 事件情報。</div><div class="mini-list">${list.length?list.map(e=>`<div class="mini-item event-list-item" data-eid="${esc(e.id)}"><span>${esc(e.title)}</span><span style="color:var(--pink)">${esc(e.geometry?.at(-1)?.date?.slice(0,10)||'OPEN')}</span></div>`).join(''):'<div>目前查詢範圍沒有 EONET 開放中的 severe storm 事件。</div>'}</div>`);document.querySelectorAll('.event-list-item').forEach(el=>el.addEventListener('click',()=>{const m=eonetMeshes.find(x=>x.userData.eonet.id===el.dataset.eid);if(m)showEonetIntel(m)}));$('rightDesc').innerHTML='<span style="color:var(--pink)">NASA EONET STORM SCAN</span><br>中央地球已投影 EONET severe storm 事件。EONET 用於事件視覺化與一般資訊，不等同官方災害警報。';return;
+    loading('GLOBAL STORM SCAN');const d=await getEonet('severeStorms');const plotted=buildEonetLayer(d);$('hudEvents').textContent=d.events.length+' STORMS';const list=d.events.slice(0,8);setAnalysis('NASA EONET // SEVERE STORMS','LIVE',`<div class="metric-grid"><div class="metric">OPEN STORMS<b>${d.events.length}</b></div><div class="metric">3D MARKERS<b>${plotted}</b></div></div><div style="margin:6px 0;color:var(--cyan)">滑鼠移到粉紅光點附近會變成手指；點擊即可讀取 NASA EONET 事件情報。</div><div class="mini-list">${list.length?list.map(e=>`<div class="mini-item event-list-item" data-eid="${esc(e.id)}"><span>${esc(e.title)}</span><span style="color:var(--pink)">${esc(e.geometry?.at(-1)?.date?.slice(0,10)||'OPEN')}</span></div>`).join(''):'<div>目前查詢範圍沒有 EONET 開放中的 severe storm 事件。</div>'}</div>`);document.querySelectorAll('.event-list-item').forEach(el=>el.addEventListener('click',()=>{const m=eonetMeshes.find(x=>x.userData.eonet.id===el.dataset.eid);if(m)showEonetIntel(m)}));$('rightDesc').innerHTML='<span style="color:var(--pink)">NASA EONET STORM SCAN</span><br>中央地球已投影 EONET severe storm 事件。EONET 用於事件視覺化與一般資訊，不等同官方災害警報。';return;
   }
   if(mode==='quakes'){
     loading('SEISMIC NETWORK');const d=await getQuakes();const plotted=buildQuakeLayer(d);const top=[...d.features].sort((a,b)=>(b.properties.mag||0)-(a.properties.mag||0)).slice(0,8);$('hudEvents').textContent=plotted+' QUAKES';setAnalysis('USGS // LIVE EARTHQUAKES M2.5+ / 24H','LIVE',`<div class="metric-grid"><div class="metric">EVENT COUNT<b>${d.metadata.count}</b></div><div class="metric">3D MARKERS<b>${plotted}</b></div></div><div style="margin:6px 0;color:var(--cyan)">點擊中央 3D 地球上的光點，可查看震級、深度、時間與 USGS 原始事件頁。</div><div class="mini-list">${top.map(f=>`<div class="mini-item quake-list-item" data-qid="${esc(f.id)}"><span>M${Number(f.properties.mag).toFixed(1)} · ${esc(f.properties.place)}</span><span>${new Date(f.properties.time).toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})}</span></div>`).join('')}</div>`);document.querySelectorAll('.quake-list-item').forEach(el=>el.addEventListener('click',()=>{const m=quakeMeshes.find(x=>x.userData.quake.id===el.dataset.qid);if(m)showQuakeIntel(m)}));$('rightDesc').innerHTML='<span style="color:var(--red)">USGS LIVE SEISMIC LAYER</span><br>中央地球已載入過去 24 小時 M2.5+ 地震。光點顏色依震級分層；點擊光點讀取事件情報。';return;
   }
   if(mode==='events'){
-    loading('PLANETARY EVENT SCAN');const d=await getEvents();const plotted=buildEonetLayer(d);$('hudEvents').textContent=String(d.events.length);const counts={};d.events.forEach(e=>(e.categories||[]).forEach(c=>counts[c.title]=(counts[c.title]||0)+1));const cats=Object.entries(counts).sort((a,b)=>b[1]-a[1]);const list=d.events.slice(0,9);setAnalysis('NASA EONET // NATURAL EVENTS','LIVE',`<div class="metric-grid"><div class="metric">OPEN EVENTS<b>${d.events.length}</b></div><div class="metric">3D MARKERS<b>${plotted}</b></div></div><div style="margin:6px 0;color:var(--cyan)">中央 3D 地球已投影可定位的 EONET 事件；點擊事件光點讀取詳細情報。</div><div class="mini-list">${list.map(e=>`<div class="mini-item event-list-item" data-eid="${esc(e.id)}"><span>${esc(e.title)}</span><span style="color:var(--amber)">${esc(eventCategoryTitle(e))}</span></div>`).join('')}</div><div style="margin-top:7px;color:var(--muted)">分類統計：${cats.slice(0,5).map(([k,v])=>`${esc(k)} ${v}`).join(' · ')}</div>`);document.querySelectorAll('.event-list-item').forEach(el=>el.addEventListener('click',()=>{const m=eonetMeshes.find(x=>x.userData.eonet.id===el.dataset.eid);if(m)showEonetIntel(m)}));$('rightDesc').innerHTML='<span style="color:var(--violet)">NASA EONET LIVE EVENT LAYER</span><br>中央地球顯示 EONET 近即時天然事件。顏色依事件類別區分；點擊光點讀取事件資料。';return;
+    loading('PLANETARY EVENT SCAN');const d=await getEvents();const plotted=buildEonetLayer(d);$('hudEvents').textContent=String(d.events.length);const counts={};d.events.forEach(e=>(e.categories||[]).forEach(c=>counts[c.title]=(counts[c.title]||0)+1));const cats=Object.entries(counts).sort((a,b)=>b[1]-a[1]);const list=d.events.slice(0,9);setAnalysis('NASA EONET // NATURAL EVENTS','LIVE',`<div class="metric-grid"><div class="metric">OPEN EVENTS<b>${d.events.length}</b></div><div class="metric">3D MARKERS<b>${plotted}</b></div></div><div style="margin:6px 0;color:var(--cyan)">中央 3D 地球已投影可定位的 EONET 事件；滑鼠靠近光點會變成手指，點擊即可讀取詳細情報。</div><div class="mini-list">${list.map(e=>`<div class="mini-item event-list-item" data-eid="${esc(e.id)}"><span>${esc(e.title)}</span><span style="color:var(--amber)">${esc(eventCategoryTitle(e))}</span></div>`).join('')}</div><div style="margin-top:7px;color:var(--muted)">分類統計：${cats.slice(0,5).map(([k,v])=>`${esc(k)} ${v}`).join(' · ')}</div>`);document.querySelectorAll('.event-list-item').forEach(el=>el.addEventListener('click',()=>{const m=eonetMeshes.find(x=>x.userData.eonet.id===el.dataset.eid);if(m)showEonetIntel(m)}));$('rightDesc').innerHTML='<span style="color:var(--violet)">NASA EONET LIVE EVENT LAYER</span><br>中央地球顯示 EONET 近即時天然事件。顏色依事件類別區分；點擊光點讀取事件資料。';return;
   }
   if(mode==='space'){
     loading('SPACE WEATHER LINK');const d=await getSpace();const rows=d.kp,last=rows[rows.length-1],prev=rows[rows.length-2];const kp=Array.isArray(last)?last[1]:(last?.Kp??'--');const kpPrev=Array.isArray(prev)?prev[1]:(prev?.Kp??'--');let wind='--',windTime='--';if(Array.isArray(d.wind)){if(Array.isArray(d.wind[0])){const hdr=d.wind[0],row=d.wind[d.wind.length-1];const si=hdr.findIndex(x=>String(x).toLowerCase().includes('speed'));wind=si>=0?row[si]:'--';windTime=row[0]||'--'}else{const row=d.wind[d.wind.length-1]||{};wind=row.proton_speed??row.WindSpeed??row.wind_speed??row.speed??'--';windTime=row.time_tag??row.TimeStamp??'--'}}setAnalysis('NOAA SWPC // SPACE WEATHER','LIVE',`<div class="metric-grid"><div class="metric">PLANETARY Kp<b>${esc(kp)}</b></div><div class="metric">PREVIOUS Kp<b>${esc(kpPrev)}</b></div><div class="metric">SOLAR WIND<b>${esc(wind)} km/s</b></div><div class="metric">SOURCE<b>NOAA SWPC</b></div></div><div style="margin-top:7px;color:var(--muted)">Solar wind timestamp: ${esc(windTime)}</div>`);return;
