@@ -102,10 +102,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.115.0/Cesium.js"></script>
     <script>
         window.addEventListener('load', () => {
-            // 使用 OpenStreetMap 免費公開圖資，徹底擺脫 Cesium Ion API Key 限制
+            // 使用 Cesium 內建自帶的 NaturalEarthII 圖像，不需聯網請求外部圖資 API，保證紋理呈現
             const viewer = new Cesium.Viewer('cesiumContainer', {
-                imageryProvider: new Cesium.OpenStreetMapImageryProvider({
-                    url: 'https://a.tile.openstreetmap.org/'
+                imageryProvider: new Cesium.TileMapServiceImageryProvider({
+                    url: Cesium.buildModuleUrl('Assets/Textures/NaturalEarthII')
                 }),
                 animation: false,
                 baseLayerPicker: false,
