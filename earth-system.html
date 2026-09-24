@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>STARSHIP EARTH SYSTEM V3.3 PHASE 2.3 // EONET CONTACT PANEL FIX</title>
+<title>STARSHIP EARTH SYSTEM V3.3 PHASE 3 // WEATHER & ATMOSPHERE INTELLIGENCE</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 <style>
 :root{
@@ -89,6 +89,47 @@ button{font:inherit}
 .focus-nasa-event{display:none}
 .focus-nasa-event.show{display:block!important}
 
+
+/* V3.3 Phase 3 — Weather & Atmosphere Intelligence */
+.wx-intel{
+  position:absolute;left:50%;bottom:45px;z-index:12;width:min(410px,58%);
+  transform:translate(-50%,10px);padding:10px 11px;
+  border:1px solid rgba(53,242,255,.36);
+  background:linear-gradient(135deg,rgba(3,13,22,.96),rgba(4,17,27,.94));
+  box-shadow:0 0 30px rgba(53,242,255,.12);
+  opacity:0;visibility:hidden;transition:.22s;pointer-events:auto
+}
+.wx-intel.atmo{border-color:rgba(80,255,177,.38);box-shadow:0 0 30px rgba(80,255,177,.10)}
+.wx-intel.show{opacity:1;visibility:visible;transform:translate(-50%,0)}
+.wx-intel-head{display:flex;justify-content:space-between;gap:10px;align-items:center;color:var(--cyan);font-size:.50rem;letter-spacing:1px}
+.wx-intel.atmo .wx-intel-head{color:var(--green)}
+.wx-intel-title{margin-top:4px;color:#fff;font-size:.67rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wx-intel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:7px}
+.wx-intel-cell{padding:5px;border:1px solid rgba(53,242,255,.10);font-size:.43rem;color:#668895}
+.wx-intel-cell b{display:block;margin-top:2px;color:var(--amber);font-size:.54rem;font-weight:500}
+.wx-close{border:0;background:transparent;color:#7898a2;cursor:pointer;font-size:.7rem}
+.wx-close:hover{color:#fff}
+.wx-legend{
+  position:absolute;left:50%;bottom:15px;z-index:9;transform:translateX(-50%);
+  display:none;align-items:center;gap:9px;padding:5px 9px;
+  border:1px solid rgba(53,242,255,.20);background:rgba(0,5,10,.80);
+  backdrop-filter:blur(8px);font-size:.43rem;color:#83a7b3;letter-spacing:.35px;
+  pointer-events:none;white-space:nowrap
+}
+.center.wx-mode .wx-legend{display:flex}
+.wx-legend b{color:var(--cyan);font-weight:500}
+.wdot{width:7px;height:7px;border-radius:50%;display:inline-block;box-shadow:0 0 8px currentColor}
+.w-cold{color:#35f2ff;background:#35f2ff}
+.w-mild{color:#50ffb1;background:#50ffb1}
+.w-warm{color:#ffd166;background:#ffd166}
+.w-hot{color:#ff3d9a;background:#ff3d9a}
+.a-good{color:#50ffb1;background:#50ffb1}
+.a-mod{color:#ffd166;background:#ffd166}
+.a-sensitive{color:#ff9f43;background:#ff9f43}
+.a-bad{color:#ff3d9a;background:#ff3d9a}
+.focus-wx-event{display:none}
+.focus-wx-event.show{display:block!important}
+
 /* V3.3 Phase 1.5 — reusable Focus View */
 .focus-trigger{position:absolute;top:12px;right:108px;z-index:12;height:25px;padding:0 9px;border:1px solid rgba(53,242,255,.28);background:rgba(1,10,18,.72);color:var(--cyan);font-size:.48rem;letter-spacing:1px;cursor:pointer;box-shadow:inset 0 0 14px rgba(53,242,255,.03);transition:.2s}
 .focus-trigger:hover{border-color:rgba(139,92,255,.75);color:#fff;box-shadow:0 0 18px rgba(139,92,255,.18),inset 0 0 18px rgba(53,242,255,.06)}
@@ -117,7 +158,7 @@ body.focus-open .bridge{filter:brightness(.42) saturate(.72)}
 <div class="space-bg"></div>
 <main class="bridge">
   <header class="topbar">
-    <span>[SYS.SECURE // STARSHIP ORBITAL HUD // V3.3-P2.3]</span>
+    <span>[SYS.SECURE // STARSHIP ORBITAL HUD // V3.3-P3]</span>
     <span class="live">PLANETARY INTELLIGENCE NETWORK: ONLINE</span>
     <span id="utcClock">UTC --:--:--</span>
   </header>
@@ -174,6 +215,25 @@ body.focus-open .bridge{filter:brightness(.42) saturate(.72)}
         <span><i class="edot e-volcano"></i> VOLCANO</span>
         <span><i class="edot e-flood"></i> FLOOD / ICE</span>
         <span><i class="edot e-other"></i> OTHER</span>
+      </div>
+      <div class="wx-intel" id="wxIntel" role="status" aria-live="polite">
+        <div class="wx-intel-head"><span id="wxIntelHead">OPEN-METEO // WEATHER CONTACT</span><button class="wx-close" id="wxClose" type="button" aria-label="關閉氣象情報">×</button></div>
+        <div class="wx-intel-title" id="wxIntelTitle">SELECT A WEATHER NODE</div>
+        <div class="wx-intel-grid">
+          <div class="wx-intel-cell"><span id="wxL1">TEMP</span><b id="wxV1">--</b></div>
+          <div class="wx-intel-cell"><span id="wxL2">HUMIDITY</span><b id="wxV2">--</b></div>
+          <div class="wx-intel-cell"><span id="wxL3">WIND</span><b id="wxV3">--</b></div>
+          <div class="wx-intel-cell"><span id="wxL4">CLOUD</span><b id="wxV4">--</b></div>
+          <div class="wx-intel-cell"><span id="wxL5">PRESSURE</span><b id="wxV5">--</b></div>
+          <div class="wx-intel-cell"><span id="wxL6">SOURCE</span><b id="wxV6">OPEN-METEO</b></div>
+        </div>
+      </div>
+      <div class="wx-legend" id="wxLegend">
+        <b id="wxLegendTitle">WEATHER NODES</b>
+        <span id="wxLegendA"><i class="wdot w-cold"></i> COLD</span>
+        <span id="wxLegendB"><i class="wdot w-mild"></i> MILD</span>
+        <span id="wxLegendC"><i class="wdot w-warm"></i> WARM</span>
+        <span id="wxLegendD"><i class="wdot w-hot"></i> HOT</span>
       </div>
       <div id="radarMap"></div>
     </div>
@@ -257,6 +317,16 @@ body.focus-open .bridge{filter:brightness(.42) saturate(.72)}
           <div>LAYER<b id="focusNasaLayer">NASA EONET</b></div>
         </div>
         <a id="focusNasaLink" href="https://eonet.gsfc.nasa.gov/" target="_blank" rel="noopener">OPEN EONET EVENT ↗</a>
+      </div>
+      <div class="focus-event focus-wx-event" id="focusWxEvent">
+        <div class="label" id="focusWxHead" style="color:var(--cyan)">OPEN-METEO // WEATHER CONTACT</div>
+        <h3 id="focusWxTitle">SELECT A WEATHER NODE</h3>
+        <div class="focus-event-grid">
+          <div><span id="focusWxL1">TEMP</span><b id="focusWxV1">--</b></div>
+          <div><span id="focusWxL2">HUMIDITY</span><b id="focusWxV2">--</b></div>
+          <div><span id="focusWxL3">WIND</span><b id="focusWxV3">--</b></div>
+          <div><span id="focusWxL4">LAYER</span><b id="focusWxV4">OPEN-METEO</b></div>
+        </div>
       </div>
       <div class="focus-hint">拖曳地球可旋轉；滾輪可縮放。EARTHQUAKES 可短按 USGS 地震光點；EVENTS / STORMS 可短按 NASA EONET 事件光點。按 ESC 或右上角 × 返回艦橋總覽。</div>
     </aside>
@@ -458,6 +528,127 @@ function hideEonetIntel(){
 }
 
 
+
+// ---------- V3.3 PHASE 3: WEATHER + ATMOSPHERE 3D INTELLIGENCE ----------
+const wxGroup=new THREE.Group(); wxGroup.name='OPEN_METEO_INTELLIGENCE_LAYER'; earth.add(wxGroup);
+let wxMeshes=[],selectedWxMesh=null,weatherGridCache=null,airGridCache=null;
+
+const wxSelectionRing=new THREE.Mesh(
+  new THREE.RingGeometry(.14,.25,36),
+  new THREE.MeshBasicMaterial({color:0x35f2ff,side:THREE.DoubleSide,transparent:true,opacity:.98})
+);
+wxSelectionRing.visible=false; earth.add(wxSelectionRing);
+
+// A deliberately sparse global sampling network for a readable prototype.
+// One batched API request is used per layer; these are model sample nodes, not physical stations.
+const planetarySampleNodes=[
+ {name:'Taipei',lat:25.03,lon:121.56},{name:'Tokyo',lat:35.68,lon:139.76},
+ {name:'Singapore',lat:1.29,lon:103.85},{name:'Delhi',lat:28.61,lon:77.21},
+ {name:'Dubai',lat:25.20,lon:55.27},{name:'Cairo',lat:30.04,lon:31.24},
+ {name:'Nairobi',lat:-1.29,lon:36.82},{name:'Cape Town',lat:-33.92,lon:18.42},
+ {name:'London',lat:51.51,lon:-0.13},{name:'Reykjavik',lat:64.15,lon:-21.94},
+ {name:'New York',lat:40.71,lon:-74.01},{name:'Miami',lat:25.76,lon:-80.19},
+ {name:'Mexico City',lat:19.43,lon:-99.13},{name:'Los Angeles',lat:34.05,lon:-118.24},
+ {name:'Vancouver',lat:49.28,lon:-123.12},{name:'Honolulu',lat:21.31,lon:-157.86},
+ {name:'São Paulo',lat:-23.55,lon:-46.63},{name:'Buenos Aires',lat:-34.60,lon:-58.38},
+ {name:'Sydney',lat:-33.87,lon:151.21},{name:'Auckland',lat:-36.85,lon:174.76}
+];
+
+function tempColor(t){
+  t=Number(t); if(t<8)return 0x35f2ff;if(t<22)return 0x50ffb1;if(t<32)return 0xffd166;return 0xff3d9a;
+}
+function aqiColor(a){
+  a=Number(a);if(a<=50)return 0x50ffb1;if(a<=100)return 0xffd166;if(a<=150)return 0xff9f43;return 0xff3d9a;
+}
+function clearWxLayer(){
+  while(wxGroup.children.length){
+    const o=wxGroup.children.pop();o.geometry?.dispose?.();o.material?.dispose?.();
+  }
+  wxMeshes=[];selectedWxMesh=null;wxSelectionRing.visible=false;
+  $('wxIntel')?.classList.remove('show');$('focusWxEvent')?.classList.remove('show');
+}
+function normalizeMultiResponse(d){return Array.isArray(d)?d:[d]}
+async function getGlobalWeatherGrid(){
+  if(weatherGridCache)return weatherGridCache;
+  const lat=planetarySampleNodes.map(n=>n.lat).join(','),lon=planetarySampleNodes.map(n=>n.lon).join(',');
+  const p=new URLSearchParams({
+    latitude:lat,longitude:lon,
+    current:'temperature_2m,relative_humidity_2m,precipitation,weather_code,cloud_cover,surface_pressure,wind_speed_10m,wind_direction_10m',
+    timezone:'GMT'
+  });
+  const r=await fetch('https://api.open-meteo.com/v1/forecast?'+p);
+  if(!r.ok)throw new Error('Open-Meteo global weather '+r.status);
+  weatherGridCache=normalizeMultiResponse(await r.json());
+  return weatherGridCache;
+}
+async function getGlobalAirGrid(){
+  if(airGridCache)return airGridCache;
+  const lat=planetarySampleNodes.map(n=>n.lat).join(','),lon=planetarySampleNodes.map(n=>n.lon).join(',');
+  const p=new URLSearchParams({
+    latitude:lat,longitude:lon,
+    current:'us_aqi,pm2_5,pm10,ozone,aerosol_optical_depth,dust,uv_index',
+    timezone:'GMT'
+  });
+  const r=await fetch('https://air-quality-api.open-meteo.com/v1/air-quality?'+p);
+  if(!r.ok)throw new Error('Open-Meteo air quality '+r.status);
+  airGridCache=normalizeMultiResponse(await r.json());
+  return airGridCache;
+}
+function buildWxLayer(rows,kind){
+  clearWxLayer();
+  rows.forEach((row,i)=>{
+    const node=planetarySampleNodes[i];if(!node||!row?.current)return;
+    const c=row.current;
+    const value=kind==='weather'?c.temperature_2m:c.us_aqi;
+    if(value==null)return;
+    const p=latLonVec(node.lat,node.lon,R+.14);
+    const color=kind==='weather'?tempColor(value):aqiColor(value);
+    const mesh=new THREE.Mesh(
+      new THREE.SphereGeometry(.105,14,14),
+      new THREE.MeshBasicMaterial({color,transparent:true,opacity:.98})
+    );
+    mesh.position.copy(p);mesh.userData={wx:true,kind,node,row};
+    wxGroup.add(mesh);wxMeshes.push(mesh);
+  });
+  return wxMeshes.length;
+}
+function showWxIntel(mesh){
+  if(!mesh?.userData?.wx)return;
+  const {kind,node,row}=mesh.userData,c=row.current||{},u=row.current_units||{};
+  selectedWxMesh=mesh;wxMeshes.forEach(m=>m.scale.setScalar(1));mesh.scale.setScalar(1.7);
+  const atmo=kind==='atmosphere';
+  $('wxIntel').classList.toggle('atmo',atmo);
+  $('wxIntelHead').textContent=atmo?'OPEN-METEO / CAMS // ATMOSPHERE CONTACT':'OPEN-METEO // WEATHER CONTACT';
+  $('wxIntelTitle').textContent=node.name+' // '+fmtCoord(node.lat,node.lon);
+
+  const vals=atmo
+   ? [['US AQI',c.us_aqi??'--'],['PM2.5',(c.pm2_5??'--')+' '+(u.pm2_5||'μg/m³')],['PM10',(c.pm10??'--')+' '+(u.pm10||'μg/m³')],['OZONE',(c.ozone??'--')+' '+(u.ozone||'μg/m³')],['AEROSOL',c.aerosol_optical_depth??'--'],['SOURCE','OPEN-METEO / CAMS']]
+   : [['TEMP',(c.temperature_2m??'--')+(u.temperature_2m||'°C')],['HUMIDITY',(c.relative_humidity_2m??'--')+(u.relative_humidity_2m||'%')],['WIND',(c.wind_speed_10m??'--')+' '+(u.wind_speed_10m||'km/h')],['CLOUD',(c.cloud_cover??'--')+(u.cloud_cover||'%')],['PRESSURE',(c.surface_pressure??'--')+' '+(u.surface_pressure||'hPa')],['SOURCE','OPEN-METEO']];
+  for(let i=0;i<6;i++){ $('wxL'+(i+1)).textContent=vals[i][0];$('wxV'+(i+1)).textContent=vals[i][1] }
+
+  $('focusWxHead').textContent=atmo?'OPEN-METEO / CAMS // ATMOSPHERE CONTACT':'OPEN-METEO // WEATHER CONTACT';
+  $('focusWxHead').style.color=atmo?'var(--green)':'var(--cyan)';
+  $('focusWxTitle').textContent=node.name+' // '+fmtCoord(node.lat,node.lon);
+  const fv=atmo
+    ? [['US AQI',c.us_aqi??'--'],['PM2.5',(c.pm2_5??'--')+' '+(u.pm2_5||'μg/m³')],['OZONE',(c.ozone??'--')+' '+(u.ozone||'μg/m³')],['LAYER','AIR QUALITY']]
+    : [['TEMP',(c.temperature_2m??'--')+(u.temperature_2m||'°C')],['HUMIDITY',(c.relative_humidity_2m??'--')+(u.relative_humidity_2m||'%')],['WIND',(c.wind_speed_10m??'--')+' '+(u.wind_speed_10m||'km/h')],['LAYER','WEATHER']];
+  for(let i=0;i<4;i++){ $('focusWxL'+(i+1)).textContent=fv[i][0];$('focusWxV'+(i+1)).textContent=fv[i][1] }
+  $('focusWxEvent').classList.add('show');
+
+  wxSelectionRing.material.color.setHex(kind==='weather'?tempColor(c.temperature_2m):aqiColor(c.us_aqi));
+  wxSelectionRing.position.copy(mesh.position.clone().multiplyScalar(1.006));
+  wxSelectionRing.lookAt(mesh.position.clone().multiplyScalar(2));wxSelectionRing.visible=true;
+  $('wxIntel').classList.add('show');
+
+  $('rightDesc').innerHTML=atmo
+   ? `<span style="color:var(--green)">ATMOSPHERE CONTACT</span><br><b>${esc(node.name)}</b> · US AQI ${esc(c.us_aqi??'--')} · PM2.5 ${esc(c.pm2_5??'--')} ${esc(u.pm2_5||'μg/m³')}<br>Model data: Open-Meteo Air Quality / CAMS.`
+   : `<span style="color:var(--cyan)">WEATHER CONTACT</span><br><b>${esc(node.name)}</b> · ${esc(wmo(c.weather_code))} · ${esc(c.temperature_2m??'--')}°C<br>Wind ${esc(c.wind_speed_10m??'--')} ${esc(u.wind_speed_10m||'km/h')} · Cloud ${esc(c.cloud_cover??'--')}%.`;
+}
+function hideWxIntel(){
+  $('wxIntel')?.classList.remove('show');$('focusWxEvent')?.classList.remove('show');
+  if(selectedWxMesh)selectedWxMesh.scale.setScalar(1);selectedWxMesh=null;wxSelectionRing.visible=false;
+}
+
 let pulseTween=null;
 function resize3D(){const w=container.clientWidth,h=container.clientHeight;if(!w||!h)return;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false)}
 new ResizeObserver(resize3D).observe(container);resize3D();
@@ -476,6 +667,12 @@ function syncFocusPanel(){
   }else{
     $('focusNasaEvent').style.display='none';
     $('focusNasaEvent').classList.remove('show');
+  }
+  if(currentMode==='weather'||currentMode==='atmosphere'){
+    $('focusWxEvent').style.display=selectedWxMesh?'block':'none';
+  }else{
+    $('focusWxEvent').style.display='none';
+    $('focusWxEvent').classList.remove('show');
   }
 }
 function openFocusView(){
@@ -503,6 +700,27 @@ const quakeRaycaster=new THREE.Raycaster(),quakePointer=new THREE.Vector2();let 
 // EONET marker to screen coordinates and choose the nearest one inside a
 // pixel-radius. This remains reliable in both Bridge View and Focus View.
 const _pickWorld=new THREE.Vector3(),_pickCenter=new THREE.Vector3(),_pickCam=new THREE.Vector3(),_pickNdc=new THREE.Vector3();
+
+function nearestSurfaceMarkerAt(meshes,clientX,clientY,radiusPx=30){
+  if(!meshes?.length)return null;
+  const rect=renderer.domElement.getBoundingClientRect();
+  earth.getWorldPosition(_pickCenter);camera.getWorldPosition(_pickCam);
+  let best=null,bestD=radiusPx;
+  for(const mesh of meshes){
+    mesh.getWorldPosition(_pickWorld);
+    const nx=_pickWorld.x-_pickCenter.x,ny=_pickWorld.y-_pickCenter.y,nz=_pickWorld.z-_pickCenter.z;
+    const cx=_pickCam.x-_pickWorld.x,cy=_pickCam.y-_pickWorld.y,cz=_pickCam.z-_pickWorld.z;
+    if(nx*cx+ny*cy+nz*cz<=0)continue;
+    _pickNdc.copy(_pickWorld).project(camera);
+    if(_pickNdc.z<-1||_pickNdc.z>1)continue;
+    const sx=rect.left+(_pickNdc.x*.5+.5)*rect.width;
+    const sy=rect.top+(-_pickNdc.y*.5+.5)*rect.height;
+    const d=Math.hypot(clientX-sx,clientY-sy);
+    if(d<bestD){bestD=d;best=mesh}
+  }
+  return best;
+}
+
 function nearestEonetMarkerAt(clientX,clientY,radiusPx=30){
   if(!eonetMeshes.length)return null;
   const rect=renderer.domElement.getBoundingClientRect();
@@ -530,14 +748,15 @@ function nearestEonetMarkerAt(clientX,clientY,radiusPx=30){
 
 renderer.domElement.addEventListener('pointerdown',e=>{pointerDownPos={x:e.clientX,y:e.clientY}});
 renderer.domElement.addEventListener('pointermove',e=>{
-  if(!['events','storms'].includes(currentMode)){renderer.domElement.style.cursor='grab';return}
-  const hit=nearestEonetMarkerAt(e.clientX,e.clientY,32);
+  let hit=null;
+  if(['events','storms'].includes(currentMode))hit=nearestEonetMarkerAt(e.clientX,e.clientY,32);
+  else if(['weather','atmosphere'].includes(currentMode))hit=nearestSurfaceMarkerAt(wxMeshes,e.clientX,e.clientY,34);
   renderer.domElement.style.cursor=hit?'pointer':'grab';
 });
 renderer.domElement.addEventListener('pointerup',e=>{
   if(!pointerDownPos)return;
   const moved=Math.hypot(e.clientX-pointerDownPos.x,e.clientY-pointerDownPos.y);pointerDownPos=null;if(moved>6)return;
-  if(!['quakes','events','storms'].includes(currentMode))return;
+  if(!['quakes','events','storms','weather','atmosphere'].includes(currentMode))return;
   const rect=renderer.domElement.getBoundingClientRect();
   quakePointer.x=((e.clientX-rect.left)/rect.width)*2-1;quakePointer.y=-((e.clientY-rect.top)/rect.height)*2+1;
   quakeRaycaster.setFromCamera(quakePointer,camera);
@@ -545,13 +764,17 @@ renderer.domElement.addEventListener('pointerup',e=>{
   if(currentMode==='quakes'){
     const hit=quakeRaycaster.intersectObjects(quakeMeshes,false).find(h=>!earthHit||h.distance<=earthHit.distance+.20);
     if(hit)showQuakeIntel(hit.object);
-  }else{
+  }else if(currentMode==='events'||currentMode==='storms'){
     const hit=nearestEonetMarkerAt(e.clientX,e.clientY,34);
     if(hit)showEonetIntel(hit);
+  }else{
+    const hit=nearestSurfaceMarkerAt(wxMeshes,e.clientX,e.clientY,36);
+    if(hit)showWxIntel(hit);
   }
 });
 $('quakeClose').addEventListener('click',hideQuakeIntel);
 $('eventClose').addEventListener('click',hideEonetIntel);
+$('wxClose').addEventListener('click',hideWxIntel);
 (function animate(){requestAnimationFrame(animate);TWEEN.update();earth.rotation.y+=.00028;orbit1.rotation.z+=.00065;orbit2.rotation.z-=.00042;controls.update();renderer.render(scene,camera)})();
 
 // ---------- LEFT NAV ----------
@@ -576,10 +799,20 @@ async function loadLandmarkPhoto(target){
     credit.innerHTML=`Visual: <a href="${filePage}" target="_blank" rel="noopener">Wikimedia Commons</a> · ${esc(artist).slice(0,80)} · 授權請見原始檔案頁`;
   }catch(e){ph.textContent='LANDMARK VISUAL UNAVAILABLE';credit.textContent='Wikimedia 圖片暫時無法載入；不影響其他分析功能。'}
 }
-function selectTarget(i){currentTarget=flatTargets[i];document.querySelectorAll('.target-btn').forEach(b=>b.classList.remove('active'));$('target-'+i)?.classList.add('active');targetMeshes.forEach(m=>{m.dot.material.color.setHex(0x35f2ff);m.ring.visible=false;m.ring.scale.set(1,1,1)});const m=targetMeshes[i];m.dot.material.color.setHex(0xff3d9a);m.ring.visible=true;if(pulseTween)pulseTween.stop();pulseTween=new TWEEN.Tween(m.ring.scale).to({x:2.2,y:2.2,z:2.2},800).yoyo(true).repeat(Infinity).start();$('targetName').textContent=currentTarget.name;$('targetCoords').textContent=fmtCoord(currentTarget.lat,currentTarget.lon);$('mapIframe').src=`https://maps.google.com/maps?q=${currentTarget.lat},${currentTarget.lon}&t=k&z=12&ie=UTF8&iwloc=&output=embed`;$('hudTarget').textContent=currentTarget.sub;$('hudCoords').textContent=fmtCoord(currentTarget.lat,currentTarget.lon);loadLandmarkPhoto(currentTarget);weatherCache=null;syncFocusPanel();renderMode(currentMode)}
+function selectTarget(i){currentTarget=flatTargets[i];document.querySelectorAll('.target-btn').forEach(b=>b.classList.remove('active'));$('target-'+i)?.classList.add('active');targetMeshes.forEach(m=>{m.dot.material.color.setHex(0x35f2ff);m.ring.visible=false;m.ring.scale.set(1,1,1)});const m=targetMeshes[i];m.dot.material.color.setHex(0xff3d9a);m.ring.visible=true;if(pulseTween)pulseTween.stop();pulseTween=new TWEEN.Tween(m.ring.scale).to({x:2.2,y:2.2,z:2.2},800).yoyo(true).repeat(Infinity).start();$('targetName').textContent=currentTarget.name;$('targetCoords').textContent=fmtCoord(currentTarget.lat,currentTarget.lon);$('mapIframe').src=`https://maps.google.com/maps?q=${currentTarget.lat},${currentTarget.lon}&t=k&z=12&ie=UTF8&iwloc=&output=embed`;$('hudTarget').textContent=currentTarget.sub;$('hudCoords').textContent=fmtCoord(currentTarget.lat,currentTarget.lon);loadLandmarkPhoto(currentTarget);weatherCache=null;weatherRequestSeq++;syncFocusPanel();renderMode(currentMode)}
 
 // ---------- LIVE DATA ----------
-async function getWeather(){if(weatherCache)return weatherCache;const p=new URLSearchParams({latitude:currentTarget.lat,longitude:currentTarget.lon,current:'temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,weather_code,cloud_cover,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m',hourly:'precipitation_probability,temperature_2m,cloud_cover,wind_speed_10m',forecast_days:'2',timezone:'auto'});const r=await fetch('https://api.open-meteo.com/v1/forecast?'+p);if(!r.ok)throw new Error('Open-Meteo '+r.status);weatherCache=await r.json();return weatherCache}
+let weatherRequestSeq=0;
+async function getWeather(){
+  if(weatherCache)return weatherCache;
+  const seq=++weatherRequestSeq,targetSnapshot=currentTarget;
+  const p=new URLSearchParams({latitude:targetSnapshot.lat,longitude:targetSnapshot.lon,current:'temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,weather_code,cloud_cover,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m',hourly:'precipitation_probability,temperature_2m,cloud_cover,wind_speed_10m',forecast_days:'2',timezone:'auto'});
+  const r=await fetch('https://api.open-meteo.com/v1/forecast?'+p);
+  if(!r.ok)throw new Error('Open-Meteo '+r.status);
+  const d=await r.json();
+  if(seq===weatherRequestSeq&&currentTarget===targetSnapshot)weatherCache=d;
+  return d;
+}
 async function getEonet(category=''){const url='https://eonet.gsfc.nasa.gov/api/v3/events?status=open&limit=30&days=30'+(category?'&category='+encodeURIComponent(category):'');const r=await fetch(url);if(!r.ok)throw new Error('NASA EONET '+r.status);return r.json()}
 async function getEvents(){if(!eventsCache)eventsCache=await getEonet();return eventsCache}
 async function getQuakes(){if(quakesCache)return quakesCache;const r=await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson');if(!r.ok)throw new Error('USGS '+r.status);quakesCache=await r.json();return quakesCache}
@@ -595,16 +828,37 @@ function ensureRadarMap(){if(radarMap)return;radarMap=L.map('radarMap',{zoomCont
 async function showRadar(){ensureRadarMap();radarMap.setView([currentTarget.lat,currentTarget.lon],5);setTimeout(()=>radarMap.invalidateSize(),100);const r=await fetch('https://api.rainviewer.com/public/weather-maps.json');if(!r.ok)throw new Error('RainViewer '+r.status);const d=await r.json();const frame=d.radar?.past?.at(-1);if(!frame)throw new Error('No radar frame');if(radarLayer)radarMap.removeLayer(radarLayer);radarLayer=L.tileLayer(`${d.host}${frame.path}/256/{z}/{x}/{y}/2/1_1.png`,{opacity:.72,zIndex:5,attribution:'Radar © RainViewer'}).addTo(radarMap);return {time:new Date(frame.time*1000),count:d.radar.past.length}}
 
 // ---------- MODES ----------
-async function renderMode(mode){currentMode=mode;syncFocusPanel();$('focusOpen').disabled=(mode==='radar');$('focusOpen').style.opacity=mode==='radar'?'.35':'1';$('focusOpen').title=mode==='radar'?'RADAR 將於後續版本加入專用放大模式':'放大中央地球分析區';document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));$('targetMode').textContent=mode.toUpperCase();$('modeChip').textContent=mode.toUpperCase()+' MODE';$('hudMode').textContent=mode.toUpperCase();$('centerViewport').classList.toggle('radar-mode',mode==='radar');$('centerViewport').classList.toggle('quake-mode',mode==='quakes');$('centerViewport').classList.toggle('event-mode',mode==='events'||mode==='storms');if(mode!=='quakes'){clearQuakeLayer()}if(mode!=='events'&&mode!=='storms'){clearEonetLayer()}$('rightDesc').innerHTML=`<span style="color:var(--cyan)">[${esc(currentTarget.name)}]</span><br>${esc(currentTarget.desc)}`;
+async function renderMode(mode){currentMode=mode;syncFocusPanel();$('focusOpen').disabled=(mode==='radar');$('focusOpen').style.opacity=mode==='radar'?'.35':'1';$('focusOpen').title=mode==='radar'?'RADAR 將於後續版本加入專用放大模式':'放大中央地球分析區';document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));$('targetMode').textContent=mode.toUpperCase();$('modeChip').textContent=mode.toUpperCase()+' MODE';$('hudMode').textContent=mode.toUpperCase();$('centerViewport').classList.toggle('radar-mode',mode==='radar');$('centerViewport').classList.toggle('quake-mode',mode==='quakes');$('centerViewport').classList.toggle('event-mode',mode==='events'||mode==='storms');$('centerViewport').classList.toggle('wx-mode',mode==='weather'||mode==='atmosphere');if(mode!=='quakes'){clearQuakeLayer()}if(mode!=='events'&&mode!=='storms'){clearEonetLayer()}if(mode!=='weather'&&mode!=='atmosphere'){clearWxLayer()}$('rightDesc').innerHTML=`<span style="color:var(--cyan)">[${esc(currentTarget.name)}]</span><br>${esc(currentTarget.desc)}`;
  try{
   if(mode==='global'){
     loading('GLOBAL SYSTEM STATUS');const [w,e,q,s]=await Promise.allSettled([getWeather(),getEvents(),getQuakes(),getSpace()]);const wc=w.status==='fulfilled'?w.value.current:null,ev=e.status==='fulfilled'?e.value.events.length:'--',qc=q.status==='fulfilled'?q.value.metadata.count:'--';$('hudWeather').textContent=wc?`${wc.temperature_2m}°C · ${wmo(wc.weather_code)}`:'UNAVAILABLE';$('hudEvents').textContent=e.status==='fulfilled'?String(e.value.events.length):'--';let kp='--';if(s.status==='fulfilled'){const rows=s.value.kp;const last=rows[rows.length-1];kp=Array.isArray(last)?last[1]:last?.Kp??'--'}setAnalysis('GLOBAL SYSTEM STATUS','ONLINE',`<div class="metric-grid"><div class="metric">TARGET<b>${esc(currentTarget.name)}</b></div><div class="metric">LOCAL TEMP<b>${wc?wc.temperature_2m+'°C':'--'}</b></div><div class="metric">NASA OPEN EVENTS<b>${ev}</b></div><div class="metric">USGS M2.5+ / 24H<b>${qc}</b></div><div class="metric">PLANETARY Kp<b>${esc(kp)}</b></div><div class="metric">NETWORK<b>LIVE</b></div></div>`);return;
   }
   if(mode==='weather'){
-    loading('LOCAL WEATHER LINK');const d=await getWeather(),c=d.current,u=d.current_units;$('hudWeather').textContent=`${c.temperature_2m}°C · ${wmo(c.weather_code)}`;setAnalysis('LOCAL WEATHER // OPEN-METEO','LIVE',`<div class="metric-grid"><div class="metric">WEATHER<b>${wmo(c.weather_code)}</b></div><div class="metric">TEMP<b>${c.temperature_2m}${u.temperature_2m}</b></div><div class="metric">FEELS LIKE<b>${c.apparent_temperature}${u.apparent_temperature}</b></div><div class="metric">HUMIDITY<b>${c.relative_humidity_2m}${u.relative_humidity_2m}</b></div><div class="metric">WIND<b>${c.wind_speed_10m} ${u.wind_speed_10m}</b></div><div class="metric">RAIN<b>${c.precipitation} ${u.precipitation}</b></div></div>`);$('rightDesc').innerHTML=`<span style="color:var(--green)">LIVE WEATHER</span><br>${esc(currentTarget.name)}：${wmo(c.weather_code)}，雲量 ${c.cloud_cover}%；地面氣壓 ${c.surface_pressure} hPa。`;return;
+    loading('GLOBAL WEATHER INTELLIGENCE');
+    const [local,grid]=await Promise.all([getWeather(),getGlobalWeatherGrid()]);
+    const c=local.current,u=local.current_units,plotted=buildWxLayer(grid,'weather');
+    $('hudWeather').textContent=`${c.temperature_2m}°C · ${wmo(c.weather_code)}`;
+    $('wxLegendTitle').textContent='GLOBAL WEATHER NODES';
+    $('wxLegendA').innerHTML='<i class="wdot w-cold"></i> < 8°C';
+    $('wxLegendB').innerHTML='<i class="wdot w-mild"></i> 8–21°C';
+    $('wxLegendC').innerHTML='<i class="wdot w-warm"></i> 22–31°C';
+    $('wxLegendD').innerHTML='<i class="wdot w-hot"></i> 32°C+';
+    setAnalysis('OPEN-METEO // GLOBAL WEATHER INTELLIGENCE','LIVE',`<div class="metric-grid"><div class="metric">GLOBAL SAMPLE NODES<b>${plotted}</b></div><div class="metric">TARGET TEMP<b>${c.temperature_2m}${u.temperature_2m}</b></div><div class="metric">TARGET WEATHER<b>${wmo(c.weather_code)}</b></div><div class="metric">HUMIDITY<b>${c.relative_humidity_2m}${u.relative_humidity_2m}</b></div><div class="metric">WIND<b>${c.wind_speed_10m} ${u.wind_speed_10m}</b></div><div class="metric">CLOUD<b>${c.cloud_cover}%</b></div></div><div style="margin-top:7px;color:var(--cyan)">中央地球已載入 ${plotted} 個全球模型取樣節點。顏色依目前 2m 氣溫分層；靠近光點後點擊可讀取節點氣象資料。</div>`);
+    $('rightDesc').innerHTML=`<span style="color:var(--cyan)">OPEN-METEO GLOBAL WEATHER LAYER</span><br>${esc(currentTarget.name)}：${wmo(c.weather_code)}，${c.temperature_2m}°C。中央光點是全球模型取樣節點，不代表實體氣象站。`;
+    return;
   }
   if(mode==='atmosphere'){
-    loading('ATMOSPHERIC ANALYSIS');const d=await getWeather(),c=d.current,u=d.current_units;const dir=c.wind_direction_10m;setAnalysis('ATMOSPHERE // LOCAL COLUMN','LIVE',`<div class="metric-grid"><div class="metric">CLOUD COVER<b>${c.cloud_cover}%</b></div><div class="metric">PRESSURE<b>${c.surface_pressure} hPa</b></div><div class="metric">HUMIDITY<b>${c.relative_humidity_2m}%</b></div><div class="metric">WIND DIR<b>${dir}°</b></div><div class="metric">GUSTS<b>${c.wind_gusts_10m} ${u.wind_gusts_10m}</b></div><div class="metric">DAY/NIGHT<b>${c.is_day?'DAY':'NIGHT'}</b></div></div>`);return;
+    loading('GLOBAL ATMOSPHERE INTELLIGENCE');
+    const grid=await getGlobalAirGrid(),plotted=buildWxLayer(grid,'atmosphere');
+    const nearest=grid[0]?.current||{};
+    $('wxLegendTitle').textContent='AIR QUALITY // US AQI';
+    $('wxLegendA').innerHTML='<i class="wdot a-good"></i> 0–50';
+    $('wxLegendB').innerHTML='<i class="wdot a-mod"></i> 51–100';
+    $('wxLegendC').innerHTML='<i class="wdot a-sensitive"></i> 101–150';
+    $('wxLegendD').innerHTML='<i class="wdot a-bad"></i> 151+';
+    setAnalysis('OPEN-METEO / CAMS // ATMOSPHERE INTELLIGENCE','LIVE',`<div class="metric-grid"><div class="metric">GLOBAL SAMPLE NODES<b>${plotted}</b></div><div class="metric">TAIPEI US AQI<b>${nearest.us_aqi??'--'}</b></div><div class="metric">PM2.5<b>${nearest.pm2_5??'--'} μg/m³</b></div><div class="metric">PM10<b>${nearest.pm10??'--'} μg/m³</b></div><div class="metric">OZONE<b>${nearest.ozone??'--'} μg/m³</b></div><div class="metric">AEROSOL DEPTH<b>${nearest.aerosol_optical_depth??'--'}</b></div></div><div style="margin-top:7px;color:var(--green)">中央地球已載入 ${plotted} 個空氣品質模型取樣節點。顏色依 US AQI 分層；點擊節點可讀取 PM2.5、PM10、O₃ 與 aerosol 資料。</div>`);
+    $('rightDesc').innerHTML='<span style="color:var(--green)">ATMOSPHERE INTELLIGENCE LAYER</span><br>資料來自 Open-Meteo Air Quality API（CAMS 模型資料）。全球光點為模型取樣位置，不等同地面實體監測站或官方健康警報。';
+    return;
   }
   if(mode==='storms'){
     loading('GLOBAL STORM SCAN');const d=await getEonet('severeStorms');const plotted=buildEonetLayer(d);$('hudEvents').textContent=d.events.length+' STORMS';const list=d.events.slice(0,8);setAnalysis('NASA EONET // SEVERE STORMS','LIVE',`<div class="metric-grid"><div class="metric">OPEN STORMS<b>${d.events.length}</b></div><div class="metric">3D MARKERS<b>${plotted}</b></div></div><div style="margin:6px 0;color:var(--cyan)">滑鼠靠近粉紅光點約 30px 範圍會變成手指；點擊即可讀取 NASA EONET 事件情報。</div><div class="mini-list">${list.length?list.map(e=>`<div class="mini-item event-list-item" data-eid="${esc(e.id)}"><span>${esc(e.title)}</span><span style="color:var(--pink)">${esc(e.geometry?.at(-1)?.date?.slice(0,10)||'OPEN')}</span></div>`).join(''):'<div>目前查詢範圍沒有 EONET 開放中的 severe storm 事件。</div>'}</div>`);document.querySelectorAll('.event-list-item').forEach(el=>el.addEventListener('click',()=>{const m=eonetMeshes.find(x=>x.userData.eonet.id===el.dataset.eid);if(m)showEonetIntel(m)}));$('rightDesc').innerHTML='<span style="color:var(--pink)">NASA EONET STORM SCAN</span><br>中央地球已投影 EONET severe storm 事件。EONET 用於事件視覺化與一般資訊，不等同官方災害警報。';return;
