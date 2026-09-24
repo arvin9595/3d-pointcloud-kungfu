@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>STARSHIP EARTH SYSTEM V3.3 PHASE 2.2 // EONET SCREEN-SPACE HIT FIX</title>
+<title>STARSHIP EARTH SYSTEM V3.3 PHASE 2.3 // EONET CONTACT PANEL FIX</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 <style>
 :root{
@@ -87,7 +87,7 @@ button{font:inherit}
 .event-list-item:hover{color:#fff;background:rgba(139,92,255,.05);padding-left:4px}
 .event-list-item.active{color:#fff;border-left:2px solid var(--violet);padding-left:5px;background:rgba(139,92,255,.07)}
 .focus-nasa-event{display:none}
-.focus-nasa-event.show{display:block}
+.focus-nasa-event.show{display:block!important}
 
 /* V3.3 Phase 1.5 — reusable Focus View */
 .focus-trigger{position:absolute;top:12px;right:108px;z-index:12;height:25px;padding:0 9px;border:1px solid rgba(53,242,255,.28);background:rgba(1,10,18,.72);color:var(--cyan);font-size:.48rem;letter-spacing:1px;cursor:pointer;box-shadow:inset 0 0 14px rgba(53,242,255,.03);transition:.2s}
@@ -117,7 +117,7 @@ body.focus-open .bridge{filter:brightness(.42) saturate(.72)}
 <div class="space-bg"></div>
 <main class="bridge">
   <header class="topbar">
-    <span>[SYS.SECURE // STARSHIP ORBITAL HUD // V3.3-P2.2]</span>
+    <span>[SYS.SECURE // STARSHIP ORBITAL HUD // V3.3-P2.3]</span>
     <span class="live">PLANETARY INTELLIGENCE NETWORK: ONLINE</span>
     <span id="utcClock">UTC --:--:--</span>
   </header>
@@ -247,7 +247,18 @@ body.focus-open .bridge{filter:brightness(.42) saturate(.72)}
         </div>
         <a id="focusQuakeLink" href="https://earthquake.usgs.gov/" target="_blank" rel="noopener">OPEN USGS EVENT ↗</a>
       </div>
-      <div class="focus-hint">拖曳地球可旋轉；滾輪可縮放。EARTHQUAKES 模式下，直接短按地震光點可讀取事件情報。按 ESC 或右上角 × 返回艦橋總覽。</div>
+      <div class="focus-event focus-nasa-event" id="focusNasaEvent">
+        <div class="label" style="color:var(--violet)">NASA EONET // NATURAL EVENT CONTACT</div>
+        <h3 id="focusNasaTitle">SELECT A NATURAL EVENT MARKER</h3>
+        <div class="focus-event-grid">
+          <div>CATEGORY<b id="focusNasaCategory">--</b></div>
+          <div>DATE<b id="focusNasaDate">--</b></div>
+          <div>MAGNITUDE<b id="focusNasaMagnitude">--</b></div>
+          <div>LAYER<b id="focusNasaLayer">NASA EONET</b></div>
+        </div>
+        <a id="focusNasaLink" href="https://eonet.gsfc.nasa.gov/" target="_blank" rel="noopener">OPEN EONET EVENT ↗</a>
+      </div>
+      <div class="focus-hint">拖曳地球可旋轉；滾輪可縮放。EARTHQUAKES 可短按 USGS 地震光點；EVENTS / STORMS 可短按 NASA EONET 事件光點。按 ESC 或右上角 × 返回艦橋總覽。</div>
     </aside>
     <footer class="focus-footer"><span>BRIDGE VIEW</span> 總覽與監控　→　<span>FOCUS VIEW</span> 詳細分析與操作</footer>
   </section>
@@ -408,16 +419,37 @@ function showEonetIntel(mesh){
   selectedEonetMesh=visual;
   eonetMeshes.forEach(m=>m.scale.setScalar(1));
   visual.scale.setScalar(1.75);
+
   const ev=mesh.userData.eonet,g=mesh.userData.point.geometry||{},cat=eventCategoryTitle(ev);
   const date=(g.date||'').slice(0,10)||'OPEN',mag=eonetMagnitude(ev,g),url=eonetEventUrl(ev);
-  eonetSelectionRing.material.color.setHex(eventColor(ev));
-  eonetSelectionRing.position.copy(visual.position.clone().multiplyScalar(1.006));
-  eonetSelectionRing.lookAt(visual.position.clone().multiplyScalar(2));eonetSelectionRing.visible=true;
-  $('eventTitle').textContent=ev.title||'Natural event';$('eventCategory').textContent=cat;$('eventDate').textContent=date;$('eventMagnitude').textContent=mag;$('eventLink').href=url;
-  $('focusNasaTitle').textContent=ev.title||'Natural event';$('focusNasaCategory').textContent=cat;$('focusNasaDate').textContent=date;$('focusNasaMagnitude').textContent=mag;$('focusNasaLink').href=url;$('focusNasaEvent').classList.add('show');
+
+  // Bridge contact panel first: even if an optional visual effect fails,
+  // the selected NASA event information must remain visible.
+  $('eventTitle').textContent=ev.title||'Natural event';
+  $('eventCategory').textContent=cat;
+  $('eventDate').textContent=date;
+  $('eventMagnitude').textContent=mag;
+  $('eventLink').href=url;
   $('eventIntel').classList.add('show');
-  document.querySelectorAll('.event-list-item').forEach(el=>el.classList.toggle('active',el.dataset.eid===ev.id));
   $('rightDesc').innerHTML=`<span style="color:var(--violet)">NASA EONET EVENT CONTACT</span><br><b>${esc(cat)}</b> · ${esc(ev.title||'Natural event')}<br>${esc(date)} · ${esc(mag)}`;
+
+  // Focus View contact panel.
+  $('focusNasaTitle').textContent=ev.title||'Natural event';
+  $('focusNasaCategory').textContent=cat;
+  $('focusNasaDate').textContent=date;
+  $('focusNasaMagnitude').textContent=mag;
+  $('focusNasaLink').href=url;
+  $('focusNasaEvent').classList.add('show');
+
+  // Selection visual is deliberately last so it can never block the data panel.
+  try{
+    eonetSelectionRing.material.color.setHex(eventColor(ev));
+    eonetSelectionRing.position.copy(visual.position.clone().multiplyScalar(1.006));
+    eonetSelectionRing.lookAt(visual.position.clone().multiplyScalar(2));
+    eonetSelectionRing.visible=true;
+  }catch(err){console.warn('EONET selection ring visual skipped:',err)}
+
+  document.querySelectorAll('.event-list-item').forEach(el=>el.classList.toggle('active',el.dataset.eid===ev.id));
 }
 function hideEonetIntel(){
   $('eventIntel')?.classList.remove('show');$('focusNasaEvent')?.classList.remove('show');
@@ -439,7 +471,12 @@ function syncFocusPanel(){
   $('focusCoords').textContent=currentTarget?fmtCoord(currentTarget.lat,currentTarget.lon):'--';
   $('focusLayer').textContent=currentMode==='quakes'?'USGS M2.5+':'EARTH CORE';
   $('focusEvent').style.display=currentMode==='quakes'?'block':'none';
-  if(currentMode!=='events'&&currentMode!=='storms')$('focusNasaEvent').classList.remove('show');
+  if(currentMode==='events'||currentMode==='storms'){
+    $('focusNasaEvent').style.display=selectedEonetMesh?'block':'none';
+  }else{
+    $('focusNasaEvent').style.display='none';
+    $('focusNasaEvent').classList.remove('show');
+  }
 }
 function openFocusView(){
   if(currentMode==='radar'){return;}
