@@ -292,10 +292,12 @@
     <!-- CesiumJS Library -->
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Cesium.js"></script>
     <script>
-        // 1. 初始化 Cesium Viewer（採用 OpenStreetMap 開放圖資，保證 100% 成功載入地表）
+        // 1. 初始化 Cesium Viewer（採用 CartoDB 通用瓦片，無 CORS 限制、免 API Key）
         const viewer = new Cesium.Viewer('cesiumContainer', {
-            imageryProvider: new Cesium.OpenStreetMapImageryProvider({
-                url: 'https://a.tile.openstreetmap.org/'
+            imageryProvider: new Cesium.UrlTemplateImageryProvider({
+                url: 'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+                subdomains: ['a', 'b', 'c', 'd'],
+                maximumLevel: 19
             }),
             animation: false,
             baseLayerPicker: false,
@@ -311,7 +313,7 @@
         });
 
         const scene = viewer.scene;
-        scene.globe.enableLighting = true; // 開啟光照效果
+        scene.globe.enableLighting = true; // 開啟日光照射效果
 
         // 2. 地球自轉與即時數據更新
         let isOrbiting = true;
@@ -427,7 +429,7 @@
             tourListContainer.appendChild(catHeader);
 
             group.items.forEach(item => {
-                // 地表青藍色發光標記點
+                // 地表發光標記點
                 viewer.entities.add({
                     name: item.name,
                     position: Cesium.Cartesian3.fromDegrees(item.lon, item.lat, 100),
