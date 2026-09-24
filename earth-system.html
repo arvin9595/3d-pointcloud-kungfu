@@ -3,171 +3,175 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>STARSHIP COCKPIT // GLOBAL HUD</title>
+    <title>STARSHIP COCKPIT // CLEAN HUD</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         
         body { 
             width: 100vw; height: 100vh; overflow: hidden; 
-            background-color: #000205; font-family: 'Courier New', Courier, monospace, sans-serif; 
+            background-color: #000103; font-family: 'Courier New', Courier, monospace, sans-serif; 
             color: #00f2fe; cursor: crosshair;
             display: flex; justify-content: center; align-items: center;
         }
 
         .space-bg {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0;
-            background: radial-gradient(circle at center, #051329 0%, #01040a 100%);
+            background: radial-gradient(circle at center, #030a17 0%, #000104 100%);
         }
 
-        .cockpit-screen-frame {
-            position: relative; width: 96vw; height: 94vh; z-index: 5;
-            border: 2px solid rgba(0, 242, 254, 0.4);
-            background: rgba(1, 5, 12, 0.82);
-            box-shadow: 0 0 35px rgba(0, 242, 254, 0.2), inset 0 0 60px rgba(0, 242, 254, 0.08);
+        .cockpit-frame {
+            position: relative; width: 98vw; height: 96vh; z-index: 5;
+            border: 2px solid rgba(0, 242, 254, 0.5);
+            background: rgba(1, 4, 10, 0.94);
+            box-shadow: 0 0 40px rgba(0, 242, 254, 0.25), inset 0 0 80px rgba(0, 242, 254, 0.05);
             display: grid;
-            grid-template-columns: 320px 1fr 380px;
-            grid-template-rows: 40px 1fr 30px;
-            padding: 12px; gap: 12px;
-            clip-path: polygon(0 0, calc(100% - 25px) 0, 100% 25px, 100% 100%, 25px 100%, 0 calc(100% - 25px));
+            grid-template-columns: 280px 1fr 340px;
+            grid-template-rows: 35px 1fr 70px;
+            padding: 10px; gap: 10px;
+            clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
         }
 
-        .screen-top-bar {
+        .top-status-bar {
             grid-column: 1 / 4;
             display: flex; justify-content: space-between; align-items: center;
             border-bottom: 1px solid rgba(0, 242, 254, 0.3);
-            padding-bottom: 5px; font-size: 0.75rem; letter-spacing: 2px; color: #ffe600;
+            padding-bottom: 3px; font-size: 0.7rem; letter-spacing: 2px; color: #ffe600;
         }
 
-        .mod-nav {
+        .left-nav-panel {
             grid-column: 1 / 2; grid-row: 2 / 3;
-            background: rgba(2, 9, 20, 0.95);
+            background: rgba(1, 7, 16, 0.95);
             border: 1px solid rgba(0, 242, 254, 0.4);
             display: flex; flex-direction: column; overflow: hidden;
         }
-        .module-header {
-            padding: 8px 10px; background: rgba(0, 242, 254, 0.15);
+        .panel-header {
+            padding: 6px 8px; background: rgba(0, 242, 254, 0.15);
             border-bottom: 1px solid rgba(0, 242, 254, 0.3);
-            font-size: 0.7rem; font-weight: bold; letter-spacing: 1.5px;
+            font-size: 0.65rem; font-weight: bold; letter-spacing: 1px;
             display: flex; justify-content: space-between; color: #00f2fe;
         }
-        .tour-list { overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+        .tour-list { overflow-y: auto; padding: 6px; display: flex; flex-direction: column; gap: 5px; flex: 1; }
         .tour-list::-webkit-scrollbar { width: 3px; }
         .tour-list::-webkit-scrollbar-thumb { background: #00f2fe; }
 
         .accordion-header {
-            background: rgba(0, 242, 254, 0.06); border: 1px solid rgba(0, 242, 254, 0.3);
-            color: #ffe600; padding: 6px 10px; font-size: 0.7rem; font-weight: bold;
+            background: rgba(0, 242, 254, 0.05); border: 1px solid rgba(0, 242, 254, 0.25);
+            color: #ffe600; padding: 5px 8px; font-size: 0.65rem; font-weight: bold;
             cursor: pointer; display: flex; justify-content: space-between; align-items: center;
         }
-        .accordion-header::after { content: '►'; font-size: 0.55rem; transition: transform 0.3s; }
+        .accordion-header::after { content: '►'; font-size: 0.5rem; transition: transform 0.3s; }
         .accordion-header.active::after { transform: rotate(90deg); color: #ff0055; }
 
         .accordion-content {
             max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out;
-            display: flex; flex-direction: column; gap: 4px; padding-left: 4px;
+            display: flex; flex-direction: column; gap: 3px; padding-left: 2px;
         }
-        .accordion-content.show { max-height: 500px; transition: max-height 0.3s ease-in; padding-top: 4px; }
+        .accordion-content.show { max-height: 400px; transition: max-height 0.3s ease-in; padding-top: 3px; }
 
         .btn-target {
-            width: 100%; padding: 8px 10px; background: rgba(0, 242, 254, 0.03);
-            border: 1px solid rgba(0, 242, 254, 0.25); color: #00f2fe;
-            font-family: inherit; font-size: 0.7rem; cursor: pointer;
+            width: 100%; padding: 6px 8px; background: rgba(0, 242, 254, 0.03);
+            border: 1px solid rgba(0, 242, 254, 0.2); color: #00f2fe;
+            font-family: inherit; font-size: 0.65rem; cursor: pointer;
             display: flex; justify-content: space-between; align-items: center;
-            position: relative; overflow: hidden; transition: all 0.2s;
+            transition: all 0.2s;
         }
         .btn-target:hover { background: rgba(0, 242, 254, 0.15); border-color: #00f2fe; color: #fff; }
-        
-        .btn-target.active { 
-            background: rgba(255, 0, 85, 0.15); border-color: #ff0055; color: #ff0055; font-weight: bold; 
-        }
-        .btn-target.active::before {
-            content: '';
-            position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-            background: conic-gradient(transparent, rgba(255, 0, 85, 0.8), transparent 30%);
-            animation: ai-ring-spin 1.5s linear infinite;
-            z-index: 1; pointer-events: none;
-        }
-        .btn-target.active span, .btn-target.active small { position: relative; z-index: 2; }
+        .btn-target.active { background: rgba(255, 0, 85, 0.2); border-color: #ff0055; color: #ff0055; font-weight: bold; }
 
-        @keyframes ai-ring-spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        #canvas-container {
+        /* 中央：小型全息地球視窗 */
+        .center-viewport {
             grid-column: 2 / 3; grid-row: 2 / 3;
-            position: relative; width: 100%; height: 100%; overflow: hidden;
+            position: relative; display: flex; justify-content: center; align-items: center;
             border: 1px solid rgba(0, 242, 254, 0.3);
-            background: rgba(0, 0, 0, 0.4);
-            box-shadow: inset 0 0 30px rgba(0, 242, 254, 0.1);
+            background: radial-gradient(circle at center, rgba(0,20,40,0.6) 0%, rgba(0,2,5,0.9) 100%);
+            overflow: hidden;
+        }
+        #earth-canvas-box {
+            width: 300px; height: 300px;
+            position: relative;
+            border-radius: 50%;
+            border: 2px dashed rgba(0, 242, 254, 0.4);
+            box-shadow: 0 0 25px rgba(0, 242, 254, 0.2), inset 0 0 20px rgba(0, 242, 254, 0.3);
+            overflow: hidden;
+            background: #000;
         }
 
-        .mod-sub-screen {
+        .right-info-panel {
             grid-column: 3 / 4; grid-row: 2 / 3;
-            background: rgba(2, 9, 20, 0.95);
+            background: rgba(1, 7, 16, 0.95);
             border: 1px solid rgba(0, 242, 254, 0.4);
-            display: flex; flex-direction: column; padding: 8px; gap: 8px; overflow-y: auto;
+            display: flex; flex-direction: column; padding: 6px; gap: 6px; overflow-y: auto;
         }
         .map-frame-box {
-            width: 100%; height: 160px; border: 1px solid #00f2fe; background: #000; position: relative;
+            width: 100%; height: 130px; border: 1px solid #00f2fe; background: #000; position: relative;
         }
         .map-iframe { width: 100%; height: 100%; border: none; }
 
         .data-card {
             background: rgba(0, 242, 254, 0.04); border: 1px solid rgba(0, 242, 254, 0.2);
-            padding: 8px; font-size: 0.7rem; display: flex; flex-direction: column; gap: 4px;
+            padding: 6px; font-size: 0.65rem; display: flex; flex-direction: column; gap: 3px;
         }
-        .data-row { display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(0, 242, 254, 0.2); padding-bottom: 3px; }
+        .data-row { display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(0, 242, 254, 0.2); padding-bottom: 2px; }
         .data-val { color: #ffe600; font-weight: bold; }
 
         .desc-box {
-            font-size: 0.7rem; line-height: 1.4; color: #cbd5e1;
-            background: rgba(0, 0, 0, 0.5); padding: 8px; border-left: 2px solid #00f2fe;
+            font-size: 0.65rem; line-height: 1.3; color: #cbd5e1;
+            background: rgba(0, 0, 0, 0.6); padding: 6px; border-left: 2px solid #00f2fe;
             flex: 1; overflow-y: auto;
         }
 
-        .screen-bottom-bar {
+        .bottom-cockpit-dashboard {
             grid-column: 1 / 4; grid-row: 3 / 4;
-            display: flex; justify-content: space-between; align-items: center;
-            border-top: 1px solid rgba(0, 242, 254, 0.3);
-            font-size: 0.65rem; color: rgba(0, 242, 254, 0.6);
+            border-top: 1px solid rgba(0, 242, 254, 0.4);
+            background: rgba(0, 10, 25, 0.9);
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px; padding: 6px 10px;
+            align-items: center;
         }
-
-        .click-pulse {
-            position: absolute; width: 12px; height: 12px; border: 2px solid #00f2fe;
-            border-radius: 50%; pointer-events: none; z-index: 99;
-            animation: pulse-anim 0.4s ease-out forwards;
+        .dash-gauge {
+            border: 1px solid rgba(0, 242, 254, 0.25);
+            background: rgba(0, 242, 254, 0.03);
+            padding: 4px 8px; font-size: 0.65rem;
+            display: flex; flex-direction: column; justify-content: space-between;
         }
-        @keyframes pulse-anim {
-            0% { transform: scale(0.5); opacity: 1; }
-            100% { transform: scale(3.5); opacity: 0; }
+        .gauge-bar {
+            width: 100%; height: 4px; background: rgba(0, 242, 254, 0.2); margin-top: 3px; position: relative; overflow: hidden;
         }
+        .gauge-fill {
+            position: absolute; top: 0; left: 0; height: 100%; background: #00f2fe; width: 68%;
+        }
+        .gauge-fill.red { background: #ff0055; width: 42%; }
     </style>
 </head>
 <body>
 
     <div class="space-bg"></div>
 
-    <div class="cockpit-screen-frame">
-        
-        <div class="screen-top-bar">
-            <span>[SYS.VER // GLOBAL COCKPIT HUD]</span>
-            <span style="color:#00f2fe;">TOUCH CONTROL: ACTIVE</span>
-            <span>SECURE LINK: ONLINE</span>
+    <div class="cockpit-frame">
+        <div class="top-status-bar">
+            <span>[SYS.SECURE // STARSHIP ORBITAL HUD]</span>
+            <span style="color:#00f2fe;">HOLOGRAPHIC PROJECTION: ACTIVE</span>
+            <span>CORE TEMP: 28.4°C</span>
         </div>
 
-        <div class="mod-nav">
-            <div class="module-header">
+        <div class="left-nav-panel">
+            <div class="panel-header">
                 <span>[GLOBAL TARGETS]</span>
                 <small style="color:#ffe600;">FULL WORLD</small>
             </div>
             <div class="tour-list" id="accordionContainer"></div>
         </div>
 
-        <div id="canvas-container"></div>
+        <div class="center-viewport">
+            <div style="position: absolute; top: 8px; left: 10px; font-size: 0.6rem; color: rgba(0,242,254,0.7); letter-spacing: 1px;">
+                [TACTICAL HOLOGRAPHIC EARTH // VIEWPORT]
+            </div>
+            <div id="earth-canvas-box"></div>
+        </div>
 
-        <div class="mod-sub-screen">
-            <div class="module-header">
+        <div class="right-info-panel">
+            <div class="panel-header">
                 <span>[TARGET ANALYZER]</span>
                 <span style="color:#ffe600;" id="targetStatus">STANDBY</span>
             </div>
@@ -184,15 +188,27 @@
             </div>
 
             <div class="desc-box" id="targetDesc">
-                >> 系統準備就緒。<br>點擊左側地標按鈕，將解鎖全球目標並載入詳細情資。
+                >> 系統就緒。<br>點擊左側地標，鎖定目標並載入情資。
             </div>
         </div>
 
-        <div class="screen-bottom-bar">
-            <span>STATUS: ALL SYSTEMS NOMINAL</span>
-            <span>AI CORE: GLOBAL MAPPING ACTIVE</span>
+        <div class="bottom-cockpit-dashboard">
+            <div class="dash-gauge">
+                <div style="display:flex; justify-content:space-between;"><span>主推進器 (MAIN THRUSTER)</span><span style="color:#ffe600;">84%</span></div>
+                <div class="gauge-bar"><div class="gauge-fill" style="width:84%;"></div></div>
+            </div>
+            <div class="dash-gauge">
+                <div style="display:flex; justify-content:space-between;"><span>重力盾調節 (GRAVITY SHIELD)</span><span style="color:#ffe600;">68%</span></div>
+                <div class="gauge-bar"><div class="gauge-fill" style="width:68%;"></div></div>
+            </div>
+            <div class="dash-gauge">
+                <div style="display:flex; justify-content:space-between;"><span>量子通訊頻寬 (QUANTUM LINK)</span><span style="color:#ff0055;">42%</span></div>
+                <div class="gauge-bar"><div class="gauge-fill red" style="width:42%;"></div></div>
+            </div>
+            <div class="dash-gauge" style="justify-content: center; align-items: center; text-align: center; color: #ffe600; font-weight: bold;">
+                [STATUS: ALL SYSTEMS NOMINAL]
+            </div>
         </div>
-
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -200,76 +216,51 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
 
     <script>
-        let audioCtx = null;
-        function initAudio() {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-        }
-
-        function playSound(type) {
-            initAudio();
-            if (!audioCtx) return;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain); gain.connect(audioCtx.destination);
-
-            if (type === 'lock') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(880, audioCtx.currentTime); 
-                osc.frequency.exponentialRampToValueAtTime(1760, audioCtx.currentTime + 0.08);
-                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
-            } else if (type === 'expand') {
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(200, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.08);
-                gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.08);
-            }
-        }
-
-        // 全球完整地標資料庫 (包含非洲、亞洲、歐洲、美洲、大洋洲)
         const tourData = [
             {
-                category: "[01] 非洲大陸 (AFRICA)",
+                category: "[01] 亞洲精選 (ASIA)",
                 items: [
-                    { name: "吉薩金字塔群", sub: "GIZA PYRAMIDS", lat: 29.9792, lon: 31.1342, era: "BC 2560年", dist: "36,450 KM", desc: "埃及尼羅河流域，古代世界七大奇蹟中唯一保存至今的偉大宏偉陵墓群。" },
-                    { name: "卡納克神廟", sub: "KARNAK TEMPLE", lat: 25.7188, lon: 32.6573, era: "BC 2000年", dist: "36,200 KM", desc: "埃及路克索龐大的古神廟遺址，以巨大的多柱廳與石雕壁畫聞名於世。" },
-                    { name: "桌山", sub: "TABLE MOUNTAIN", lat: -33.9628, lon: 18.4098, era: "遠古造山地貌", dist: "41,000 KM", desc: "南非開普敦的地標，擁有平坦如桌面的山頂，俯瞰大西洋與印度洋交會處。" },
-                    { name: "維多利亞瀑布", sub: "VICTORIA FALLS", lat: -17.9243, lon: 25.8572, era: "自然奇觀", dist: "39,500 KM", desc: "位於贊比西河上，世界最大瀑布群之一，水霧如煙霧般震撼壯麗。" }
+                    { name: "日本 富士山", sub: "MOUNT FUJI", lat: 35.3606, lon: 138.7274, era: "火山地貌", dist: "35,200 KM", desc: "日本最高峰（3,776公尺），橫跨靜岡與山梨縣的錐形複式火山，日本精神象徵。" },
+                    { name: "台北 101", sub: "TAIPEI 101", lat: 25.0330, lon: 121.5645, era: "2004 年竣工", dist: "35,508 KM", desc: "臺灣地標，竹節意象與風阻尼球抗震科技高空摩天大樓。" },
+                    { name: "東京晴空塔", sub: "TOKYO SKYTREE", lat: 35.7100, lon: 139.8107, era: "2012 年啟用", dist: "35,350 KM", desc: "高 634 公尺，融合日本傳統美學與現代鋼構技術的通訊塔。" },
+                    { name: "萬里長城 (八達嶺)", sub: "GREAT WALL", lat: 40.4319, lon: 116.5704, era: "明代修築", dist: "35,210 KM", desc: "橫亙中國北方崇山峻嶺間之宏偉防禦工事，人類文明歷史奇蹟。" }
                 ]
             },
             {
-                category: "[02] 亞洲大陸 (ASIA)",
+                category: "[02] 非洲大陸 (AFRICA)",
                 items: [
-                    { name: "台北 101", sub: "TAIPEI 101", lat: 25.0330, lon: 121.5645, era: "2004 年竣工", dist: "35,508 KM", desc: "臺灣地標，融合竹節意象與風阻尼球抗震科技的高空摩天大樓。" },
-                    { name: "萬里長城 (八達嶺)", sub: "GREAT WALL", lat: 40.4319, lon: 116.5704, era: "明代修築", dist: "35,210 KM", desc: "橫亙中國北方崇山峻嶺間之宏偉防禦工事，人類文明歷史奇蹟。" },
-                    { name: "泰姬瑪哈陵", sub: "TAJ MAHAL", lat: 27.1751, lon: 78.0421, era: "1653 年竣工", dist: "35,800 KM", desc: "印度阿格拉的純白大理石陵寢，蒙兀兒帝國建築藝術的巔峰之作。" },
-                    { name: "東京晴空塔", sub: "TOKYO SKYTREE", lat: 35.7100, lon: 139.8107, era: "2012 年啟用", dist: "35,350 KM", desc: "高 634 公尺，融合日本傳統美學與現代鋼構技術的通訊塔。" }
+                    { name: "吉薩金字塔群", sub: "GIZA PYRAMIDS", lat: 29.9792, lon: 31.1342, era: "BC 2560年", dist: "36,450 KM", desc: "埃及尼羅河流域，古代世界七大奇蹟中唯一保存至今的偉大宏偉陵墓群。" },
+                    { name: "南非 桌山", sub: "TABLE MOUNTAIN", lat: -33.9628, lon: 18.4098, era: "遠古造山地貌", dist: "41,000 KM", desc: "開普敦地標，擁有平坦如桌面的山頂，俯瞰大西洋與印度洋交會處。" },
+                    { name: "維多利亞瀑布", sub: "VICTORIA FALLS", lat: -17.9243, lon: 25.8572, era: "自然奇觀", dist: "39,500 KM", desc: "贊比西河上世界最大瀑布群之一，水霧如煙霧般震撼壯麗。" }
                 ]
             },
             {
                 category: "[03] 歐洲大陸 (EUROPE)",
                 items: [
                     { name: "巴黎 艾菲爾鐵塔", sub: "EIFFEL TOWER", lat: 48.8584, lon: 2.2945, era: "1889 年落成", dist: "37,100 KM", desc: "法國巴黎標誌性鐵件建築，工業革命與現代設計的先驅。" },
-                    { name: "羅馬競技場", sub: "COLOSSEUM", lat: 41.8902, lon: 12.4922, era: "AD 80 年", dist: "36,900 KM", desc: "古羅馬帝國時期最大之圓形角鬥場，精湛的混凝土拱門工程。" },
-                    { name: "雅典帕德嫩神廟", sub: "PARTHENON", lat: 37.9715, lon: 23.7266, era: "BC 438 年", dist: "36,600 KM", desc: "希臘雅典衛城核心，古希臘古典建築與美學黃金比例的典範。" }
+                    { name: "羅馬競技場", sub: "COLOSSEUM", lat: 41.8902, lon: 12.4922, era: "AD 80 年", dist: "36,900 KM", desc: "古羅馬帝國時期最大之圓形角鬥場，精湛的混凝土拱門工程。" }
                 ]
             },
             {
-                category: "[04] 美洲與大洋洲 (AMERICA & OCEANIA)",
+                category: "[04] 美洲與馬雅 (AMERICA & MAYA)",
                 items: [
+                    { name: "墨西哥 奇琴伊察", sub: "CHICHEN ITZA", lat: 20.6843, lon: -88.5678, era: "AD 600 年", dist: "38,100 KM", desc: "馬雅文明核心遺址，庫庫爾坎金字塔蘊含精密的春分巨蛇光影曆法天文學。" },
+                    { name: "瓜地馬拉 蒂卡爾", sub: "TIKAL RUINS", lat: 17.2220, lon: -89.6237, era: "BC 4 世紀", dist: "38,400 KM", desc: "馬雅古典期最大城邦與宗教中心，神廟高聳穿透熱帶雨林樹冠。" },
                     { name: "紐約 自由女神像", sub: "STATUE OF LIBERTY", lat: 40.6892, lon: -74.0445, era: "1886 年揭幕", dist: "37,800 KM", desc: "美國紐約港的巨大銅像，象徵民主、自由與美法友誼。" },
-                    { name: "印加 馬丘比丘", sub: "MACHU PICCHU", lat: -13.1631, lon: -72.5450, era: "AD 1450 年", dist: "38,200 KM", desc: "秘魯安地斯山脈上的神祕天空之城，高精密度乾砌石工藝。" },
-                    { name: "雪梨歌劇院", sub: "SYDNEY OPERA HOUSE", lat: -33.8568, lon: 151.2153, era: "1973 年啟用", dist: "38,500 KM", desc: "澳洲雪梨港灣的貝殼造型現代主義建築傑作。" }
+                    { name: "秘魯 馬丘比丘", sub: "MACHU PICCHU", lat: -13.1631, lon: -72.5450, era: "AD 1450 年", dist: "38,200 KM", desc: "安地斯山脈上的神祕天空之城，高精密度乾砌石工藝。" }
+                ]
+            },
+            {
+                category: "[05] 極地科考站 (POLAR STATIONS)",
+                items: [
+                    { name: "南極 麥克默多站", sub: "MCMURDO STATION", lat: -77.8419, lon: 166.6863, era: "1956 年建立", dist: "45,000 KM", desc: "南極洲規模最大的科學考察站與物流樞紐，羅斯島極地小鎮。" },
+                    { name: "南極 東方站", sub: "VOSTOK STATION", lat: -78.4645, lon: 106.8340, era: "1957 年建立", dist: "46,200 KM", desc: "俄羅斯內陸科考站，曾測得地球最低自然氣溫 (-89.2°C) 的極端地標。" }
                 ]
             }
         ];
 
         window.addEventListener('load', () => {
-            const container = document.getElementById('canvas-container');
+            const container = document.getElementById('earth-canvas-box');
             const EARTH_RADIUS = 5;
 
             const scene = new THREE.Scene();
@@ -289,9 +280,7 @@
 
             const geometry = new THREE.SphereGeometry(EARTH_RADIUS, 64, 64);
             const textureLoader = new THREE.TextureLoader();
-            // 使用標準等距柱狀世界地圖
-            const texture = textureLoader.load('https://upload.wikimedia.org/wikipedia/commons/8/83/Equirectangular_projection_SW.jpg', (tex) => {
-                // 載入成功後微調地球初始旋轉，讓非洲與歐亞大陸對準正前方
+            const texture = textureLoader.load('https://upload.wikimedia.org/wikipedia/commons/8/83/Equirectangular_projection_SW.jpg', () => {
                 earth.rotation.y = -Math.PI / 2.2;
             });
             const material = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.5 });
@@ -325,7 +314,6 @@
                 }
 
                 head.onclick = () => {
-                    playSound('expand');
                     head.classList.toggle('active');
                     content.classList.toggle('show');
                 };
@@ -364,7 +352,6 @@
             });
 
             window.updateSubScreen = function(index) {
-                playSound('lock');
                 const loc = globalLocations[index];
 
                 globalLocations.forEach((item, i) => {
@@ -390,26 +377,15 @@
                 document.getElementById('targetEra').innerText = loc.era;
                 document.getElementById('targetDist').innerText = loc.dist || "35,000 KM";
                 document.getElementById('targetCoords').innerText = `${loc.lat.toFixed(2)}° N, ${loc.lon.toFixed(2)}° E`;
-                document.getElementById('targetDesc').innerHTML = `>> <span style="color:#ff0055;">[AI 全球鎖定]</span> 情資：<br>${loc.desc}`;
+                document.getElementById('targetDesc').innerHTML = `>> <span style="color:#ff0055;">[AI 全息鎖定]</span> 情資：<br>${loc.desc}`;
 
                 const googleMapUrl = `https://maps.google.com/maps?q=${loc.lat},${loc.lon}&t=k&z=15&ie=UTF8&iwloc=&output=embed`;
                 document.getElementById('mapIframe').src = googleMapUrl;
             };
 
-            window.addEventListener('click', (e) => {
-                initAudio();
-                const pulse = document.createElement('div');
-                pulse.className = 'click-pulse';
-                pulse.style.left = `${e.clientX - 6}px`;
-                pulse.style.top = `${e.clientY - 6}px`;
-                document.body.appendChild(pulse);
-                setTimeout(() => pulse.remove(), 400);
-            });
-
             function animate() {
                 requestAnimationFrame(animate);
                 TWEEN.update();
-                // 如果沒有手動轉動地球，讓它微微自轉
                 earth.rotation.y += 0.0003;
                 controls.update();
                 renderer.render(scene, camera);
