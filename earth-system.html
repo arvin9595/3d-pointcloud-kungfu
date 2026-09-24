@@ -292,7 +292,7 @@
     <!-- CesiumJS Library -->
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Cesium.js"></script>
     <script>
-        // 1. 初始化 Cesium Viewer 並使用 ArcGIS 免費高畫質衛星地圖
+        // 1. 初始化 Cesium Viewer (採用穩定高解析衛星影像圖層)
         const viewer = new Cesium.Viewer('cesiumContainer', {
             imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
                 url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
@@ -311,7 +311,7 @@
         });
 
         const scene = viewer.scene;
-        scene.globe.enableLighting = true; // 開啟太陽日光照射效果
+        scene.globe.enableLighting = true; // 開啟太陽光效果
 
         // 2. 自轉與即時數據更新
         let isOrbiting = true;
@@ -326,7 +326,6 @@
                 scene.camera.rotate(Cesium.Cartesian3.UNIT_Z, -0.04 * delta);
             }
 
-            // 即時計算相機距離與經緯度
             const cameraPosition = viewer.camera.positionCartographic;
             if (cameraPosition) {
                 const alt = (cameraPosition.height / 1000).toFixed(0);
@@ -339,7 +338,7 @@
             }
         });
 
-        // 3. 完整的景點選單資料（臺灣景點 + 全球地標）
+        // 3. 修正後的景點資料（包含經緯度、鏡頭距離 range、傾角 pitch）
         const tourData = [
             {
                 category: "臺灣經典名勝",
@@ -349,40 +348,35 @@
                         sub: "Taipei 101",
                         tag: "TAIPEI / URBAN",
                         desc: "臺灣第一高樓，高度 508 公尺，俯瞰信義區整體現代都市景觀。",
-                        destination: Cesium.Cartesian3.fromDegrees(121.5645, 25.0330, 2000),
-                        orientation: { heading: Cesium.Math.toRadians(330), pitch: Cesium.Math.toRadians(-25), roll: 0 }
+                        lon: 121.5645, lat: 25.0330, range: 8000, pitch: -45
                     },
                     {
                         name: "玉山主峰",
                         sub: "Yushan Peak (3,952m)",
                         tag: "TAIWAN / MOUNTAIN",
                         desc: "東北亞第一高峰。高空還原雄偉的中央山脈主脊地貌。",
-                        destination: Cesium.Cartesian3.fromDegrees(120.9573, 23.4700, 15000),
-                        orientation: { heading: Cesium.Math.toRadians(25), pitch: Cesium.Math.toRadians(-30), roll: 0 }
+                        lon: 120.9573, lat: 23.4700, range: 35000, pitch: -50
                     },
                     {
                         name: "高雄流行音樂中心",
                         sub: "Kaohsiung Music Center",
                         tag: "KAOHSIUNG / HARBOR",
                         desc: "座落於高雄愛河灣與高雄港區，俯瞰南臺灣港灣新地標。",
-                        destination: Cesium.Cartesian3.fromDegrees(120.2930, 22.6180, 2500),
-                        orientation: { heading: Cesium.Math.toRadians(45), pitch: Cesium.Math.toRadians(-30), roll: 0 }
+                        lon: 120.2930, lat: 22.6180, range: 10000, pitch: -45
                     },
                     {
                         name: "日月潭",
                         sub: "Sun Moon Lake",
                         tag: "NANTOU / LAKE",
                         desc: "臺灣最大半天然湖泊，群山環抱，提供高空極佳的水岸地形視野。",
-                        destination: Cesium.Cartesian3.fromDegrees(120.9159, 23.8517, 8000),
-                        orientation: { heading: Cesium.Math.toRadians(180), pitch: Cesium.Math.toRadians(-35), roll: 0 }
+                        lon: 120.9159, lat: 23.8517, range: 25000, pitch: -50
                     },
                     {
                         name: "太魯閣國家公園",
                         sub: "Taroko Gorge",
                         tag: "HUALIEN / GORGE",
                         desc: "立霧溪切割出近乎垂直的大理岩峽谷，展現臺灣造山運動的壯麗地質風貌。",
-                        destination: Cesium.Cartesian3.fromDegrees(121.5500, 24.1600, 10000),
-                        orientation: { heading: Cesium.Math.toRadians(210), pitch: Cesium.Math.toRadians(-35), roll: 0 }
+                        lon: 121.5500, lat: 24.1600, range: 30000, pitch: -50
                     }
                 ]
             },
@@ -394,38 +388,34 @@
                         sub: "Tokyo Tower",
                         tag: "JAPAN / TOKYO",
                         desc: "東京著名地標塔，展現繁華的東京都心風貌。",
-                        destination: Cesium.Cartesian3.fromDegrees(139.7454, 35.6586, 2500),
-                        orientation: { heading: Cesium.Math.toRadians(140), pitch: Cesium.Math.toRadians(-25), roll: 0 }
+                        lon: 139.7454, lat: 35.6586, range: 10000, pitch: -45
                     },
                     {
                         name: "法國 艾菲爾鐵塔",
                         sub: "Eiffel Tower",
                         tag: "FRANCE / PARIS",
                         desc: "巴黎最具代表性的標誌建築，俯瞰塞納河畔與古典巴黎城區規劃。",
-                        destination: Cesium.Cartesian3.fromDegrees(2.2945, 48.8584, 2000),
-                        orientation: { heading: Cesium.Math.toRadians(50), pitch: Cesium.Math.toRadians(-20), roll: 0 }
+                        lon: 2.2945, lat: 48.8584, range: 10000, pitch: -45
                     },
                     {
                         name: "美國 大峽谷",
                         sub: "Grand Canyon",
                         tag: "USA / NATURE",
                         desc: "科羅拉多河數百萬年切割出的深邃峽谷，展示地殼層次與壯麗的自然奇觀。",
-                        destination: Cesium.Cartesian3.fromDegrees(-112.1129, 36.1069, 12000),
-                        orientation: { heading: Cesium.Math.toRadians(290), pitch: Cesium.Math.toRadians(-25), roll: 0 }
+                        lon: -112.1129, lat: 36.1069, range: 50000, pitch: -50
                     },
                     {
                         name: "埃及 吉薩金字塔",
                         sub: "Giza Pyramids",
                         tag: "EGYPT / HERITAGE",
                         desc: "開羅吉薩高原的千年古文明遺跡，展現沙漠地形與浩瀚古建築群。",
-                        destination: Cesium.Cartesian3.fromDegrees(31.1342, 29.9792, 3500),
-                        orientation: { heading: Cesium.Math.toRadians(70), pitch: Cesium.Math.toRadians(-25), roll: 0 }
+                        lon: 31.1342, lat: 29.9792, range: 15000, pitch: -45
                     }
                 ]
             }
         ];
 
-        // 4. 動態產生左側選單
+        // 4. 在地圖上記錄與在地表標記地標 Pin
         const tourListContainer = document.getElementById('tourList');
         let globalLocations = [];
         let locIndex = 0;
@@ -437,6 +427,28 @@
             tourListContainer.appendChild(catHeader);
 
             group.items.forEach(item => {
+                // 建立 3D 畫面的地標 Pin
+                viewer.entities.add({
+                    name: item.name,
+                    position: Cesium.Cartesian3.fromDegrees(item.lon, item.lat, 100),
+                    point: {
+                        pixelSize: 10,
+                        color: Cesium.Color.fromCssColorString('#00f2fe'),
+                        outlineColor: Cesium.Color.WHITE,
+                        outlineWidth: 2
+                    },
+                    label: {
+                        text: item.name,
+                        font: '14px sans-serif',
+                        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                        outlineWidth: 2,
+                        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                        pixelOffset: new Cesium.Cartesian2(0, -12),
+                        fillColor: Cesium.Color.WHITE
+                    }
+                });
+
+                // 生成左側選單按鈕
                 const btn = document.createElement('button');
                 btn.className = 'btn-tour';
                 const currentIndex = locIndex;
@@ -449,24 +461,29 @@
             });
         });
 
-        // 5. 鏡頭飛行控制
+        // 5. 修正後的鏡頭飛行算法 (使用 BoundingSphere 精準對焦)
         function flyToLocation(index) {
             isOrbiting = false;
             document.getElementById('statusText').innerText = "地面模式：景點對焦中";
             hideCard();
 
             const loc = globalLocations[index];
-            viewer.camera.flyTo({
-                destination: loc.destination,
-                orientation: loc.orientation,
-                duration: 3.5,
-                easingFunction: Cesium.EasingFunction.CUBIC_IN_OUT,
+            const targetPos = Cesium.Cartesian3.fromDegrees(loc.lon, loc.lat, 0);
+            
+            viewer.camera.flyToBoundingSphere(new Cesium.BoundingSphere(targetPos, 0), {
+                offset: new Cesium.HeadingPitchRange(
+                    Cesium.Math.toRadians(0),
+                    Cesium.Math.toRadians(loc.pitch),
+                    loc.range
+                ),
+                duration: 3.0,
                 complete: () => {
                     showCard(loc);
                 }
             });
         }
 
+        // 返回太空軌道
         function returnToOrbit() {
             hideCard();
             document.getElementById('statusText').innerText = "太空中：軌道運轉中";
@@ -478,8 +495,7 @@
                     pitch: Cesium.Math.toRadians(-90),
                     roll: 0
                 },
-                duration: 3.0,
-                easingFunction: Cesium.EasingFunction.QUINTIC_OUT,
+                duration: 2.5,
                 complete: () => {
                     lastTime = Date.now();
                     isOrbiting = true;
