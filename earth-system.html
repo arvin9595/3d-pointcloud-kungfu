@@ -3,201 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D 地球與全亞洲全球導覽系統 (NASA 貼圖版)</title>
+    <title>3D 地球與全亞洲全球導覽系統</title>
     <!-- CesiumJS CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.115.0/Widgets/widgets.min.css" rel="stylesheet">
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-        }
-        html, body, #cesiumContainer {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #000;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        html, body, #cesiumContainer { width: 100%; height: 100%; overflow: hidden; background-color: #000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 
-        /* 左側導覽控制面板 */
         .hud-panel {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 10;
-            width: 320px;
-            max-height: calc(100vh - 40px);
-            padding: 18px;
-            background: rgba(10, 15, 30, 0.88);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(0, 242, 254, 0.35);
-            border-radius: 14px;
-            color: #fff;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
-            display: flex;
-            flex-direction: column;
+            position: absolute; top: 20px; left: 20px; z-index: 10; width: 320px;
+            max-height: calc(100vh - 40px); padding: 18px; background: rgba(10, 15, 30, 0.88);
+            backdrop-filter: blur(16px); border: 1px solid rgba(0, 242, 254, 0.35);
+            border-radius: 14px; color: #fff; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
+            display: flex; flex-direction: column;
         }
-
         .hud-title {
-            font-size: 1.15rem;
-            font-weight: 700;
-            letter-spacing: 1px;
+            font-size: 1.15rem; font-weight: 700; letter-spacing: 1px;
             background: linear-gradient(135deg, #00f2fe, #4facfe);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 4px;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 4px;
         }
+        .hud-status { font-size: 0.75rem; color: #00f2fe; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+        .status-dot { width: 8px; height: 8px; background-color: #00f2fe; border-radius: 50%; box-shadow: 0 0 8px #00f2fe; }
 
-        .hud-status {
-            font-size: 0.75rem;
-            color: #00f2fe;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            background-color: #00f2fe;
-            border-radius: 50%;
-            box-shadow: 0 0 8px #00f2fe;
-        }
-
-        /* 景點列表滾動區 */
-        .tour-list {
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            padding-right: 4px;
-            max-height: 55vh;
-        }
-
-        .tour-list::-webkit-scrollbar {
-            width: 4px;
-        }
-        .tour-list::-webkit-scrollbar-thumb {
-            background: rgba(0, 242, 254, 0.4);
-            border-radius: 4px;
-        }
+        .tour-list { overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 4px; max-height: 55vh; }
+        .tour-list::-webkit-scrollbar { width: 4px; }
+        .tour-list::-webkit-scrollbar-thumb { background: rgba(0, 242, 254, 0.4); border-radius: 4px; }
 
         .category-title {
-            font-size: 0.75rem;
-            color: #00f2fe;
-            margin-top: 12px;
-            margin-bottom: 4px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid rgba(0, 242, 254, 0.2);
-            padding-bottom: 3px;
+            font-size: 0.75rem; color: #00f2fe; margin-top: 12px; margin-bottom: 4px; font-weight: 700;
+            letter-spacing: 0.5px; border-bottom: 1px solid rgba(0, 242, 254, 0.2); padding-bottom: 3px;
         }
-
         .btn-tour {
-            width: 100%;
-            padding: 8px 10px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(0, 242, 254, 0.2);
-            border-radius: 6px;
-            color: #ffffff;
-            font-size: 0.82rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            width: 100%; padding: 8px 10px; background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 242, 254, 0.2); border-radius: 6px; color: #ffffff;
+            font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease;
+            display: flex; align-items: center; justify-content: space-between;
         }
+        .btn-tour:hover { background: rgba(0, 242, 254, 0.2); border-color: #00f2fe; transform: translateX(3px); }
+        .btn-orbit { margin-top: 12px; padding: 10px; background: linear-gradient(135deg, rgba(0, 242, 254, 0.25), rgba(79, 172, 254, 0.25)); border-color: #00f2fe; flex-shrink: 0; }
 
-        .btn-tour:hover {
-            background: rgba(0, 242, 254, 0.2);
-            border-color: #00f2fe;
-            transform: translateX(3px);
-        }
-
-        .btn-orbit {
-            margin-top: 12px;
-            padding: 10px;
-            background: linear-gradient(135deg, rgba(0, 242, 254, 0.25), rgba(79, 172, 254, 0.25));
-            border-color: #00f2fe;
-            flex-shrink: 0;
-        }
-
-        /* 右側面板 */
         .telemetry-panel {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            z-index: 10;
-            width: 280px;
-            padding: 16px;
-            background: rgba(10, 15, 30, 0.88);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(0, 242, 254, 0.35);
-            border-radius: 14px;
-            color: #e2e8f0;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
-            font-size: 0.8rem;
+            position: absolute; top: 20px; right: 20px; z-index: 10; width: 280px; padding: 16px;
+            background: rgba(10, 15, 30, 0.88); backdrop-filter: blur(16px); border: 1px solid rgba(0, 242, 254, 0.35);
+            border-radius: 14px; color: #e2e8f0; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7); font-size: 0.8rem;
         }
-
-        .telemetry-title {
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: #00f2fe;
-            margin-bottom: 10px;
-            border-bottom: 1px solid rgba(0, 242, 254, 0.3);
-            padding-bottom: 4px;
-        }
-
-        .data-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 6px;
-        }
-
+        .telemetry-title { font-size: 0.95rem; font-weight: 700; color: #00f2fe; margin-bottom: 10px; border-bottom: 1px solid rgba(0, 242, 254, 0.3); padding-bottom: 4px; }
+        .data-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
         .data-label { color: #94a3b8; }
         .data-value { color: #38bdf8; font-family: monospace; font-weight: 600; }
 
-        /* 底部詳細介紹卡片 */
         .story-card {
-            position: absolute;
-            bottom: 25px;
-            left: 50%;
-            transform: translateX(-50%) translateY(20px);
-            z-index: 10;
-            width: 420px;
-            max-width: 90vw;
-            padding: 16px 20px;
-            background: rgba(10, 15, 30, 0.9);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(0, 242, 254, 0.35);
-            border-radius: 14px;
-            color: #f8fafc;
-            opacity: 0;
-            transition: all 0.4s ease;
-            pointer-events: none;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
+            position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%) translateY(20px);
+            z-index: 10; width: 420px; max-width: 90vw; padding: 16px 20px; background: rgba(10, 15, 30, 0.9);
+            backdrop-filter: blur(20px); border: 1px solid rgba(0, 242, 254, 0.35); border-radius: 14px; color: #f8fafc;
+            opacity: 0; transition: all 0.4s ease; pointer-events: none; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
         }
-
-        .story-card.active {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-            pointer-events: auto;
-        }
-
-        .story-tag {
-            font-size: 0.7rem;
-            padding: 2px 6px;
-            background: rgba(0, 242, 254, 0.2);
-            color: #00f2fe;
-            border-radius: 4px;
-            display: inline-block;
-            margin-bottom: 6px;
-        }
-
+        .story-card.active { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+        .story-tag { font-size: 0.7rem; padding: 2px 6px; background: rgba(0, 242, 254, 0.2); color: #00f2fe; border-radius: 4px; display: inline-block; margin-bottom: 6px; }
         .story-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 4px; }
         .story-desc { font-size: 0.82rem; line-height: 1.4; color: #cbd5e1; }
     </style>
@@ -212,9 +74,7 @@
             <span class="status-dot"></span>
             <span id="statusText">太空中：軌道運轉中</span>
         </div>
-
         <div class="tour-list" id="tourList"></div>
-
         <button class="btn-tour btn-orbit" onclick="returnToOrbit()">
             <span>🚀 返回太空軌道俯瞰</span>
             <small>Orbit View</small>
@@ -242,10 +102,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.115.0/Cesium.js"></script>
     <script>
         window.addEventListener('load', () => {
-            // 使用 NASA Blue Marble 高解析度衛星圖像作為底圖
+            // 使用 Esri 高解析度真實衛星照片（開放 CORS 且支援 HTTPS，絕不阻擋）
             const viewer = new Cesium.Viewer('cesiumContainer', {
-                imageryProvider: new Cesium.SingleTileImageryProvider({
-                    url: 'https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Assets/Textures/NaturalEarthII/256/0/0/0.jpg'
+                imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
+                    url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
                 }),
                 animation: false,
                 baseLayerPicker: false,
@@ -287,7 +147,7 @@
                 }
             });
 
-            // 涵蓋全亞洲及全球各大洲主要地標的完整數據庫
+            // 全亞洲與全球景點選單
             const tourData = [
                 {
                     category: "🇹🇼 臺灣經典名勝",
@@ -327,38 +187,21 @@
                     items: [
                         { name: "新加坡 濱海灣金沙", sub: "Marina Bay Sands", tag: "SINGAPORE / URBAN", desc: "新加坡最具代表性的現代建築群。", lon: 103.8597, lat: 1.2834, range: 15000, pitch: -45 },
                         { name: "柬埔寨 吳哥窟", sub: "Angkor Wat", tag: "CAMBODIA / HERITAGE", desc: "高棉帝國宏偉的石造廟宇遺跡。", lon: 103.8670, lat: 13.4125, range: 25000, pitch: -50 },
-                        { name: "泰國 曼谷大皇宮", sub: "Grand Palace", tag: "THAILAND / BANGKOK", desc: "曼谷市中心輝煌的泰式皇宮建築。", lon: 100.4916, lat: 13.7500, range: 15000, pitch: -45 },
-                        { name: "印尼 峇里島阿貢火山", sub: "Mount Agung", tag: "INDONESIA / BALI", desc: "峇里島最高峰與聖山。", lon: 115.5080, lat: -8.3405, range: 35000, pitch: -50 }
+                        { name: "泰國 曼谷大皇宮", sub: "Grand Palace", tag: "THAILAND / BANGKOK", desc: "曼谷市中心輝煌的泰式皇宮建築。", lon: 100.4916, lat: 13.7500, range: 15000, pitch: -45 }
                     ]
                 },
                 {
-                    category: "🇮🇳 🇳🇵 南亞區域",
+                    category: "🇮🇳 🇳🇵 南亞與中東",
                     items: [
                         { name: "印度 泰姬瑪哈陵", sub: "Taj Mahal", tag: "INDIA / HERITAGE", desc: "世界七大奇蹟之一的大理石陵墓。", lon: 78.0421, lat: 27.1751, range: 15000, pitch: -45 },
-                        { name: "尼泊爾 聖母峰", sub: "Mount Everest", tag: "NEPAL / HIMALAYAS", desc: "地球第一高峰，海拔 8,848.86 公尺。", lon: 86.9250, lat: 27.9881, range: 45000, pitch: -50 }
+                        { name: "杜拜 哈里發塔", sub: "Burj Khalifa", tag: "UAE / DUBAI", desc: "全球第一高樓，高度達 828 公尺。", lon: 55.2744, lat: 25.1972, range: 15000, pitch: -45 }
                     ]
                 },
                 {
-                    category: "🇦🇪 🇸🇦 中東區域",
-                    items: [
-                        { name: "杜拜 哈里發塔", sub: "Burj Khalifa", tag: "UAE / DUBAI", desc: "全球第一高樓，高度達 828 公尺。", lon: 55.2744, lat: 25.1972, range: 15000, pitch: -45 },
-                        { name: "沙烏地 麥加禁寺", sub: "Masjid al-Haram", tag: "SAUDI / MECCA", desc: "伊斯蘭教最神聖的聖地。", lon: 39.8262, lat: 21.4225, range: 15000, pitch: -45 }
-                    ]
-                },
-                {
-                    category: "🌍 歐洲與非洲重點",
+                    category: "🌍 全球指標名勝",
                     items: [
                         { name: "法國 艾菲爾鐵塔", sub: "Eiffel Tower", tag: "FRANCE / PARIS", desc: "巴黎最具代表性的鋼鐵地標。", lon: 2.2945, lat: 48.8584, range: 15000, pitch: -45 },
-                        { name: "埃及 吉薩金字塔", sub: "Giza Pyramids", tag: "EGYPT / CAIRO", desc: "千年古文明吉薩金字塔群。", lon: 31.1342, lat: 29.9792, range: 20000, pitch: -45 },
-                        { name: "坦尚尼亞 乞力馬扎羅山", sub: "Kilimanjaro", tag: "TANZANIA / AFRICA", desc: "非洲最高峰，獨立火山結構。", lon: 37.3556, lat: -3.0674, range: 40000, pitch: -50 }
-                    ]
-                },
-                {
-                    category: "🌎 美洲與極地",
-                    items: [
-                        { name: "美國 大峽谷", sub: "Grand Canyon", tag: "USA / NATURE", desc: "科羅拉多河切割出的壯麗自然奇觀。", lon: -112.1129, lat: 36.1069, range: 50000, pitch: -50 },
-                        { name: "巴西 救世基督像", sub: "Christ the Redeemer", tag: "BRAZIL / RIO", desc: "里約熱內盧駝背山上的巨大雕像。", lon: -43.2105, lat: -22.9519, range: 15000, pitch: -45 },
-                        { name: "南極洲 南極點", sub: "South Pole", tag: "ANTARCTICA / POLE", desc: "地球最南端極點。", lon: 0.0000, lat: -90.0000, range: 100000, pitch: -60 }
+                        { name: "埃及 吉薩金字塔", sub: "Giza Pyramids", tag: "EGYPT / CAIRO", desc: "千年古文明吉薩金字塔群。", lon: 31.1342, lat: 29.9792, range: 20000, pitch: -45 }
                     ]
                 }
             ];
@@ -374,7 +217,6 @@
                 tourListContainer.appendChild(catHeader);
 
                 group.items.forEach(item => {
-                    // 地表發光標示點與標籤
                     viewer.entities.add({
                         name: item.name,
                         position: Cesium.Cartesian3.fromDegrees(item.lon, item.lat, 100),
@@ -390,7 +232,6 @@
                         }
                     });
 
-                    // 選單按鈕生成
                     const btn = document.createElement('button');
                     btn.className = 'btn-tour';
                     const currentIndex = locIndex;
