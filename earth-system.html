@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D 地球與全亞洲全球導覽系統</title>
+    <title>3D 地球與全亞洲全球導覽系統 (原始版)</title>
     <!-- CesiumJS CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.115.0/Widgets/widgets.min.css" rel="stylesheet">
     <style>
@@ -102,11 +102,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.115.0/Cesium.js"></script>
     <script>
         window.addEventListener('load', () => {
-            // 使用 Esri 高解析度真實衛星照片（開放 CORS 且支援 HTTPS，絕不阻擋）
+            // 最原始初始化：完全不加載任何外部圖資伺服器，使用預設初始化
             const viewer = new Cesium.Viewer('cesiumContainer', {
-                imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
-                    url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
-                }),
                 animation: false,
                 baseLayerPicker: false,
                 fullscreenButton: false,
