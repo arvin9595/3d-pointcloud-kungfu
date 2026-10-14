@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>STARSHIP EARTH SYSTEM V3.3 PHASE 7.1 // ANALYSIS DECK LAYOUT FIX</title>
+<title>STARSHIP EARTH SYSTEM V3.3 PHASE 7.2 // EARTH DIAGNOSTIC</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 <style>
 :root{
@@ -245,13 +245,22 @@ body.focus-open .bridge{filter:brightness(.42) saturate(.72)}
 
 @media(max-width:1050px){body{overflow:auto}.bridge{width:100%;height:auto;min-height:100vh;margin:0;grid-template-columns:1fr;grid-template-rows:38px minmax(430px,62vh) auto auto auto;clip-path:none}.topbar{grid-column:1}.topbar span:first-child,.topbar span:last-child{display:none}.center{grid-column:1;grid-row:2}.left-panel{grid-column:1;grid-row:3;max-height:420px}.right-panel{grid-column:1;grid-row:4;max-height:560px}.console{grid-column:1;grid-row:5;margin:0;clip-path:none;grid-template-columns:1fr;padding:38px 10px 18px}.mode-grid{grid-template-columns:repeat(3,1fr)}.analysis-viewport{width:100%;max-height:none}.earth-stage{grid-template-columns:1fr minmax(230px,1.4fr) 1fr;padding-left:3%;padding-right:3%}#earth-box{width:min(35vw,292px)}}
 @media(max-width:600px){.quake-intel{width:88%;bottom:42px}.quake-legend{gap:6px;font-size:.40rem}.telemetry{display:none}.earth-stage{grid-template-columns:1fr;padding:46px 18px 20px}#earth-box{width:min(62vw,270px)}.mode-grid{grid-template-columns:repeat(2,1fr)}.console:before{font-size:.44rem;letter-spacing:1.4px}.topbar{justify-content:center}.viewport-title{font-size:.46rem}.map-frame{height:160px}}
+
+/* P7.2 DIAGNOSTIC: non-destructive Earth renderer status overlay */
+.earth-diag-launch{position:fixed;right:16px;bottom:16px;z-index:12010;background:#071c2b;color:#35f2ff;border:1px solid #35f2ff;padding:9px 12px;cursor:pointer;font-size:12px;letter-spacing:.5px;box-shadow:0 0 12px #00b5ff40}
+.earth-diag-panel{position:fixed;right:16px;bottom:58px;z-index:12011;width:min(430px,calc(100vw - 32px));max-height:70vh;overflow:auto;padding:14px;background:#030b14f5;color:#c5f7ff;border:1px solid #35f2ff80;box-shadow:0 0 28px #00b5ff30;font:12px/1.65 ui-monospace,Menlo,Consolas,monospace;display:none;white-space:normal}
+.earth-diag-panel.show{display:block}
+.earth-diag-panel h3{color:#35f2ff;margin:0 0 8px;font-size:13px}
+.earth-diag-panel pre{white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 0;color:#c5f7ff}
+.earth-diag-panel button{background:#092030;color:#ffe56b;border:1px solid #35f2ff66;padding:7px 9px;margin:3px 5px 3px 0;cursor:pointer;font-size:11px}
+.earth-diag-panel .diag-note{color:#88a8b6;font-size:11px}
 </style>
 </head>
 <body>
 <div class="space-bg"></div>
 <main class="bridge">
   <header class="topbar">
-    <span>[SYS.SECURE // STARSHIP ORBITAL HUD // V3.3-P7.1]</span>
+    <span>[SYS.SECURE // STARSHIP ORBITAL HUD // V3.3-P7.2-DIAG]</span>
     <span class="live">PLANETARY INTELLIGENCE NETWORK: ONLINE</span>
     <span id="utcClock">UTC --:--:--</span>
   </header>
@@ -523,6 +532,18 @@ body.focus-open .bridge{filter:brightness(.42) saturate(.72)}
     </aside>
     <footer class="focus-footer"><span>BRIDGE VIEW</span> 總覽與監控　→　<span>FOCUS VIEW</span> 詳細分析與操作</footer>
   </section>
+</div>
+
+<!-- P7.2 diagnostic UI; independent of Bridge / Focus renderer ownership -->
+<button type="button" class="earth-diag-launch" id="earthDiagLaunch" aria-expanded="false" aria-controls="earthDiagPanel">◉ 3D DIAG</button>
+<div class="earth-diag-panel" id="earthDiagPanel" role="status" aria-live="polite">
+  <h3>EARTH RENDERER // P7.2 DIAGNOSTIC</h3>
+  <div class="diag-note">讀取目前 Three.js / WebGL 狀態，不更動既有情報資料。</div>
+  <pre id="earthDiagOutput">WAITING FOR STATUS...</pre>
+  <button type="button" id="earthDiagRefresh">REFRESH STATUS</button>
+  <button type="button" id="earthDiagReset">RESET CAMERA / SIZE</button>
+  <button type="button" id="earthDiagCopy">COPY REPORT</button>
+  <div class="diag-note" id="earthDiagFeedback">先按 REFRESH STATUS，截圖整個診斷面板。</div>
 </div>
 <div class="footer-credit">Data: NASA EONET · USGS · NOAA SWPC · Open-Meteo · Wikimedia · <a href="https://www.rainviewer.com/" target="_blank" rel="noopener">RainViewer</a></div>
 
@@ -1714,6 +1735,80 @@ async function renderMode(mode){currentMode=mode;syncFocusPanel();$('focusOpen')
 }
 $('modeGrid').addEventListener('click',e=>{const b=e.target.closest('.mode-btn');if(b)renderMode(b.dataset.mode)});
 selectTarget(1);
+
+// ---------- P7.2 // EARTH RENDERER DIAGNOSTIC (non-destructive) ----------
+(() => {
+  const diagLaunch=document.getElementById('earthDiagLaunch');
+  const diagPanel=document.getElementById('earthDiagPanel');
+  const diagOutput=document.getElementById('earthDiagOutput');
+  const diagFeedback=document.getElementById('earthDiagFeedback');
+  let contextEvent='none observed';
+  const canvas=renderer.domElement;
+  canvas.addEventListener('webglcontextlost',()=>{contextEvent='WEBGL CONTEXT LOST';if(diagPanel.classList.contains('show'))refreshDiag();});
+  canvas.addEventListener('webglcontextrestored',()=>{contextEvent='WEBGL CONTEXT RESTORED';if(diagPanel.classList.contains('show'))refreshDiag();});
+  function refreshDiag(){
+    const rect=canvas.getBoundingClientRect();
+    const box=container.getBoundingClientRect();
+    let lost='unknown',glVersion='unknown';
+    try{const gl=renderer.getContext();lost=gl.isContextLost();glVersion=gl.getParameter(gl.VERSION);}catch(err){glVersion='ERROR: '+String(err)}
+    const tex=earth.material?.map;
+    const img=tex?.image;
+    const report={
+      version:'V3.3-P7.2-DIAG',
+      mode:currentMode,
+      focusOpen,
+      webglContextLost:lost,
+      contextEvent,
+      webglVersion:glVersion,
+      canvasConnected:canvas.isConnected,
+      canvasParentId:canvas.parentElement?.id||'(no id)',
+      earthBoxParent:container.parentElement?.className||'(none)',
+      canvasPixels:[canvas.width,canvas.height],
+      canvasCSS:[Math.round(rect.width),Math.round(rect.height)],
+      earthBoxCSS:[Math.round(box.width),Math.round(box.height)],
+      canvasVisibility:getComputedStyle(canvas).visibility,
+      canvasDisplay:getComputedStyle(canvas).display,
+      canvasOpacity:getComputedStyle(canvas).opacity,
+      cameraXYZ:camera.position.toArray().map(n=>+n.toFixed(2)),
+      cameraDistance:+camera.position.distanceTo(controls.target).toFixed(2),
+      cameraNearFar:[camera.near,camera.far],
+      sceneChildren:scene.children.length,
+      earthVisible:earth.visible,
+      earthInScene:scene.children.includes(earth),
+      renderDrawCalls:renderer.info.render.calls,
+      texturePresent:!!tex,
+      textureLoaded:!!img&&(img.complete===undefined?true:img.complete),
+      textureNaturalSize:img?[img.naturalWidth??img.width??null,img.naturalHeight??img.height??null]:null,
+      timestamp:new Date().toISOString()
+    };
+    diagOutput.textContent=JSON.stringify(report,null,2);
+    return report;
+  }
+  diagLaunch.addEventListener('click',()=>{
+    const open=!diagPanel.classList.contains('show');
+    diagPanel.classList.toggle('show',open);
+    diagLaunch.setAttribute('aria-expanded',String(open));
+    if(open)refreshDiag();
+  });
+  document.getElementById('earthDiagRefresh').addEventListener('click',()=>{refreshDiag();diagFeedback.textContent='狀態已更新，請截圖。';});
+  document.getElementById('earthDiagReset').addEventListener('click',()=>{
+    camera.position.set(0,0,22);
+    controls.target.set(0,0,0);
+    controls.update();
+    resize3D();
+    renderer.render(scene,camera);
+    refreshDiag();
+    diagFeedback.textContent='已重設相機位置與 Canvas 尺寸；請觀察地球是否恢復。';
+  });
+  document.getElementById('earthDiagCopy').addEventListener('click',async()=>{
+    const report=diagOutput.textContent;
+    try{await navigator.clipboard.writeText(report);diagFeedback.textContent='已複製診斷報告。';}
+    catch(err){diagFeedback.textContent='瀏覽器未允許複製，請直接截圖診斷面板。';}
+  });
+  window.addEventListener('error',e=>{
+    if(diagPanel.classList.contains('show'))diagFeedback.textContent='PAGE ERROR: '+String(e.message);
+  });
+})();
 </script>
 </body>
 </html>
