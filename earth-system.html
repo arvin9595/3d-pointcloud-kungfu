@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>STARSHIP EARTH SYSTEM V3.3 PHASE 7.2 // EARTH DIAGNOSTIC</title>
+<title>STARSHIP EARTH SYSTEM V3.3 PHASE 7.3 // EARTH VIEWPORT RECOVERY</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 <style>
 :root{
@@ -37,7 +37,7 @@ button{font:inherit}
 .viewport-title{position:absolute;top:14px;left:18px;z-index:8;font-size:.55rem;letter-spacing:2px;color:rgba(53,242,255,.70)}.mode-chip{position:absolute;top:12px;right:16px;z-index:8;padding:4px 8px;border:1px solid rgba(53,242,255,.25);color:var(--green);font-size:.50rem;background:rgba(0,0,0,.55)}
 .earth-stage{position:absolute;inset:0;z-index:3;display:grid;grid-template-columns:minmax(150px,.72fr) minmax(250px,1.35fr) minmax(150px,.72fr);align-items:center;gap:12px;padding:52px 5% 30px}.holo-beam{position:absolute;left:27%;right:27%;top:7%;bottom:4%;background:linear-gradient(90deg,transparent,rgba(53,242,255,.025),rgba(53,242,255,.085),rgba(53,242,255,.025),transparent);clip-path:polygon(43% 0,57% 0,100% 100%,0 100%);filter:blur(3px);opacity:.7;pointer-events:none}
 .telemetry{position:relative;z-index:5;display:grid;gap:9px;align-content:center}.telemetry.right{text-align:right}.telemetry-card{padding:8px 9px;border-left:1px solid rgba(53,242,255,.28);background:linear-gradient(90deg,rgba(53,242,255,.045),transparent);font-size:.50rem;color:#71909b;letter-spacing:.7px}.telemetry.right .telemetry-card{border-left:0;border-right:1px solid rgba(53,242,255,.28);background:linear-gradient(270deg,rgba(53,242,255,.045),transparent)}.telemetry-card b{display:block;margin-top:3px;color:var(--cyan);font-size:.67rem;font-weight:500}.telemetry-card b.warn{color:var(--amber)}
-.globe-zone{position:relative;z-index:5;display:flex;align-items:center;justify-content:center;min-width:0;height:100%}#earth-box{position:relative;width:min(28vw,306px,47vh);aspect-ratio:1;border-radius:50%;filter:drop-shadow(0 0 18px rgba(53,242,255,.25));transition:.5s}#earth-box:before{content:"";position:absolute;inset:-9%;border:1px dashed rgba(53,242,255,.28);border-radius:50%;animation:spin 20s linear infinite;pointer-events:none}#earth-box:after{content:"";position:absolute;left:-13%;right:-13%;top:18%;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);box-shadow:0 0 12px var(--cyan);opacity:.42;animation:scan 4.6s ease-in-out infinite;pointer-events:none}@keyframes spin{to{transform:rotate(360deg)}}@keyframes scan{0%,100%{top:18%;opacity:.12}50%{top:82%;opacity:.6}}
+.globe-zone{position:relative;z-index:5;display:flex;align-items:center;justify-content:center;min-width:0;height:100%}#earth-box{position:relative;width:min(28vw,306px,47vh);height:min(28vw,306px,47vh);min-height:0;flex:0 0 auto;aspect-ratio:1;border-radius:50%;filter:drop-shadow(0 0 18px rgba(53,242,255,.25));transition:.5s}#earth-box:before{content:"";position:absolute;inset:-9%;border:1px dashed rgba(53,242,255,.28);border-radius:50%;animation:spin 20s linear infinite;pointer-events:none}#earth-box:after{content:"";position:absolute;left:-13%;right:-13%;top:18%;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);box-shadow:0 0 12px var(--cyan);opacity:.42;animation:scan 4.6s ease-in-out infinite;pointer-events:none}@keyframes spin{to{transform:rotate(360deg)}}@keyframes scan{0%,100%{top:18%;opacity:.12}50%{top:82%;opacity:.6}}
 /* V3.3 Phase 1 — USGS live seismic overlay */
 .quake-legend{position:absolute;left:50%;bottom:15px;z-index:9;transform:translateX(-50%);display:none;align-items:center;gap:10px;padding:5px 9px;border:1px solid rgba(53,242,255,.20);background:rgba(0,5,10,.78);backdrop-filter:blur(8px);font-size:.44rem;color:#83a7b3;letter-spacing:.4px;pointer-events:none}.center.quake-mode .quake-legend{display:flex}.quake-legend b{color:var(--cyan);font-weight:500}.qdot{width:7px;height:7px;border-radius:50%;display:inline-block;box-shadow:0 0 7px currentColor}.q25{color:var(--cyan);background:var(--cyan)}.q4{color:var(--amber);background:var(--amber)}.q5{color:var(--pink);background:var(--pink)}.q6{color:var(--red);background:var(--red)}
 .quake-intel{position:absolute;left:50%;bottom:45px;z-index:10;width:min(360px,52%);transform:translate(-50%,10px);padding:9px 11px;border:1px solid rgba(255,61,103,.38);background:linear-gradient(135deg,rgba(3,13,22,.94),rgba(20,4,15,.92));box-shadow:0 0 28px rgba(255,61,103,.12);opacity:0;visibility:hidden;transition:.22s;pointer-events:auto}.quake-intel.show{opacity:1;visibility:visible;transform:translate(-50%,0)}.quake-intel-head{display:flex;justify-content:space-between;gap:10px;align-items:center;color:var(--red);font-size:.50rem;letter-spacing:1px}.quake-intel-mag{font-size:.95rem;color:#fff;font-weight:700}.quake-intel-place{margin-top:4px;color:var(--cyan);font-size:.62rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.quake-intel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:7px}.quake-intel-cell{padding:5px;border:1px solid rgba(53,242,255,.10);font-size:.43rem;color:#668895}.quake-intel-cell b{display:block;margin-top:2px;color:var(--amber);font-size:.55rem;font-weight:500}.quake-intel a{display:inline-block;margin-top:6px;color:#83dfff;text-decoration:none;font-size:.44rem}.quake-close{border:0;background:transparent;color:#7898a2;cursor:pointer;font-size:.7rem}.quake-close:hover{color:#fff}.quake-list-item{cursor:pointer;transition:.15s}.quake-list-item:hover{color:#fff;background:rgba(53,242,255,.035);padding-left:4px}.quake-list-item.active{color:#fff;border-left:2px solid var(--red);padding-left:5px;background:rgba(255,59,103,.05)}
@@ -227,13 +227,13 @@ button{font:inherit}
 .focus-main{grid-column:1;grid-row:2;position:relative;min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;background:radial-gradient(circle at center,rgba(0,170,230,.10),transparent 58%)}
 .focus-main:before{content:"";position:absolute;left:15%;right:15%;top:8%;bottom:7%;background:linear-gradient(90deg,transparent,rgba(53,242,255,.025),rgba(53,242,255,.08),rgba(53,242,255,.025),transparent);clip-path:polygon(43% 0,57% 0,100% 100%,0 100%);filter:blur(3px);pointer-events:none}
 .focus-earth-host{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center}
-.focus-overlay #earth-box{width:min(62vh,48vw,590px);max-width:none;filter:drop-shadow(0 0 34px rgba(53,242,255,.34))}
+.focus-overlay #earth-box{width:min(62vh,48vw,590px);height:min(62vh,48vw,590px);max-width:none;filter:drop-shadow(0 0 34px rgba(53,242,255,.34))}
 .focus-overlay #earth-box:before{inset:-11%;border-color:rgba(53,242,255,.38)}
 .focus-side{grid-column:2;grid-row:2;padding:14px;overflow:auto;border-left:1px solid rgba(53,242,255,.20);background:linear-gradient(180deg,rgba(5,20,31,.78),rgba(1,8,14,.88))}
 .focus-side-title{margin-bottom:10px;color:var(--amber);font-size:.56rem;letter-spacing:1.3px}.focus-target{padding:10px;border:1px solid rgba(53,242,255,.16);background:rgba(53,242,255,.025);font-size:.52rem;color:var(--muted);line-height:1.65}.focus-target b{display:block;color:var(--cyan);font-size:.76rem;font-weight:500}.focus-event{margin-top:10px;padding:12px;border:1px solid rgba(255,61,103,.28);background:linear-gradient(135deg,rgba(16,4,13,.68),rgba(2,11,19,.82));font-size:.53rem;color:#8faab3;line-height:1.65}.focus-event .label{color:var(--pink);font-size:.50rem;letter-spacing:1px}.focus-event h3{margin:5px 0 10px;color:#fff;font-size:.76rem;font-weight:500}.focus-event-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}.focus-event-grid div{padding:7px;border:1px solid rgba(53,242,255,.12);background:rgba(0,0,0,.18)}.focus-event-grid b{display:block;margin-top:2px;color:var(--amber);font-size:.68rem}.focus-event a{display:inline-block;margin-top:10px;color:var(--cyan);text-decoration:none;border-bottom:1px solid rgba(53,242,255,.28)}
 .focus-hint{margin-top:12px;padding-top:10px;border-top:1px solid rgba(53,242,255,.12);font-size:.49rem;color:#607d87;line-height:1.7}.focus-footer{grid-column:1/3;grid-row:3;display:flex;align-items:center;justify-content:center;gap:18px;border-top:1px solid rgba(53,242,255,.14);font-size:.46rem;color:#607d87;letter-spacing:.7px}.focus-footer span{color:var(--cyan)}
 body.focus-open .bridge{filter:brightness(.42) saturate(.72)}
-@media(max-width:850px){.focus-shell{height:94vh;grid-template-columns:1fr;grid-template-rows:42px minmax(0,1fr) minmax(180px,30vh) 32px}.focus-head,.focus-footer{grid-column:1}.focus-main{grid-column:1;grid-row:2}.focus-side{grid-column:1;grid-row:3;border-left:0;border-top:1px solid rgba(53,242,255,.20)}.focus-footer{grid-row:4}.focus-overlay #earth-box{width:min(48vh,72vw,470px)}.focus-trigger{right:98px}}
+@media(max-width:850px){.focus-shell{height:94vh;grid-template-columns:1fr;grid-template-rows:42px minmax(0,1fr) minmax(180px,30vh) 32px}.focus-head,.focus-footer{grid-column:1}.focus-main{grid-column:1;grid-row:2}.focus-side{grid-column:1;grid-row:3;border-left:0;border-top:1px solid rgba(53,242,255,.20)}.focus-footer{grid-row:4}.focus-overlay #earth-box{width:min(48vh,72vw,470px);height:min(48vh,72vw,470px)}.focus-trigger{right:98px}}
 
 
 @media (min-width:1051px) and (max-height:820px){
@@ -243,8 +243,8 @@ body.focus-open .bridge{filter:brightness(.42) saturate(.72)}
   .mode-btn small{margin-top:2px}
 }
 
-@media(max-width:1050px){body{overflow:auto}.bridge{width:100%;height:auto;min-height:100vh;margin:0;grid-template-columns:1fr;grid-template-rows:38px minmax(430px,62vh) auto auto auto;clip-path:none}.topbar{grid-column:1}.topbar span:first-child,.topbar span:last-child{display:none}.center{grid-column:1;grid-row:2}.left-panel{grid-column:1;grid-row:3;max-height:420px}.right-panel{grid-column:1;grid-row:4;max-height:560px}.console{grid-column:1;grid-row:5;margin:0;clip-path:none;grid-template-columns:1fr;padding:38px 10px 18px}.mode-grid{grid-template-columns:repeat(3,1fr)}.analysis-viewport{width:100%;max-height:none}.earth-stage{grid-template-columns:1fr minmax(230px,1.4fr) 1fr;padding-left:3%;padding-right:3%}#earth-box{width:min(35vw,292px)}}
-@media(max-width:600px){.quake-intel{width:88%;bottom:42px}.quake-legend{gap:6px;font-size:.40rem}.telemetry{display:none}.earth-stage{grid-template-columns:1fr;padding:46px 18px 20px}#earth-box{width:min(62vw,270px)}.mode-grid{grid-template-columns:repeat(2,1fr)}.console:before{font-size:.44rem;letter-spacing:1.4px}.topbar{justify-content:center}.viewport-title{font-size:.46rem}.map-frame{height:160px}}
+@media(max-width:1050px){body{overflow:auto}.bridge{width:100%;height:auto;min-height:100vh;margin:0;grid-template-columns:1fr;grid-template-rows:38px minmax(430px,62vh) auto auto auto;clip-path:none}.topbar{grid-column:1}.topbar span:first-child,.topbar span:last-child{display:none}.center{grid-column:1;grid-row:2}.left-panel{grid-column:1;grid-row:3;max-height:420px}.right-panel{grid-column:1;grid-row:4;max-height:560px}.console{grid-column:1;grid-row:5;margin:0;clip-path:none;grid-template-columns:1fr;padding:38px 10px 18px}.mode-grid{grid-template-columns:repeat(3,1fr)}.analysis-viewport{width:100%;max-height:none}.earth-stage{grid-template-columns:1fr minmax(230px,1.4fr) 1fr;padding-left:3%;padding-right:3%}#earth-box{width:min(35vw,292px);height:min(35vw,292px)}}
+@media(max-width:600px){.quake-intel{width:88%;bottom:42px}.quake-legend{gap:6px;font-size:.40rem}.telemetry{display:none}.earth-stage{grid-template-columns:1fr;padding:46px 18px 20px}#earth-box{width:min(62vw,270px);height:min(62vw,270px)}.mode-grid{grid-template-columns:repeat(2,1fr)}.console:before{font-size:.44rem;letter-spacing:1.4px}.topbar{justify-content:center}.viewport-title{font-size:.46rem}.map-frame{height:160px}}
 
 /* P7.2 DIAGNOSTIC: non-destructive Earth renderer status overlay */
 .earth-diag-launch{position:fixed;right:16px;bottom:16px;z-index:12010;background:#071c2b;color:#35f2ff;border:1px solid #35f2ff;padding:9px 12px;cursor:pointer;font-size:12px;letter-spacing:.5px;box-shadow:0 0 12px #00b5ff40}
@@ -260,7 +260,7 @@ body.focus-open .bridge{filter:brightness(.42) saturate(.72)}
 <div class="space-bg"></div>
 <main class="bridge">
   <header class="topbar">
-    <span>[SYS.SECURE // STARSHIP ORBITAL HUD // V3.3-P7.2-DIAG]</span>
+    <span>[SYS.SECURE // STARSHIP ORBITAL HUD // V3.3-P7.3-RECOVERY]</span>
     <span class="live">PLANETARY INTELLIGENCE NETWORK: ONLINE</span>
     <span id="utcClock">UTC --:--:--</span>
   </header>
@@ -1076,8 +1076,53 @@ function hideSpaceIntel(){
 }
 
 let pulseTween=null;
-function resize3D(){const w=container.clientWidth,h=container.clientHeight;if(!w||!h)return;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false)}
-new ResizeObserver(resize3D).observe(container);resize3D();
+// P7.3 BUG-P7-3D-001: prevent the CSS flex/aspect-ratio feedback loop
+// (observed height 16,777,215 CSS px and canvas 33,554,432 device px).
+// The Earth is a square viewport: both dimensions are explicit, finite, bounded.
+function resize3D(){
+  const inFocus=container.parentElement?.id==='focusEarthHost';
+  const host=inFocus?$('focusEarthHost'):container.parentElement;
+  const hostRect=host?.getBoundingClientRect();
+  const outer=inFocus?document.querySelector('.focus-main'):$('centerViewport');
+  const outerRect=outer?.getBoundingClientRect();
+  const maxW=Number.isFinite(hostRect?.width)?hostRect.width:window.innerWidth;
+  const maxH=Number.isFinite(outerRect?.height)?outerRect.height:window.innerHeight;
+  const vw=window.innerWidth,vh=window.innerHeight;
+  let target;
+  if(inFocus){
+    target=Math.min(590,.62*vh,.48*vw,maxW*.88,maxH*.88);
+    if(vw<=850)target=Math.min(target,470,.48*vh,.72*vw);
+  }else if(vw<=600){
+    target=Math.min(270,.62*vw,maxW*.90,maxH*.84);
+  }else if(vw<=1050){
+    target=Math.min(292,.35*vw,maxW*.90,maxH*.84);
+  }else{
+    target=Math.min(306,.28*vw,.47*vh,maxW*.90,maxH*.84);
+  }
+  const side=Math.round(Math.max(64,Math.min(640,Number.isFinite(target)?target:240)));
+  if(!Number.isFinite(side)||side<1)return;
+  container.style.width=side+'px';
+  container.style.height=side+'px';
+  container.style.minHeight='0';
+  container.style.flex='0 0 auto';
+  camera.aspect=1;
+  camera.updateProjectionMatrix();
+  // The browser's previous 16M-pixel layout may have pushed OrbitControls
+  // to the maximum distance. Normalize only when out of the intended range.
+  if(!Number.isFinite(camera.position.distanceTo(controls.target)) || camera.position.distanceTo(controls.target)>27){
+    camera.position.set(0,0,22);controls.target.set(0,0,0);controls.update();
+  }
+  renderer.setSize(side,side,false);
+  renderer.domElement.style.width='100%';
+  renderer.domElement.style.height='100%';
+  renderer.render(scene,camera);
+}
+// Observe stable outer containers, not the resized child itself, to avoid loops.
+const earthResizeObserver=new ResizeObserver(()=>requestAnimationFrame(resize3D));
+earthResizeObserver.observe($('centerViewport'));
+earthResizeObserver.observe(document.querySelector('.focus-main'));
+window.addEventListener('resize',resize3D);
+resize3D();
 
 // ---------- FOCUS VIEW SYSTEM ----------
 const globeHome=container.parentElement;
@@ -1736,7 +1781,7 @@ async function renderMode(mode){currentMode=mode;syncFocusPanel();$('focusOpen')
 $('modeGrid').addEventListener('click',e=>{const b=e.target.closest('.mode-btn');if(b)renderMode(b.dataset.mode)});
 selectTarget(1);
 
-// ---------- P7.2 // EARTH RENDERER DIAGNOSTIC (non-destructive) ----------
+// ---------- P7.3 // EARTH VIEWPORT RECOVERY + DIAGNOSTIC ----------
 (() => {
   const diagLaunch=document.getElementById('earthDiagLaunch');
   const diagPanel=document.getElementById('earthDiagPanel');
@@ -1754,7 +1799,7 @@ selectTarget(1);
     const tex=earth.material?.map;
     const img=tex?.image;
     const report={
-      version:'V3.3-P7.2-DIAG',
+      version:'V3.3-P7.3-RECOVERY',
       mode:currentMode,
       focusOpen,
       webglContextLost:lost,
