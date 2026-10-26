@@ -3,70 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>科幻全像投影面板</title>
+    <title>科幻全像投影系統 // HUD</title>
     <style>
-        body {
+        body, html {
             margin: 0;
             padding: 0;
-            background-color: #030a16; /* 深科技感背景 */
-            background-image: 
-                radial-gradient(circle at 50% 50%, #0a1c3a 0%, #030a16 100%),
-                linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px);
-            background-size: 100% 100%, 20px 20px, 20px 20px; /* 內建科幻網格背景 */
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            width: 100%;
+            height: 100%;
+            background-color: #020712;
             overflow: hidden;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+        }
+
+        /* 3D 渲染畫布底層 */
+        #webgl-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1; /* 放到底層 */
+        }
+
+        /* 科幻網格背景與微塵環境 */
+        .scifi-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+            background-image: 
+                linear-gradient(rgba(0, 243, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 243, 255, 0.02) 1px, transparent 1px);
+            background-size: 30px 30px;
         }
 
         /* 呼吸漂浮動效 */
         @keyframes floatAnimation {
-            0% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-15px) rotate(0.5deg); }
-            100% { transform: translateY(0px) rotate(0deg); }
+            0% { transform: translate(-50%, -50%) translateY(0px) rotate(0deg); }
+            50% { transform: translate(-50%, -50%) translateY(-15px) rotate(0.3deg); }
+            100% { transform: translate(-50%, -50%) translateY(0px) rotate(0deg); }
         }
 
-        /* 霓虹閃爍動效 */
+        /* 霓虹微閃爍動效 */
         @keyframes glitchBlink {
             0%, 100% { opacity: 1; }
             95% { opacity: 1; }
-            96% { opacity: 0.8; }
+            96% { opacity: 0.9; }
             97% { opacity: 1; }
-            98% { opacity: 0.5; }
+            98% { opacity: 0.7; }
             99% { opacity: 1; }
         }
 
-        /* 科幻毛玻璃面板 */
+        /* 網頁科幻透明面板 */
         .scifi-panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             width: 380px;
             padding: 25px;
-            background: rgba(6, 26, 44, 0.4); /* 半透明暗藍 */
+            background: rgba(6, 26, 44, 0.35); /* 半透明暗藍 */
             border: 1px solid #00f3ff; /* 亮藍科幻邊框 */
             border-radius: 4px;
             color: #d1f4ff;
-            backdrop-filter: blur(12px); /* 關鍵：毛玻璃透明感 */
+            backdrop-filter: blur(10px); /* 關鍵：毛玻璃透明感 */
+            -webkit-backdrop-filter: blur(10px);
             box-shadow: 
-                0 0 20px rgba(0, 243, 255, 0.15), 
-                inset 0 0 15px rgba(0, 243, 255, 0.1);
-            position: relative;
-            animation: floatAnimation 6s ease-in-out infinite, glitchBlink 8s infinite;
+                0 0 25px rgba(0, 243, 255, 0.15), 
+                inset 0 0 20px rgba(0, 243, 255, 0.1);
+            z-index: 10; /* 確保浮在 3D 主體前方並可進行滑鼠點擊 */
+            animation: floatAnimation 6s ease-in-out infinite, glitchBlink 10s infinite;
         }
 
-        /* 面板裝飾角 (Cyberpunk 常見的切角設計) */
+        /* 賽博朋克切角裝飾點綴 */
         .scifi-panel::before {
             content: '';
             position: absolute;
             top: -1px; left: -1px;
             width: 15px; height: 15px;
-            border-top: 3px solid #ff0055; /* 霓虹紅點綴 */
+            border-top: 3px solid #ff0055;
             border-left: 3px solid #ff0055;
         }
 
         .panel-header {
-            border-bottom: 1px solid rgba(0, 243, 255, 0.3);
+            border-bottom: 1px solid rgba(0, 243, 255, 0.25);
             padding-bottom: 10px;
             margin-bottom: 15px;
         }
@@ -76,7 +99,7 @@
             font-size: 18px;
             letter-spacing: 2px;
             color: #00f3ff;
-            text-shadow: 0 0 8px rgba(0, 243, 255, 0.6); /* 文字發光 */
+            text-shadow: 0 0 8px rgba(0, 243, 255, 0.6);
         }
 
         .data-row {
@@ -89,9 +112,9 @@
         .data-label { color: rgba(209, 244, 255, 0.6); }
         .data-value { color: #00f3ff; font-weight: bold; }
 
-        /* 科幻進度條 */
+        /* 科幻發光進度條 */
         .progress-bar-container {
-            background: rgba(0, 243, 255, 0.1);
+            background: rgba(0, 243, 255, 0.08);
             height: 6px;
             border-radius: 3px;
             overflow: hidden;
@@ -101,14 +124,20 @@
         .progress-fill {
             background: linear-gradient(90deg, #00f3ff, #ff0055);
             height: 100%;
-            width: 78%; /* 進度數值 */
+            width: 78%; 
             box-shadow: 0 0 8px #00f3ff;
         }
     </style>
 </head>
 <body>
 
-    <!-- 科幻透明面板主體 -->
+    <!-- 1. 3D WebGL 渲染層 -->
+    <div id="webgl-container"></div>
+
+    <!-- 2. 環境網格背景層 -->
+    <div class="scifi-overlay"></div>
+
+    <!-- 3. 前景資料互動面板 -->
     <div class="scifi-panel">
         <div class="panel-header">
             <h2 class="panel-title">SYSTEM // VITAL_SIGNS</h2>
@@ -125,11 +154,100 @@
             <span class="data-label">全像投影穩定率</span>
             <span class="data-value">78 %</span>
         </div>
-        <!-- 進度條展示 -->
         <div class="progress-bar-container">
             <div class="progress-fill"></div>
         </div>
     </div>
 
+    <!-- 導入 CDN Three.js 引擎核心 -->
+    <script src="https://cloudflare.com"></script>
+    <script>
+        // 初始化 3D 場景
+        const container = document.getElementById('webgl-container');
+        const scene = new THREE.Scene();
+        
+        // 設置相機
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 15;
+
+        // 設置 WebGL 渲染器
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        // 建立 3D 立體科幻粒子球體（模擬核心大腦/全像核心）
+        const geometry = new THREE.SphereGeometry(4.5, 32, 32);
+        
+        // 提取頂點並製作點雲網格線條
+        const count = geometry.attributes.position.count;
+        const colors = [];
+        const colorCyan = new THREE.Color('#00f3ff');
+        const colorPink = new THREE.Color('#ff0055');
+
+        for (let i = 0; i < count; i++) {
+            // 隨機在粒子間混合藍色與粉色，製造色彩漸層感
+            const mixedColor = colorCyan.clone().lerp(colorPink, Math.random() * 0.4);
+            colors.push(mixedColor.r, mixedColor.g, mixedColor.b);
+        }
+        geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+        // 設定科技點材質
+        const pointsMaterial = new THREE.PointsMaterial({
+            size: 0.08,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending // 讓粒子重疊時發出強光
+        });
+
+        // 建立點雲主體
+        const brainCluster = new THREE.Points(geometry, pointsMaterial);
+        scene.add(brainCluster);
+
+        // 建立漂浮微塵環境粒子
+        const starsGeometry = new THREE.BufferGeometry();
+        const starsCount = 200;
+        const starPositions = new Float32Array(starsCount * 3);
+
+        for(let i = 0; i < starsCount * 3; i++) {
+            starPositions[i] = (Math.random() - 0.5) * 40;
+        }
+        starsGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+        
+        const starsMaterial = new THREE.PointsMaterial({
+            size: 0.04,
+            color: 0x00f3ff,
+            transparent: true,
+            opacity: 0.3
+        });
+        const starField = new THREE.Points(starsGeometry, starsMaterial);
+        scene.add(starField);
+
+        // 網頁動態渲染循環
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
+
+            // 讓核心 3D 全像體緩慢旋轉
+            brainCluster.rotation.y = elapsedTime * 0.15;
+            brainCluster.rotation.x = elapsedTime * 0.05;
+
+            // 微塵緩慢漂浮
+            starField.rotation.y = elapsedTime * 0.02;
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // 響應式視窗縮放
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
 </body>
 </html>
