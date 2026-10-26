@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>科幻全像投影系統 // HUD</title>
+    <title>科幻全像投影系統</title>
     <style>
         body, html {
             margin: 0;
@@ -15,17 +15,16 @@
             font-family: 'Segoe UI', Roboto, sans-serif;
         }
 
-        /* 3D 渲染畫布底層 */
-        #webgl-container {
+        /* 原生 2D 畫布，100% 本地相容 */
+        #local-canvas {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 1; /* 放到底層 */
+            z-index: 1;
         }
 
-        /* 科幻網格背景與微塵環境 */
         .scifi-overlay {
             position: absolute;
             top: 0;
@@ -40,45 +39,30 @@
             background-size: 30px 30px;
         }
 
-        /* 呼吸漂浮動效 */
         @keyframes floatAnimation {
-            0% { transform: translate(-50%, -50%) translateY(0px) rotate(0deg); }
-            50% { transform: translate(-50%, -50%) translateY(-15px) rotate(0.3deg); }
-            100% { transform: translate(-50%, -50%) translateY(0px) rotate(0deg); }
+            0% { transform: translate(-50%, -50%) translateY(0px); }
+            50% { transform: translate(-50%, -50%) translateY(-12px); }
+            100% { transform: translate(-50%, -50%) translateY(0px); }
         }
 
-        /* 霓虹微閃爍動效 */
-        @keyframes glitchBlink {
-            0%, 100% { opacity: 1; }
-            95% { opacity: 1; }
-            96% { opacity: 0.9; }
-            97% { opacity: 1; }
-            98% { opacity: 0.7; }
-            99% { opacity: 1; }
-        }
-
-        /* 網頁科幻透明面板 */
         .scifi-panel {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 380px;
+            width: 360px;
             padding: 25px;
-            background: rgba(6, 26, 44, 0.35); /* 半透明暗藍 */
-            border: 1px solid #00f3ff; /* 亮藍科幻邊框 */
+            background: rgba(6, 26, 44, 0.5); /* 加深底色確保本地無毛玻璃時也清晰 */
+            border: 1px solid #00f3ff;
             border-radius: 4px;
             color: #d1f4ff;
-            backdrop-filter: blur(10px); /* 關鍵：毛玻璃透明感 */
+            backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            box-shadow: 
-                0 0 25px rgba(0, 243, 255, 0.15), 
-                inset 0 0 20px rgba(0, 243, 255, 0.1);
-            z-index: 10; /* 確保浮在 3D 主體前方並可進行滑鼠點擊 */
-            animation: floatAnimation 6s ease-in-out infinite, glitchBlink 10s infinite;
+            box-shadow: 0 0 25px rgba(0, 243, 255, 0.2);
+            z-index: 10;
+            animation: floatAnimation 5s ease-in-out infinite;
         }
 
-        /* 賽博朋克切角裝飾點綴 */
         .scifi-panel::before {
             content: '';
             position: absolute;
@@ -112,9 +96,8 @@
         .data-label { color: rgba(209, 244, 255, 0.6); }
         .data-value { color: #00f3ff; font-weight: bold; }
 
-        /* 科幻發光進度條 */
         .progress-bar-container {
-            background: rgba(0, 243, 255, 0.08);
+            background: rgba(0, 243, 255, 0.1);
             height: 6px;
             border-radius: 3px;
             overflow: hidden;
@@ -131,13 +114,13 @@
 </head>
 <body>
 
-    <!-- 1. 3D WebGL 渲染層 -->
-    <div id="webgl-container"></div>
+    <!-- 1. 純本地 Canvas 畫布層 -->
+    <canvas id="local-canvas"></canvas>
 
-    <!-- 2. 環境網格背景層 -->
+    <!-- 2. 背景網格 -->
     <div class="scifi-overlay"></div>
 
-    <!-- 3. 前景資料互動面板 -->
+    <!-- 3. 文字面板 -->
     <div class="scifi-panel">
         <div class="panel-header">
             <h2 class="panel-title">SYSTEM // VITAL_SIGNS</h2>
@@ -159,94 +142,99 @@
         </div>
     </div>
 
-    <!-- 導入 CDN Three.js 引擎核心 -->
-    <script src="https://cloudflare.com"></script>
     <script>
-        // 初始化 3D 場景
-        const container = document.getElementById('webgl-container');
-        const scene = new THREE.Scene();
-        
-        // 設置相機
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.z = 15;
+        // 本地純 JS 3D 粒子矩陣運算
+        const canvas = document.getElementById('local-canvas');
+        const ctx = canvas.getContext('2d');
 
-        // 設置 WebGL 渲染器
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        container.appendChild(renderer.domElement);
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
 
-        // 建立 3D 立體科幻粒子球體（模擬核心大腦/全像核心）
-        const geometry = new THREE.SphereGeometry(4.5, 32, 32);
-        
-        // 提取頂點並製作點雲網格線條
-        const count = geometry.attributes.position.count;
-        const colors = [];
-        const colorCyan = new THREE.Color('#00f3ff');
-        const colorPink = new THREE.Color('#ff0055');
+        // 生成 3D 球體點雲資料
+        const points = [];
+        const numPoints = 350; // 粒子數量
+        const radius = 220;    // 3D 結構半徑
 
-        for (let i = 0; i < count; i++) {
-            // 隨機在粒子間混合藍色與粉色，製造色彩漸層感
-            const mixedColor = colorCyan.clone().lerp(colorPink, Math.random() * 0.4);
-            colors.push(mixedColor.r, mixedColor.g, mixedColor.b);
+        for (let i = 0; i < numPoints; i++) {
+            // 數學公式分配球面坐標
+            let theta = Math.acos(Math.random() * 2 - 1);
+            let phi = Math.random() * Math.PI * 2;
+
+            points.push({
+                x: radius * Math.sin(theta) * Math.cos(phi),
+                y: radius * Math.sin(theta) * Math.sin(phi),
+                z: radius * Math.cos(theta)
+            });
         }
-        geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
 
-        // 設定科技點材質
-        const pointsMaterial = new THREE.PointsMaterial({
-            size: 0.08,
-            vertexColors: true,
-            transparent: true,
-            opacity: 0.8,
-            blending: THREE.AdditiveBlending // 讓粒子重疊時發出強光
-        });
+        let angleY = 0.01; // 旋轉速度
+        let angleX = 0.005;
 
-        // 建立點雲主體
-        const brainCluster = new THREE.Points(geometry, pointsMaterial);
-        scene.add(brainCluster);
-
-        // 建立漂浮微塵環境粒子
-        const starsGeometry = new THREE.BufferGeometry();
-        const starsCount = 200;
-        const starPositions = new Float32Array(starsCount * 3);
-
-        for(let i = 0; i < starsCount * 3; i++) {
-            starPositions[i] = (Math.random() - 0.5) * 40;
+        function rotateY(point, angle) {
+            let cos = Math.cos(angle);
+            let sin = Math.sin(angle);
+            let x1 = point.x * cos - point.z * sin;
+            let z1 = point.z * cos + point.x * sin;
+            point.x = x1;
+            point.z = z1;
         }
-        starsGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
-        
-        const starsMaterial = new THREE.PointsMaterial({
-            size: 0.04,
-            color: 0x00f3ff,
-            transparent: true,
-            opacity: 0.3
-        });
-        const starField = new THREE.Points(starsGeometry, starsMaterial);
-        scene.add(starField);
 
-        // 網頁動態渲染循環
-        const clock = new THREE.Clock();
-
-        function animate() {
-            requestAnimationFrame(animate);
-            const elapsedTime = clock.getElapsedTime();
-
-            // 讓核心 3D 全像體緩慢旋轉
-            brainCluster.rotation.y = elapsedTime * 0.15;
-            brainCluster.rotation.x = elapsedTime * 0.05;
-
-            // 微塵緩慢漂浮
-            starField.rotation.y = elapsedTime * 0.02;
-
-            renderer.render(scene, camera);
+        function rotateX(point, angle) {
+            let cos = Math.cos(angle);
+            let sin = Math.sin(angle);
+            let y1 = point.y * cos - point.z * sin;
+            let z1 = point.z * cos + point.y * sin;
+            point.y = y1;
+            point.z = z1;
         }
-        animate();
 
-        // 響應式視窗縮放
+        // 渲染循環
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+            
+            // 設定畫布重疊發光模式 (雷射全像感)
+            ctx.globalCompositeOperation = 'screen';
+
+            let cx = width / 2;
+            let cy = height / 2;
+            let fov = 400; // 視角深度
+
+            points.forEach(p => {
+                // 計算旋轉
+                rotateY(p, angleY);
+                rotateX(p, angleX);
+
+                // 3D 投影到 2D 螢幕坐標
+                let scale = fov / (fov + p.z);
+                let x2d = p.x * scale + cx;
+                let y2d = p.y * scale + cy;
+
+                // 根據 3D 深度 (Z 軸) 決定粒子大小與透明度
+                let size = (p.z + radius) / radius * 2 + 1;
+                let alpha = (p.z + radius) / (radius * 2) * 0.6 + 0.2;
+
+                // 繪製科技發光點
+                ctx.beginPath();
+                ctx.arc(x2d, y2d, size, 0, Math.PI * 2);
+                
+                // 漸層混合色（前半段偏藍，後半段偏粉）
+                if (p.z > 0) {
+                    ctx.fillStyle = `rgba(0, 243, 255, ${alpha})`;
+                } else {
+                    ctx.fillStyle = `rgba(255, 0, 85, ${alpha * 0.8})`;
+                }
+                ctx.fill();
+            });
+
+            requestAnimationFrame(draw);
+        }
+
+        draw();
+
+        // 監聽視窗縮放
         window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
         });
     </script>
 </body>
