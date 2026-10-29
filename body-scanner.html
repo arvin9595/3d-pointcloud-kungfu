@@ -1,106 +1,45 @@
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#020712">
-  <title>科幻全像投影系統｜Holographic Console</title>
-  <style>
-    :root{color-scheme:dark;--cyan:#00f3ff;--pink:#ff0055}
-    *{box-sizing:border-box}
-    html,body{margin:0;width:100%;min-height:100%;background:#020712;color:#d1f4ff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans TC",sans-serif}
-    body{min-height:100vh;min-height:100dvh;overflow:hidden}
-    #local-canvas{position:fixed;inset:0;display:block;width:100%;height:100%;z-index:1}
-    .scifi-overlay{position:fixed;inset:0;z-index:2;pointer-events:none;background-image:linear-gradient(rgba(0,243,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(0,243,255,.035) 1px,transparent 1px);background-size:30px 30px}
-    .scifi-overlay::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,transparent 8%,rgba(2,7,18,.5) 90%)}
-    .panel-holder{position:fixed;inset:0;z-index:10;display:grid;place-items:center;padding:20px;pointer-events:none}
-    .scifi-panel{width:min(100%,410px);padding:25px;background:rgba(6,26,44,.76);border:1px solid var(--cyan);border-radius:5px;box-shadow:0 0 25px rgba(0,243,255,.22),inset 0 0 16px rgba(0,243,255,.06);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);position:relative;animation:floatAnimation 5s ease-in-out infinite}
-    .scifi-panel::before{content:"";position:absolute;top:-2px;left:-2px;width:18px;height:18px;border-top:3px solid var(--pink);border-left:3px solid var(--pink)}
-    .panel-header{border-bottom:1px solid rgba(0,243,255,.28);padding-bottom:12px;margin-bottom:16px}
-    .panel-title{margin:0;font-size:clamp(14px,3.6vw,18px);letter-spacing:1.5px;color:var(--cyan);text-shadow:0 0 8px rgba(0,243,255,.6);overflow-wrap:anywhere}
-    .subtitle{font-size:10px;letter-spacing:2px;color:#8faebd;margin-top:8px}
-    .data-row{display:flex;justify-content:space-between;gap:12px;margin:13px 0;font-size:14px}
-    .data-label{color:rgba(209,244,255,.7)}.data-value{color:var(--cyan);font-weight:700;white-space:nowrap}
-    .progress-bar-container{background:rgba(0,243,255,.12);height:7px;border-radius:4px;overflow:hidden;margin-top:8px}
-    .progress-fill{background:linear-gradient(90deg,var(--cyan),var(--pink));height:100%;width:78%;box-shadow:0 0 8px var(--cyan)}
-    .footnote{text-align:right;font-size:10px;margin-top:14px;color:#7c9cae;letter-spacing:1px}
-    .status-indicator{display:inline-block;background:#4affe1;width:7px;height:7px;border-radius:50%;box-shadow:0 0 8px #4affe1;margin-right:5px}
-    @keyframes floatAnimation{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
-    @media(max-width:420px){.scifi-panel{padding:20px}.data-row{font-size:12px}}
-    @media(prefers-reduced-motion:reduce){.scifi-panel{animation:none}}
-  </style>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#020c14"><title>ANATOMICA // Cinematic Hologram Scanner</title>
+<style>
+:root{--cyan:#77f4ff;--cyan2:#11c8e9;--orange:#ffad72;--ink:#061b2a;--line:rgba(130,227,255,.34)}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#01070c;color:#defaff;font-family:Arial,"Noto Sans TC",sans-serif}button{font:inherit}.stage{position:relative;width:100%;height:100%;height:100dvh;min-height:400px;isolation:isolate;background:#010910;overflow:hidden}
+.backdrop{position:absolute;inset:-3%;background:url('assets/anatomy-lab.jpg') center center / cover no-repeat;filter:brightness(.70) saturate(1.2) contrast(1.12);transform:scale(1.05);animation:camera 28s ease-in-out infinite alternate;will-change:transform}
+.stage:before{content:"";position:absolute;inset:0;z-index:1;background:radial-gradient(ellipse 40% 75% at 50% 45%,transparent 10%,rgba(0,6,13,.3) 85%),linear-gradient(90deg,rgba(0,10,18,.82),transparent 27%,transparent 73%,rgba(0,10,18,.8)),linear-gradient(0deg,rgba(0,6,13,.85),transparent 24%,transparent 78%,rgba(0,6,13,.65));pointer-events:none}
+.stage:after{content:"";position:absolute;inset:0;z-index:6;opacity:.22;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0px,transparent 3px,rgba(100,230,255,.07) 4px);mix-blend-mode:screen}
+#fx{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none}.beam{position:absolute;top:7%;bottom:8%;left:37%;width:26%;z-index:3;pointer-events:none;overflow:hidden;mix-blend-mode:screen;opacity:.84}.beam:before{content:"";position:absolute;left:0;right:0;height:14%;top:-20%;background:linear-gradient(180deg,transparent,rgba(33,214,255,.035) 10%,rgba(122,249,255,.24) 70%,rgba(195,255,255,.65) 92%,transparent);filter:blur(5px);animation:scan 7s linear infinite}.beam:after{content:"";position:absolute;inset:0;border-left:1px solid rgba(99,231,255,.06);border-right:1px solid rgba(99,231,255,.06);box-shadow:inset 0 0 70px rgba(25,196,244,.06)}
+.hud{position:absolute;inset:0;z-index:5;pointer-events:none}.hud>*{pointer-events:auto}.topbar{position:absolute;top:4%;left:4%;right:4%;display:flex;justify-content:space-between;align-items:start;gap:15px}.eyebrow{font:700 10px/1.5 monospace;letter-spacing:.28em;color:var(--cyan2);text-shadow:0 0 11px #00e6ff}.brand{font-size:clamp(17px,2.3vw,32px);letter-spacing:.16em;font-weight:700;margin:5px 0 2px;text-shadow:0 0 26px rgba(50,224,253,.55)}.sub{font-size:10px;letter-spacing:.17em;color:#96bbc9}.pill{border:1px solid var(--line);padding:10px 14px;background:rgba(0,15,28,.48);font:11px monospace;letter-spacing:.16em;white-space:nowrap;backdrop-filter:blur(8px)}.live{display:inline-block;width:6px;height:6px;border-radius:100%;margin-right:9px;background:#4dffc4;box-shadow:0 0 10px #4dffc4;animation:blink 2s infinite}
+.side{position:absolute;width:min(25vw,310px);top:25%;display:flex;flex-direction:column;gap:16px}.left{left:4%}.right{right:4%}.panel{position:relative;border-top:1px solid var(--line);border-left:1px solid rgba(115,221,250,.18);background:linear-gradient(100deg,rgba(0,22,37,.62),rgba(0,15,27,.18));padding:15px 14px 14px;backdrop-filter:blur(5px);box-shadow:0 0 35px rgba(0,190,255,.06)}.panel:before{content:"";position:absolute;top:-2px;left:0;width:28px;height:3px;background:var(--cyan);box-shadow:0 0 12px var(--cyan)}.panel h2{font:700 clamp(10px,1vw,13px) monospace;letter-spacing:.17em;margin:0 0 14px;color:var(--cyan)}.row{display:flex;justify-content:space-between;gap:8px;font-size:clamp(10px,.9vw,12px);margin:10px 0;color:#a2c5d0}.value{color:#e0fcff;font-family:monospace}.orange{color:var(--orange)}.track{height:3px;background:#164257;overflow:hidden;margin-top:7px}.fill{height:100%;width:var(--progress,70%);background:linear-gradient(90deg,#1787ac,#88faff);box-shadow:0 0 8px var(--cyan);transition:width 1s}.ecg{width:100%;height:40px;display:block;overflow:visible}.ecg polyline{fill:none;stroke:#6becff;stroke-width:1.5;filter:drop-shadow(0 0 5px #26e0ff);stroke-dasharray:220;animation:trace 4s linear infinite}.small{font:9px monospace;color:#7297a6;letter-spacing:.13em}.readout{font:28px monospace;color:var(--cyan);text-shadow:0 0 20px rgba(39,235,255,.7);line-height:1.4}.circle{position:absolute;left:50%;top:51%;width:min(48vw,570px);height:min(72vh,650px);transform:translate(-50%,-50%);border-radius:50%;border:1px solid rgba(118,240,255,.1);box-shadow:0 0 75px rgba(63,228,255,.06),inset 0 0 90px rgba(63,228,255,.03);pointer-events:none}.circle:before,.circle:after{content:"";position:absolute;inset:8%;border-radius:50%;border:1px dashed rgba(117,237,255,.12);animation:spin 55s linear infinite}.circle:after{inset:20%;border-style:solid;opacity:.3;animation-direction:reverse}.target{position:absolute;left:50%;top:45%;width:22px;height:22px;transform:translate(-50%,-50%);border:1px solid rgba(145,255,255,.5);border-radius:50%;box-shadow:0 0 15px rgba(135,248,255,.4);opacity:.7;pointer-events:none}.target:after{content:"";position:absolute;top:9px;left:-9px;width:38px;height:1px;background:rgba(166,255,255,.6)}
+.bottom{position:absolute;bottom:4%;left:4%;right:4%;display:flex;justify-content:space-between;align-items:end;gap:12px}.controls{display:flex;gap:7px;flex-wrap:wrap}.controls button{cursor:pointer;color:#b9dce6;padding:10px 13px;border:1px solid rgba(111,214,247,.34);background:rgba(2,18,32,.76);text-transform:uppercase;font:10px monospace;letter-spacing:.12em;backdrop-filter:blur(8px);transition:.2s}.controls button:hover,.controls button.active{border-color:var(--cyan);color:white;background:rgba(8,106,137,.38);box-shadow:0 0 15px rgba(22,206,247,.16)}.footerdata{text-align:right;font:10px/1.9 monospace;letter-spacing:.13em;color:#94b8c7}.time{color:#e1fbff}.cinema{position:absolute;left:0;right:0;height:2.5%;background:#000;z-index:8;pointer-events:none}.cinema.top{top:0}.cinema.low{bottom:0}.paused .backdrop,.paused .beam:before,.paused .ecg polyline,.paused .circle:before,.paused .circle:after{animation-play-state:paused}.paused .beam:before{opacity:.12}
+@keyframes camera{from{transform:scale(1.05) translate(0,0)}to{transform:scale(1.13) translate(-.7%,.5%)}}@keyframes scan{to{top:110%}}@keyframes trace{to{stroke-dashoffset:-440}}@keyframes spin{to{transform:rotate(360deg)}}@keyframes blink{50%{opacity:.35}}
+@media(max-width:800px){.topbar{top:4%;left:5%;right:5%}.brand{font-size:19px}.side{top:auto;bottom:19%;width:43%;gap:9px}.left{left:4%}.right{right:4%}.panel{padding:9px}.panel h2{font-size:10px;margin-bottom:7px}.row{font-size:10px;margin:6px 0}.side .panel:nth-child(2){display:none}.circle{width:66vw;height:60vh}.bottom{bottom:6%;left:4%;right:4%;display:block}.footerdata{display:none}.controls{justify-content:center}.controls button{padding:10px}.pill{font-size:9px;padding:7px}.backdrop{background-position:center center}}
+@media(max-width:490px){.stage{min-height:350px}.brand{font-size:15px;letter-spacing:.11em}.sub{font-size:8px}.eyebrow{font-size:8px}.pill{font-size:8px;letter-spacing:0;padding:5px}.side{bottom:17%;width:46%}.panel .row:nth-of-type(n+4){display:none}.panel h2{font-size:9px;letter-spacing:0}.row{font-size:9px}.readout{font-size:17px}.backdrop{background-size:auto 100%;background-position:center}.beam{left:23%;width:54%}.circle{height:50vh;width:80vw}.controls button{font-size:9px;padding:9px 8px}}
+@media(prefers-reduced-motion:reduce){.backdrop,.beam:before,.circle:before,.circle:after,.ecg polyline,.live{animation:none!important}}
+</style>
 </head>
 <body>
-  <canvas id="local-canvas" aria-label="旋轉全像粒子球背景"></canvas>
-  <div class="scifi-overlay" aria-hidden="true"></div>
-  <main class="panel-holder">
-    <section class="scifi-panel" aria-label="系統狀態">
-      <header class="panel-header">
-        <h1 class="panel-title">SYSTEM // VITAL_SIGNS</h1>
-        <div class="subtitle"><span class="status-indicator"></span>HOLOGRAPHIC INTERFACE / ACTIVE</div>
-      </header>
-      <div class="data-row"><span class="data-label">主體結構狀態</span><span class="data-value">ONLINE</span></div>
-      <div class="data-row"><span class="data-label">神經網絡連結度</span><span class="data-value">98.2 %</span></div>
-      <div class="data-row"><span class="data-label">全像投影穩定率</span><span class="data-value">78 %</span></div>
-      <div class="progress-bar-container" role="progressbar" aria-label="全像投影穩定率" aria-valuenow="78" aria-valuemin="0" aria-valuemax="100"><div class="progress-fill"></div></div>
-      <div class="footnote">LOCAL SYSTEM // v1.1</div>
-    </section>
-  </main>
-  <script>
-    (() => {
-      'use strict';
-      const canvas = document.getElementById('local-canvas');
-      const ctx = canvas && canvas.getContext('2d', { alpha: false });
-      if (!ctx) { console.warn('Canvas 2D is unavailable.'); return; }
-      let width = 0, height = 0, dpr = 1;
-      const count = 500, radius = 220, fov = 520;
-      const points = Array.from({length:count}, (_, i) => {
-        const y = 1 - 2 * (i + 0.5) / count;
-        const r = Math.sqrt(Math.max(0, 1-y*y));
-        const phi = i * Math.PI * (3 - Math.sqrt(5));
-        return {x:r*Math.cos(phi)*radius,y:y*radius,z:r*Math.sin(phi)*radius};
-      });
-      function resize(){
-        width = window.innerWidth;
-        height = window.innerHeight;
-        dpr = Math.min(window.devicePixelRatio || 1, 2);
-        canvas.width = Math.round(width*dpr);
-        canvas.height = Math.round(height*dpr);
-        ctx.setTransform(dpr,0,0,dpr,0,0);
-      }
-      window.addEventListener('resize',resize,{passive:true});
-      resize();
-      const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      let last = 0, ay = 0, ax = 0;
-      function draw(t){
-        const dt = last ? Math.min((t-last)/1000,.05) : 0;
-        last=t;
-        if(!reduceMotion){ay += dt*.36;ax += dt*.12;}
-        ctx.globalCompositeOperation='source-over';
-        ctx.fillStyle='#020712';
-        ctx.fillRect(0,0,width,height);
-        ctx.globalCompositeOperation='screen';
-        const ca=Math.cos(ay),sa=Math.sin(ay),cb=Math.cos(ax),sb=Math.sin(ax);
-        const screenRadius=Math.min(radius,Math.max(75,Math.min(width,height)*.30));
-        const factor=screenRadius/radius;
-        const cx=width/2,cy=height/2;
-        for(const p of points){
-          const x=p.x*ca-p.z*sa;
-          const z=p.x*sa+p.z*ca;
-          const y=p.y*cb-z*sb;
-          const rz=p.y*sb+z*cb;
-          const scale=fov/(fov+rz);
-          const opacity=.22+((rz+radius)/(radius*2))*.65;
-          const dotSize=Math.max(.65,(1.15+(rz+radius)/radius*1.25)*factor);
-          ctx.beginPath();
-          ctx.arc(cx+x*scale*factor,cy+y*scale*factor,dotSize,0,Math.PI*2);
-          ctx.fillStyle=rz>0?`rgba(0,243,255,${opacity})`:`rgba(255,0,85,${opacity*.75})`;
-          ctx.fill();
-        }
-        if(!reduceMotion) requestAnimationFrame(draw);
-      }
-      requestAnimationFrame(draw);
-    })();
-  </script>
-</body>
-</html>
+<main class="stage" id="stage" aria-label="科幻人體全像投影掃描系統">
+<div class="backdrop" aria-hidden="true"></div><canvas id="fx" aria-hidden="true"></canvas><div class="beam" aria-hidden="true"></div><div class="circle" aria-hidden="true"></div><div class="target" aria-hidden="true"></div>
+<div class="hud">
+<header class="topbar"><div><div class="eyebrow">ANATOMICA // PROJECTION SYSTEM</div><div class="brand">HUMAN // HOLOGRAM</div><div class="sub">BIOMETRIC VISUALIZATION · CINEMATIC INTERFACE</div></div><div class="pill"><span class="live"></span><span id="status">SYSTEM ONLINE</span></div></header>
+<section class="side left" aria-label="左側診斷資料"><div class="panel"><h2>01 / CENTRAL NERVOUS</h2><div class="row"><span>神經訊號連結</span><span class="value" id="neural">98.2%</span></div><div class="track"><div class="fill" style="--progress:98%"></div></div><div class="row"><span>訊號同步</span><span class="value">STABLE</span></div><div class="small">NEURAL PATHWAYS // ACTIVE</div></div><div class="panel"><h2>02 / CARDIAC SIGNAL</h2><svg class="ecg" viewBox="0 0 220 40" role="img" aria-label="裝飾性心電波形"><polyline points="0,22 38,22 47,19 53,25 60,22 69,22 77,6 85,36 94,22 126,22 135,19 141,25 148,22 157,22 165,6 173,36 182,22 220,22"/></svg><div class="row"><span>模擬心率</span><span class="value orange" id="bpm">072 BPM</span></div></div></section>
+<section class="side right" aria-label="右側掃描資料"><div class="panel"><h2>03 / SKELETAL MAPPING</h2><div class="row"><span>骨骼結構</span><span class="value">LOCKED</span></div><div class="row"><span>掃描覆蓋率</span><span class="value" id="coverage">78.0%</span></div><div class="track"><div class="fill" id="coverageBar" style="--progress:78%"></div></div><div class="small">MULTI-LAYER ANATOMY SCAN</div></div><div class="panel"><h2>04 / PROJECTION CORE</h2><div class="readout" id="integrity">99.6<span style="font-size:13px"> %</span></div><div class="small">HOLOGRAM INTEGRITY</div><div class="row"><span>渲染狀態</span><span class="value">ACTIVE</span></div><div class="row"><span>能量波段</span><span class="value orange">CYAN / AMBER</span></div></div></section>
+<footer class="bottom"><div class="controls" role="group" aria-label="掃描操作"><button id="scanBtn" class="active" type="button">● 掃描中</button><button id="pauseBtn" type="button">Ⅱ 暫停動畫</button><button id="viewBtn" type="button">＋ 隱藏面板</button></div><div class="footerdata"><div>ANATOMICAL SYSTEM // DEMONSTRATION</div><div>LOCAL SIMULATION · <span class="time" id="clock">00:00:00</span></div></div></footer>
+</div><div class="cinema top"></div><div class="cinema low"></div>
+</main>
+<script>
+(()=>{'use strict';
+const stage=document.getElementById('stage'),canvas=document.getElementById('fx'),ctx=canvas.getContext('2d');let w=0,h=0,dpr=1,particles=[],last=0,paused=false,scanning=true,raf=0;
+function resize(){const r=stage.getBoundingClientRect();w=r.width;h=r.height;dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);particles=Array.from({length:Math.min(155,Math.max(55,Math.floor(w*h/7000)))},()=>({x:Math.random()*w,y:Math.random()*h,v:.14+Math.random()*.55,rad:.4+Math.random()*1.5,alpha:.15+Math.random()*.65,t:Math.random()*7}));}
+function frame(t){raf=requestAnimationFrame(frame);if(paused||document.hidden)return;const dt=Math.min((t-last)||16,50);last=t;ctx.clearRect(0,0,w,h);ctx.globalCompositeOperation='screen';for(const p of particles){p.y-=p.v*dt*.04;p.x+=Math.sin(t*.0003+p.t)*dt*.002;if(p.y<0){p.y=h;p.x=Math.random()*w}ctx.beginPath();ctx.arc(p.x,p.y,p.rad,0,Math.PI*2);ctx.fillStyle=`rgba(${p.t>4?'255,151,104':'77,227,255'},${p.alpha})`;ctx.shadowColor=p.t>4?'#ff9f66':'#62ebff';ctx.shadowBlur=7;ctx.fill()}ctx.shadowBlur=0;ctx.globalCompositeOperation='source-over';}
+resize();window.addEventListener('resize',resize,{passive:true});if(ctx)raf=requestAnimationFrame(frame);
+const clock=document.getElementById('clock');function tick(){const d=new Date();clock.textContent=d.toLocaleTimeString('en-GB',{hour12:false});if(!paused){const s=d.getSeconds();document.getElementById('bpm').textContent=String(70+(s%5)).padStart(3,'0')+' BPM';document.getElementById('neural').textContent=(98.1+(s%3)*.1).toFixed(1)+'%';if(scanning){const n=72+(s%28);document.getElementById('coverage').textContent=n.toFixed(1)+'%';document.getElementById('coverageBar').style.setProperty('--progress',n+'%')}}}
+tick();setInterval(tick,1000);
+document.getElementById('pauseBtn').addEventListener('click',e=>{paused=!paused;stage.classList.toggle('paused',paused);e.currentTarget.textContent=paused?'▶ 繼續動畫':'Ⅱ 暫停動畫';document.getElementById('status').textContent=paused?'SYSTEM PAUSED':'SYSTEM ONLINE'});
+document.getElementById('scanBtn').addEventListener('click',e=>{scanning=!scanning;stage.querySelector('.beam').style.display=scanning?'':'none';e.currentTarget.textContent=scanning?'● 掃描中':'○ 開始掃描';e.currentTarget.classList.toggle('active',scanning)});
+document.getElementById('viewBtn').addEventListener('click',e=>{const sides=stage.querySelectorAll('.side');const hidden=sides[0].style.display!=='none';sides.forEach(s=>s.style.display=hidden?'none':'');e.currentTarget.textContent=hidden?'＋ 顯示面板':'＋ 隱藏面板'});
+})();
+</script>
+</body></html>
