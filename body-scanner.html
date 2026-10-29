@@ -2,7 +2,7 @@
 <html lang="zh-Hant-TW">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#020c14"><title>ANATOMICA // Cinematic Hologram Scanner</title>
+<meta name="theme-color" content="#020c14"><title>ANATOMICA // Cinematic Hologram Scanner Lite V2.1</title>
 <style>
 :root{--cyan:#77f4ff;--cyan2:#11c8e9;--orange:#ffad72;--ink:#061b2a;--line:rgba(130,227,255,.34)}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#01070c;color:#defaff;font-family:Arial,"Noto Sans TC",sans-serif}button{font:inherit}.stage{position:relative;width:100%;height:100%;height:100dvh;min-height:400px;isolation:isolate;background:#010910;overflow:hidden}
@@ -17,6 +17,21 @@
 @media(max-width:800px){.topbar{top:4%;left:5%;right:5%}.brand{font-size:19px}.side{top:auto;bottom:19%;width:43%;gap:9px}.left{left:4%}.right{right:4%}.panel{padding:9px}.panel h2{font-size:10px;margin-bottom:7px}.row{font-size:10px;margin:6px 0}.side .panel:nth-child(2){display:none}.circle{width:66vw;height:60vh}.bottom{bottom:6%;left:4%;right:4%;display:block}.footerdata{display:none}.controls{justify-content:center}.controls button{padding:10px}.pill{font-size:9px;padding:7px}.backdrop{background-position:center center}}
 @media(max-width:490px){.stage{min-height:350px}.brand{font-size:15px;letter-spacing:.11em}.sub{font-size:8px}.eyebrow{font-size:8px}.pill{font-size:8px;letter-spacing:0;padding:5px}.side{bottom:17%;width:46%}.panel .row:nth-of-type(n+4){display:none}.panel h2{font-size:9px;letter-spacing:0}.row{font-size:9px}.readout{font-size:17px}.backdrop{background-size:auto 100%;background-position:center}.beam{left:23%;width:54%}.circle{height:50vh;width:80vw}.controls button{font-size:9px;padding:9px 8px}}
 @media(prefers-reduced-motion:reduce){.backdrop,.beam:before,.circle:before,.circle:after,.ecg polyline,.live{animation:none!important}}
+
+/* V2.1: default fast-render mode. Animated backgrounds and blur are intentionally off. */
+.backdrop{inset:0;transform:none;animation:none!important;will-change:auto;filter:brightness(.78) saturate(1.07)}
+.panel,.pill,.controls button{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.beam{mix-blend-mode:normal;opacity:.52}.beam:before{filter:none;animation-duration:11s}
+.stage:after{display:none}.circle:before,.circle:after{animation:none!important}
+.ecg polyline{filter:none;animation:none}
+#fx{opacity:.65}
+.mode{color:#adf5ff;border:1px solid rgba(111,214,247,.34);background:rgba(2,18,32,.8);padding:9px 10px;font:10px monospace;letter-spacing:.05em;cursor:pointer}
+.stage[data-mode="still"] #fx,.stage[data-mode="still"] .beam{display:none}
+.stage[data-mode="still"] .backdrop,.stage[data-mode="still"] .live{animation:none!important}
+.stage[data-mode="cinema"] .backdrop{animation:camera 28s ease-in-out infinite alternate!important;will-change:transform}
+.stage[data-mode="cinema"] .beam{opacity:.8;mix-blend-mode:screen}
+.stage[data-mode="cinema"] .ecg polyline{animation:trace 4s linear infinite}
+@media(prefers-reduced-motion:reduce){.stage[data-mode="cinema"] .backdrop,.stage[data-mode="cinema"] .ecg polyline{animation:none!important}}
 </style>
 </head>
 <body>
@@ -26,20 +41,43 @@
 <header class="topbar"><div><div class="eyebrow">ANATOMICA // PROJECTION SYSTEM</div><div class="brand">HUMAN // HOLOGRAM</div><div class="sub">BIOMETRIC VISUALIZATION · CINEMATIC INTERFACE</div></div><div class="pill"><span class="live"></span><span id="status">SYSTEM ONLINE</span></div></header>
 <section class="side left" aria-label="左側診斷資料"><div class="panel"><h2>01 / CENTRAL NERVOUS</h2><div class="row"><span>神經訊號連結</span><span class="value" id="neural">98.2%</span></div><div class="track"><div class="fill" style="--progress:98%"></div></div><div class="row"><span>訊號同步</span><span class="value">STABLE</span></div><div class="small">NEURAL PATHWAYS // ACTIVE</div></div><div class="panel"><h2>02 / CARDIAC SIGNAL</h2><svg class="ecg" viewBox="0 0 220 40" role="img" aria-label="裝飾性心電波形"><polyline points="0,22 38,22 47,19 53,25 60,22 69,22 77,6 85,36 94,22 126,22 135,19 141,25 148,22 157,22 165,6 173,36 182,22 220,22"/></svg><div class="row"><span>模擬心率</span><span class="value orange" id="bpm">072 BPM</span></div></div></section>
 <section class="side right" aria-label="右側掃描資料"><div class="panel"><h2>03 / SKELETAL MAPPING</h2><div class="row"><span>骨骼結構</span><span class="value">LOCKED</span></div><div class="row"><span>掃描覆蓋率</span><span class="value" id="coverage">78.0%</span></div><div class="track"><div class="fill" id="coverageBar" style="--progress:78%"></div></div><div class="small">MULTI-LAYER ANATOMY SCAN</div></div><div class="panel"><h2>04 / PROJECTION CORE</h2><div class="readout" id="integrity">99.6<span style="font-size:13px"> %</span></div><div class="small">HOLOGRAM INTEGRITY</div><div class="row"><span>渲染狀態</span><span class="value">ACTIVE</span></div><div class="row"><span>能量波段</span><span class="value orange">CYAN / AMBER</span></div></div></section>
-<footer class="bottom"><div class="controls" role="group" aria-label="掃描操作"><button id="scanBtn" class="active" type="button">● 掃描中</button><button id="pauseBtn" type="button">Ⅱ 暫停動畫</button><button id="viewBtn" type="button">＋ 隱藏面板</button></div><div class="footerdata"><div>ANATOMICAL SYSTEM // DEMONSTRATION</div><div>LOCAL SIMULATION · <span class="time" id="clock">00:00:00</span></div></div></footer>
+<footer class="bottom"><div class="controls" role="group" aria-label="掃描操作"><button id="modeBtn" type="button" title="切換畫面效能">效能：流暢</button><button id="scanBtn" class="active" type="button">● 掃描中</button><button id="pauseBtn" type="button">Ⅱ 暫停動畫</button><button id="viewBtn" type="button">＋ 隱藏面板</button></div><div class="footerdata"><div>ANATOMICAL SYSTEM // DEMONSTRATION</div><div>LOCAL SIMULATION · <span class="time" id="clock">00:00:00</span></div></div></footer>
 </div><div class="cinema top"></div><div class="cinema low"></div>
 </main>
 <script>
 (()=>{'use strict';
-const stage=document.getElementById('stage'),canvas=document.getElementById('fx'),ctx=canvas.getContext('2d');let w=0,h=0,dpr=1,particles=[],last=0,paused=false,scanning=true,raf=0;
-function resize(){const r=stage.getBoundingClientRect();w=r.width;h=r.height;dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);particles=Array.from({length:Math.min(155,Math.max(55,Math.floor(w*h/7000)))},()=>({x:Math.random()*w,y:Math.random()*h,v:.14+Math.random()*.55,rad:.4+Math.random()*1.5,alpha:.15+Math.random()*.65,t:Math.random()*7}));}
-function frame(t){raf=requestAnimationFrame(frame);if(paused||document.hidden)return;const dt=Math.min((t-last)||16,50);last=t;ctx.clearRect(0,0,w,h);ctx.globalCompositeOperation='screen';for(const p of particles){p.y-=p.v*dt*.04;p.x+=Math.sin(t*.0003+p.t)*dt*.002;if(p.y<0){p.y=h;p.x=Math.random()*w}ctx.beginPath();ctx.arc(p.x,p.y,p.rad,0,Math.PI*2);ctx.fillStyle=`rgba(${p.t>4?'255,151,104':'77,227,255'},${p.alpha})`;ctx.shadowColor=p.t>4?'#ff9f66':'#62ebff';ctx.shadowBlur=7;ctx.fill()}ctx.shadowBlur=0;ctx.globalCompositeOperation='source-over';}
-resize();window.addEventListener('resize',resize,{passive:true});if(ctx)raf=requestAnimationFrame(frame);
-const clock=document.getElementById('clock');function tick(){const d=new Date();clock.textContent=d.toLocaleTimeString('en-GB',{hour12:false});if(!paused){const s=d.getSeconds();document.getElementById('bpm').textContent=String(70+(s%5)).padStart(3,'0')+' BPM';document.getElementById('neural').textContent=(98.1+(s%3)*.1).toFixed(1)+'%';if(scanning){const n=72+(s%28);document.getElementById('coverage').textContent=n.toFixed(1)+'%';document.getElementById('coverageBar').style.setProperty('--progress',n+'%')}}}
-tick();setInterval(tick,1000);
-document.getElementById('pauseBtn').addEventListener('click',e=>{paused=!paused;stage.classList.toggle('paused',paused);e.currentTarget.textContent=paused?'▶ 繼續動畫':'Ⅱ 暫停動畫';document.getElementById('status').textContent=paused?'SYSTEM PAUSED':'SYSTEM ONLINE'});
-document.getElementById('scanBtn').addEventListener('click',e=>{scanning=!scanning;stage.querySelector('.beam').style.display=scanning?'':'none';e.currentTarget.textContent=scanning?'● 掃描中':'○ 開始掃描';e.currentTarget.classList.toggle('active',scanning)});
-document.getElementById('viewBtn').addEventListener('click',e=>{const sides=stage.querySelectorAll('.side');const hidden=sides[0].style.display!=='none';sides.forEach(s=>s.style.display=hidden?'none':'');e.currentTarget.textContent=hidden?'＋ 顯示面板':'＋ 隱藏面板'});
+const stage=document.getElementById('stage'),canvas=document.getElementById('fx'),ctx=canvas.getContext('2d',{alpha:true});
+const ids=id=>document.getElementById(id);
+let w=0,h=0,particles=[],last=0,paused=false,scanning=true,mode='lite',raf=0,needsRedraw=true;
+const modes=['lite','still','cinema'];const labels={lite:'效能：流暢',still:'效能：靜態',cinema:'效能：電影'};
+function resize(){const r=stage.getBoundingClientRect();w=Math.max(1,r.width);h=Math.max(1,r.height);
+// Cap internal resolution: Retina and large windows must not multiply the workload.
+const ratio=Math.min(window.devicePixelRatio||1,1.25,1280/w,800/h);
+canvas.width=Math.round(w*ratio);canvas.height=Math.round(h*ratio);
+ctx.setTransform(ratio,0,0,ratio,0,0);
+particles=Array.from({length:Math.min(38,Math.max(16,Math.floor(w*h/26000)))},()=>({x:Math.random()*w,y:Math.random()*h,v:.16+Math.random()*.24,rad:.4+Math.random()*.9,alpha:.15+Math.random()*.48,amber:Math.random()>.78}));needsRedraw=true;
+}
+function render(t){raf=0;if(paused||document.hidden||mode==='still')return;
+// Limit to 20 frames/s by default, 30 in cinema mode.
+const interval=mode==='cinema'?1000/30:1000/20;
+if(t-last>=interval){const dt=Math.min(t-last||interval,100);last=t;
+ctx.clearRect(0,0,w,h);
+for(const p of particles){p.y-=p.v*dt*.027;if(p.y<0){p.y=h;p.x=Math.random()*w}
+ctx.beginPath();ctx.arc(p.x,p.y,p.rad,0,Math.PI*2);
+ctx.fillStyle=p.amber?`rgba(255,165,109,${p.alpha})`:`rgba(77,227,255,${p.alpha})`;ctx.fill();}
+}
+raf=requestAnimationFrame(render);
+}
+function resume(){if(raf)cancelAnimationFrame(raf);raf=0;last=0;if(mode==='still'){ctx.clearRect(0,0,w,h);return;}if(!paused&&!document.hidden)raf=requestAnimationFrame(render)}
+function setMode(next){mode=next;stage.dataset.mode=next;ids('modeBtn').textContent=labels[next];resume()}
+resize();window.addEventListener('resize',()=>{resize();resume()},{passive:true});
+ids('modeBtn').addEventListener('click',()=>setMode(modes[(modes.indexOf(mode)+1)%modes.length]));
+ids('pauseBtn').addEventListener('click',e=>{paused=!paused;stage.classList.toggle('paused',paused);e.currentTarget.textContent=paused?'▶ 繼續動畫':'Ⅱ 暫停動畫';ids('status').textContent=paused?'SYSTEM PAUSED':'SYSTEM ONLINE';resume()});
+ids('scanBtn').addEventListener('click',e=>{scanning=!scanning;stage.querySelector('.beam').style.display=scanning?'':'none';e.currentTarget.textContent=scanning?'● 掃描中':'○ 開始掃描';e.currentTarget.classList.toggle('active',scanning)});
+ids('viewBtn').addEventListener('click',e=>{const sides=stage.querySelectorAll('.side');const hidden=sides[0].style.display!=='none';sides.forEach(s=>s.style.display=hidden?'none':'');e.currentTarget.textContent=hidden?'＋ 顯示面板':'＋ 隱藏面板'});
+document.addEventListener('visibilitychange',resume);
+const timer=()=>{if(document.hidden)return;const d=new Date();ids('clock').textContent=d.toLocaleTimeString('en-GB',{hour12:false});if(!paused){const s=d.getSeconds();ids('bpm').textContent=String(70+s%5).padStart(3,'0')+' BPM';ids('neural').textContent=(98.1+(s%3)*.1).toFixed(1)+'%';if(scanning){const n=72+s%28;ids('coverage').textContent=n.toFixed(1)+'%';ids('coverageBar').style.setProperty('--progress',n+'%')}}};timer();setInterval(timer,1000);
+setMode('lite');
 })();
 </script>
 </body></html>
