@@ -2,7 +2,7 @@
 <html lang="zh-Hant-TW">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#020c14"><title>ANATOMICA // Cinematic Hologram Scanner Lite V2.1</title>
+<meta name="theme-color" content="#020c14"><title>ANATOMICA // Cinematic Hologram Scanner V2.2</title>
 <style>
 :root{--cyan:#77f4ff;--cyan2:#11c8e9;--orange:#ffad72;--ink:#061b2a;--line:rgba(130,227,255,.34)}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#01070c;color:#defaff;font-family:Arial,"Noto Sans TC",sans-serif}button{font:inherit}.stage{position:relative;width:100%;height:100%;height:100dvh;min-height:400px;isolation:isolate;background:#010910;overflow:hidden}
@@ -32,16 +32,33 @@
 .stage[data-mode="cinema"] .beam{opacity:.8;mix-blend-mode:screen}
 .stage[data-mode="cinema"] .ecg polyline{animation:trace 4s linear infinite}
 @media(prefers-reduced-motion:reduce){.stage[data-mode="cinema"] .backdrop,.stage[data-mode="cinema"] .ecg polyline{animation:none!important}}
+
+/* V2.2 — cinematic layers: gradient / border / transform only; no video or shaders */
+.glow-column{position:absolute;z-index:2;left:40%;top:10%;width:20%;height:82%;pointer-events:none;background:radial-gradient(ellipse 48% 48% at 50% 45%,rgba(44,222,255,.19),rgba(17,151,225,.055) 54%,transparent 85%);opacity:.60}
+.lens{position:absolute;z-index:3;pointer-events:none;left:22%;top:52%;width:56%;height:1px;background:linear-gradient(90deg,transparent,rgba(255,172,116,.04) 10%,rgba(255,178,110,.42) 48%,rgba(145,245,255,.5) 53%,rgba(255,173,93,.22) 67%,transparent);box-shadow:0 0 14px 3px rgba(42,193,230,.1);opacity:.55}
+.frame-corners{position:absolute;inset:12% 30%;z-index:4;pointer-events:none;opacity:.5;background:linear-gradient(var(--cyan),var(--cyan)) top left/22px 1px no-repeat,linear-gradient(var(--cyan),var(--cyan)) top left/1px 22px no-repeat,linear-gradient(var(--cyan),var(--cyan)) top right/22px 1px no-repeat,linear-gradient(var(--cyan),var(--cyan)) top right/1px 22px no-repeat,linear-gradient(var(--cyan),var(--cyan)) bottom left/22px 1px no-repeat,linear-gradient(var(--cyan),var(--cyan)) bottom left/1px 22px no-repeat,linear-gradient(var(--cyan),var(--cyan)) bottom right/22px 1px no-repeat,linear-gradient(var(--cyan),var(--cyan)) bottom right/1px 22px no-repeat}
+.scan-label{position:absolute;z-index:4;pointer-events:none;left:50%;top:13%;transform:translateX(-50%);font:10px monospace;color:rgba(145,244,255,.9);letter-spacing:.24em;text-shadow:0 0 9px #00d9ff;white-space:nowrap}
+.filmgrain{position:absolute;inset:0;z-index:3;pointer-events:none;opacity:.13;background:repeating-linear-gradient(0deg,transparent 0px,rgba(40,166,192,.09) 1px,transparent 2px,transparent 6px)}
+.cinema.top,.cinema.low{height:3.2%}.stage[data-mode="cinema"] .cinema.top,.stage[data-mode="cinema"] .cinema.low{height:4%}
+.stage[data-mode="still"] .lens,.stage[data-mode="still"] .glow-column,.stage[data-mode="still"] .filmgrain{display:none}
+.stage[data-mode="lite"] .lens{opacity:.4}
+.stage[data-mode="cinema"] .lens{animation:light-breathe 7s ease-in-out infinite alternate}
+.stage[data-mode="cinema"] .glow-column{animation:light-breathe 5s ease-in-out infinite alternate}
+.stage[data-mode="cinema"] .frame-corners{opacity:.75}
+.stage.paused .lens,.stage.paused .glow-column{animation-play-state:paused!important}
+@keyframes light-breathe{from{opacity:.25}to{opacity:.75}}
+@media(max-width:800px){.frame-corners{inset:14% 20%}.scan-label{top:15%;font-size:8px}.lens{left:12%;width:76%}}
+@media(prefers-reduced-motion:reduce){.stage[data-mode="cinema"] .lens,.stage[data-mode="cinema"] .glow-column{animation:none!important}}
 </style>
 </head>
 <body>
 <main class="stage" id="stage" aria-label="科幻人體全像投影掃描系統">
-<div class="backdrop" aria-hidden="true"></div><canvas id="fx" aria-hidden="true"></canvas><div class="beam" aria-hidden="true"></div><div class="circle" aria-hidden="true"></div><div class="target" aria-hidden="true"></div>
+<div class="backdrop" aria-hidden="true"></div><div class="glow-column" aria-hidden="true"></div><div class="lens" aria-hidden="true"></div><div class="frame-corners" aria-hidden="true"></div><div class="filmgrain" aria-hidden="true"></div><div class="scan-label" id="scanLabel" aria-hidden="true">ANATOMY // SCAN SEQUENCE ACTIVE</div><canvas id="fx" aria-hidden="true"></canvas><div class="beam" aria-hidden="true"></div><div class="circle" aria-hidden="true"></div><div class="target" aria-hidden="true"></div>
 <div class="hud">
 <header class="topbar"><div><div class="eyebrow">ANATOMICA // PROJECTION SYSTEM</div><div class="brand">HUMAN // HOLOGRAM</div><div class="sub">BIOMETRIC VISUALIZATION · CINEMATIC INTERFACE</div></div><div class="pill"><span class="live"></span><span id="status">SYSTEM ONLINE</span></div></header>
 <section class="side left" aria-label="左側診斷資料"><div class="panel"><h2>01 / CENTRAL NERVOUS</h2><div class="row"><span>神經訊號連結</span><span class="value" id="neural">98.2%</span></div><div class="track"><div class="fill" style="--progress:98%"></div></div><div class="row"><span>訊號同步</span><span class="value">STABLE</span></div><div class="small">NEURAL PATHWAYS // ACTIVE</div></div><div class="panel"><h2>02 / CARDIAC SIGNAL</h2><svg class="ecg" viewBox="0 0 220 40" role="img" aria-label="裝飾性心電波形"><polyline points="0,22 38,22 47,19 53,25 60,22 69,22 77,6 85,36 94,22 126,22 135,19 141,25 148,22 157,22 165,6 173,36 182,22 220,22"/></svg><div class="row"><span>模擬心率</span><span class="value orange" id="bpm">072 BPM</span></div></div></section>
 <section class="side right" aria-label="右側掃描資料"><div class="panel"><h2>03 / SKELETAL MAPPING</h2><div class="row"><span>骨骼結構</span><span class="value">LOCKED</span></div><div class="row"><span>掃描覆蓋率</span><span class="value" id="coverage">78.0%</span></div><div class="track"><div class="fill" id="coverageBar" style="--progress:78%"></div></div><div class="small">MULTI-LAYER ANATOMY SCAN</div></div><div class="panel"><h2>04 / PROJECTION CORE</h2><div class="readout" id="integrity">99.6<span style="font-size:13px"> %</span></div><div class="small">HOLOGRAM INTEGRITY</div><div class="row"><span>渲染狀態</span><span class="value">ACTIVE</span></div><div class="row"><span>能量波段</span><span class="value orange">CYAN / AMBER</span></div></div></section>
-<footer class="bottom"><div class="controls" role="group" aria-label="掃描操作"><button id="modeBtn" type="button" title="切換畫面效能">效能：流暢</button><button id="scanBtn" class="active" type="button">● 掃描中</button><button id="pauseBtn" type="button">Ⅱ 暫停動畫</button><button id="viewBtn" type="button">＋ 隱藏面板</button></div><div class="footerdata"><div>ANATOMICAL SYSTEM // DEMONSTRATION</div><div>LOCAL SIMULATION · <span class="time" id="clock">00:00:00</span></div></div></footer>
+<footer class="bottom"><div class="controls" role="group" aria-label="掃描操作"><button id="modeBtn" type="button" title="切換畫面效能">效能：流暢</button><button id="scanBtn" class="active" type="button">● 掃描中</button><button id="pauseBtn" type="button">Ⅱ 暫停動畫</button><button id="viewBtn" type="button">＋ 隱藏面板</button></div><div class="footerdata"><div>ANATOMICAL SYSTEM // CINEMATIC V2.2</div><div>LOCAL SIMULATION · <span class="time" id="clock">00:00:00</span></div></div></footer>
 </div><div class="cinema top"></div><div class="cinema low"></div>
 </main>
 <script>
@@ -73,7 +90,7 @@ function setMode(next){mode=next;stage.dataset.mode=next;ids('modeBtn').textCont
 resize();window.addEventListener('resize',()=>{resize();resume()},{passive:true});
 ids('modeBtn').addEventListener('click',()=>setMode(modes[(modes.indexOf(mode)+1)%modes.length]));
 ids('pauseBtn').addEventListener('click',e=>{paused=!paused;stage.classList.toggle('paused',paused);e.currentTarget.textContent=paused?'▶ 繼續動畫':'Ⅱ 暫停動畫';ids('status').textContent=paused?'SYSTEM PAUSED':'SYSTEM ONLINE';resume()});
-ids('scanBtn').addEventListener('click',e=>{scanning=!scanning;stage.querySelector('.beam').style.display=scanning?'':'none';e.currentTarget.textContent=scanning?'● 掃描中':'○ 開始掃描';e.currentTarget.classList.toggle('active',scanning)});
+ids('scanBtn').addEventListener('click',e=>{scanning=!scanning;stage.querySelector('.beam').style.display=scanning?'':'none';e.currentTarget.textContent=scanning?'● 掃描中':'○ 開始掃描';e.currentTarget.classList.toggle('active',scanning);ids('scanLabel').textContent=scanning?'ANATOMY // SCAN SEQUENCE ACTIVE':'ANATOMY // SCAN STANDBY'});
 ids('viewBtn').addEventListener('click',e=>{const sides=stage.querySelectorAll('.side');const hidden=sides[0].style.display!=='none';sides.forEach(s=>s.style.display=hidden?'none':'');e.currentTarget.textContent=hidden?'＋ 顯示面板':'＋ 隱藏面板'});
 document.addEventListener('visibilitychange',resume);
 const timer=()=>{if(document.hidden)return;const d=new Date();ids('clock').textContent=d.toLocaleTimeString('en-GB',{hour12:false});if(!paused){const s=d.getSeconds();ids('bpm').textContent=String(70+s%5).padStart(3,'0')+' BPM';ids('neural').textContent=(98.1+(s%3)*.1).toFixed(1)+'%';if(scanning){const n=72+s%28;ids('coverage').textContent=n.toFixed(1)+'%';ids('coverageBar').style.setProperty('--progress',n+'%')}}};timer();setInterval(timer,1000);
