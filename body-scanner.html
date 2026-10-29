@@ -1,241 +1,106 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>科幻全像投影系統</title>
-    <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #020712;
-            overflow: hidden;
-            font-family: 'Segoe UI', Roboto, sans-serif;
-        }
-
-        /* 原生 2D 畫布，100% 本地相容 */
-        #local-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-        }
-
-        .scifi-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 2;
-            pointer-events: none;
-            background-image: 
-                linear-gradient(rgba(0, 243, 255, 0.02) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 243, 255, 0.02) 1px, transparent 1px);
-            background-size: 30px 30px;
-        }
-
-        @keyframes floatAnimation {
-            0% { transform: translate(-50%, -50%) translateY(0px); }
-            50% { transform: translate(-50%, -50%) translateY(-12px); }
-            100% { transform: translate(-50%, -50%) translateY(0px); }
-        }
-
-        .scifi-panel {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 360px;
-            padding: 25px;
-            background: rgba(6, 26, 44, 0.5); /* 加深底色確保本地無毛玻璃時也清晰 */
-            border: 1px solid #00f3ff;
-            border-radius: 4px;
-            color: #d1f4ff;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            box-shadow: 0 0 25px rgba(0, 243, 255, 0.2);
-            z-index: 10;
-            animation: floatAnimation 5s ease-in-out infinite;
-        }
-
-        .scifi-panel::before {
-            content: '';
-            position: absolute;
-            top: -1px; left: -1px;
-            width: 15px; height: 15px;
-            border-top: 3px solid #ff0055;
-            border-left: 3px solid #ff0055;
-        }
-
-        .panel-header {
-            border-bottom: 1px solid rgba(0, 243, 255, 0.25);
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-        }
-
-        .panel-title {
-            margin: 0;
-            font-size: 18px;
-            letter-spacing: 2px;
-            color: #00f3ff;
-            text-shadow: 0 0 8px rgba(0, 243, 255, 0.6);
-        }
-
-        .data-row {
-            display: flex;
-            justify-content: space-between;
-            margin: 12px 0;
-            font-size: 14px;
-        }
-
-        .data-label { color: rgba(209, 244, 255, 0.6); }
-        .data-value { color: #00f3ff; font-weight: bold; }
-
-        .progress-bar-container {
-            background: rgba(0, 243, 255, 0.1);
-            height: 6px;
-            border-radius: 3px;
-            overflow: hidden;
-            margin-top: 5px;
-        }
-
-        .progress-fill {
-            background: linear-gradient(90deg, #00f3ff, #ff0055);
-            height: 100%;
-            width: 78%; 
-            box-shadow: 0 0 8px #00f3ff;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#020712">
+  <title>科幻全像投影系統｜Holographic Console</title>
+  <style>
+    :root{color-scheme:dark;--cyan:#00f3ff;--pink:#ff0055}
+    *{box-sizing:border-box}
+    html,body{margin:0;width:100%;min-height:100%;background:#020712;color:#d1f4ff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans TC",sans-serif}
+    body{min-height:100vh;min-height:100dvh;overflow:hidden}
+    #local-canvas{position:fixed;inset:0;display:block;width:100%;height:100%;z-index:1}
+    .scifi-overlay{position:fixed;inset:0;z-index:2;pointer-events:none;background-image:linear-gradient(rgba(0,243,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(0,243,255,.035) 1px,transparent 1px);background-size:30px 30px}
+    .scifi-overlay::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,transparent 8%,rgba(2,7,18,.5) 90%)}
+    .panel-holder{position:fixed;inset:0;z-index:10;display:grid;place-items:center;padding:20px;pointer-events:none}
+    .scifi-panel{width:min(100%,410px);padding:25px;background:rgba(6,26,44,.76);border:1px solid var(--cyan);border-radius:5px;box-shadow:0 0 25px rgba(0,243,255,.22),inset 0 0 16px rgba(0,243,255,.06);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);position:relative;animation:floatAnimation 5s ease-in-out infinite}
+    .scifi-panel::before{content:"";position:absolute;top:-2px;left:-2px;width:18px;height:18px;border-top:3px solid var(--pink);border-left:3px solid var(--pink)}
+    .panel-header{border-bottom:1px solid rgba(0,243,255,.28);padding-bottom:12px;margin-bottom:16px}
+    .panel-title{margin:0;font-size:clamp(14px,3.6vw,18px);letter-spacing:1.5px;color:var(--cyan);text-shadow:0 0 8px rgba(0,243,255,.6);overflow-wrap:anywhere}
+    .subtitle{font-size:10px;letter-spacing:2px;color:#8faebd;margin-top:8px}
+    .data-row{display:flex;justify-content:space-between;gap:12px;margin:13px 0;font-size:14px}
+    .data-label{color:rgba(209,244,255,.7)}.data-value{color:var(--cyan);font-weight:700;white-space:nowrap}
+    .progress-bar-container{background:rgba(0,243,255,.12);height:7px;border-radius:4px;overflow:hidden;margin-top:8px}
+    .progress-fill{background:linear-gradient(90deg,var(--cyan),var(--pink));height:100%;width:78%;box-shadow:0 0 8px var(--cyan)}
+    .footnote{text-align:right;font-size:10px;margin-top:14px;color:#7c9cae;letter-spacing:1px}
+    .status-indicator{display:inline-block;background:#4affe1;width:7px;height:7px;border-radius:50%;box-shadow:0 0 8px #4affe1;margin-right:5px}
+    @keyframes floatAnimation{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+    @media(max-width:420px){.scifi-panel{padding:20px}.data-row{font-size:12px}}
+    @media(prefers-reduced-motion:reduce){.scifi-panel{animation:none}}
+  </style>
 </head>
 <body>
-
-    <!-- 1. 純本地 Canvas 畫布層 -->
-    <canvas id="local-canvas"></canvas>
-
-    <!-- 2. 背景網格 -->
-    <div class="scifi-overlay"></div>
-
-    <!-- 3. 文字面板 -->
-    <div class="scifi-panel">
-        <div class="panel-header">
-            <h2 class="panel-title">SYSTEM // VITAL_SIGNS</h2>
-        </div>
-        <div class="data-row">
-            <span class="data-label">主體結構狀態</span>
-            <span class="data-value">ONLINE</span>
-        </div>
-        <div class="data-row">
-            <span class="data-label">神經網絡連結度</span>
-            <span class="data-value">98.2 %</span>
-        </div>
-        <div class="data-row">
-            <span class="data-label">全像投影穩定率</span>
-            <span class="data-value">78 %</span>
-        </div>
-        <div class="progress-bar-container">
-            <div class="progress-fill"></div>
-        </div>
-    </div>
-
-    <script>
-        // 本地純 JS 3D 粒子矩陣運算
-        const canvas = document.getElementById('local-canvas');
-        const ctx = canvas.getContext('2d');
-
-        let width = canvas.width = window.innerWidth;
-        let height = canvas.height = window.innerHeight;
-
-        // 生成 3D 球體點雲資料
-        const points = [];
-        const numPoints = 350; // 粒子數量
-        const radius = 220;    // 3D 結構半徑
-
-        for (let i = 0; i < numPoints; i++) {
-            // 數學公式分配球面坐標
-            let theta = Math.acos(Math.random() * 2 - 1);
-            let phi = Math.random() * Math.PI * 2;
-
-            points.push({
-                x: radius * Math.sin(theta) * Math.cos(phi),
-                y: radius * Math.sin(theta) * Math.sin(phi),
-                z: radius * Math.cos(theta)
-            });
+  <canvas id="local-canvas" aria-label="旋轉全像粒子球背景"></canvas>
+  <div class="scifi-overlay" aria-hidden="true"></div>
+  <main class="panel-holder">
+    <section class="scifi-panel" aria-label="系統狀態">
+      <header class="panel-header">
+        <h1 class="panel-title">SYSTEM // VITAL_SIGNS</h1>
+        <div class="subtitle"><span class="status-indicator"></span>HOLOGRAPHIC INTERFACE / ACTIVE</div>
+      </header>
+      <div class="data-row"><span class="data-label">主體結構狀態</span><span class="data-value">ONLINE</span></div>
+      <div class="data-row"><span class="data-label">神經網絡連結度</span><span class="data-value">98.2 %</span></div>
+      <div class="data-row"><span class="data-label">全像投影穩定率</span><span class="data-value">78 %</span></div>
+      <div class="progress-bar-container" role="progressbar" aria-label="全像投影穩定率" aria-valuenow="78" aria-valuemin="0" aria-valuemax="100"><div class="progress-fill"></div></div>
+      <div class="footnote">LOCAL SYSTEM // v1.1</div>
+    </section>
+  </main>
+  <script>
+    (() => {
+      'use strict';
+      const canvas = document.getElementById('local-canvas');
+      const ctx = canvas && canvas.getContext('2d', { alpha: false });
+      if (!ctx) { console.warn('Canvas 2D is unavailable.'); return; }
+      let width = 0, height = 0, dpr = 1;
+      const count = 500, radius = 220, fov = 520;
+      const points = Array.from({length:count}, (_, i) => {
+        const y = 1 - 2 * (i + 0.5) / count;
+        const r = Math.sqrt(Math.max(0, 1-y*y));
+        const phi = i * Math.PI * (3 - Math.sqrt(5));
+        return {x:r*Math.cos(phi)*radius,y:y*radius,z:r*Math.sin(phi)*radius};
+      });
+      function resize(){
+        width = window.innerWidth;
+        height = window.innerHeight;
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = Math.round(width*dpr);
+        canvas.height = Math.round(height*dpr);
+        ctx.setTransform(dpr,0,0,dpr,0,0);
+      }
+      window.addEventListener('resize',resize,{passive:true});
+      resize();
+      const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      let last = 0, ay = 0, ax = 0;
+      function draw(t){
+        const dt = last ? Math.min((t-last)/1000,.05) : 0;
+        last=t;
+        if(!reduceMotion){ay += dt*.36;ax += dt*.12;}
+        ctx.globalCompositeOperation='source-over';
+        ctx.fillStyle='#020712';
+        ctx.fillRect(0,0,width,height);
+        ctx.globalCompositeOperation='screen';
+        const ca=Math.cos(ay),sa=Math.sin(ay),cb=Math.cos(ax),sb=Math.sin(ax);
+        const screenRadius=Math.min(radius,Math.max(75,Math.min(width,height)*.30));
+        const factor=screenRadius/radius;
+        const cx=width/2,cy=height/2;
+        for(const p of points){
+          const x=p.x*ca-p.z*sa;
+          const z=p.x*sa+p.z*ca;
+          const y=p.y*cb-z*sb;
+          const rz=p.y*sb+z*cb;
+          const scale=fov/(fov+rz);
+          const opacity=.22+((rz+radius)/(radius*2))*.65;
+          const dotSize=Math.max(.65,(1.15+(rz+radius)/radius*1.25)*factor);
+          ctx.beginPath();
+          ctx.arc(cx+x*scale*factor,cy+y*scale*factor,dotSize,0,Math.PI*2);
+          ctx.fillStyle=rz>0?`rgba(0,243,255,${opacity})`:`rgba(255,0,85,${opacity*.75})`;
+          ctx.fill();
         }
-
-        let angleY = 0.01; // 旋轉速度
-        let angleX = 0.005;
-
-        function rotateY(point, angle) {
-            let cos = Math.cos(angle);
-            let sin = Math.sin(angle);
-            let x1 = point.x * cos - point.z * sin;
-            let z1 = point.z * cos + point.x * sin;
-            point.x = x1;
-            point.z = z1;
-        }
-
-        function rotateX(point, angle) {
-            let cos = Math.cos(angle);
-            let sin = Math.sin(angle);
-            let y1 = point.y * cos - point.z * sin;
-            let z1 = point.z * cos + point.y * sin;
-            point.y = y1;
-            point.z = z1;
-        }
-
-        // 渲染循環
-        function draw() {
-            ctx.clearRect(0, 0, width, height);
-            
-            // 設定畫布重疊發光模式 (雷射全像感)
-            ctx.globalCompositeOperation = 'screen';
-
-            let cx = width / 2;
-            let cy = height / 2;
-            let fov = 400; // 視角深度
-
-            points.forEach(p => {
-                // 計算旋轉
-                rotateY(p, angleY);
-                rotateX(p, angleX);
-
-                // 3D 投影到 2D 螢幕坐標
-                let scale = fov / (fov + p.z);
-                let x2d = p.x * scale + cx;
-                let y2d = p.y * scale + cy;
-
-                // 根據 3D 深度 (Z 軸) 決定粒子大小與透明度
-                let size = (p.z + radius) / radius * 2 + 1;
-                let alpha = (p.z + radius) / (radius * 2) * 0.6 + 0.2;
-
-                // 繪製科技發光點
-                ctx.beginPath();
-                ctx.arc(x2d, y2d, size, 0, Math.PI * 2);
-                
-                // 漸層混合色（前半段偏藍，後半段偏粉）
-                if (p.z > 0) {
-                    ctx.fillStyle = `rgba(0, 243, 255, ${alpha})`;
-                } else {
-                    ctx.fillStyle = `rgba(255, 0, 85, ${alpha * 0.8})`;
-                }
-                ctx.fill();
-            });
-
-            requestAnimationFrame(draw);
-        }
-
-        draw();
-
-        // 監聽視窗縮放
-        window.addEventListener('resize', () => {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-        });
-    </script>
+        if(!reduceMotion) requestAnimationFrame(draw);
+      }
+      requestAnimationFrame(draw);
+    })();
+  </script>
 </body>
 </html>
