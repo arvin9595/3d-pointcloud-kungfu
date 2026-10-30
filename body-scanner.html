@@ -85,6 +85,8 @@
 @media(max-width:800px){.medical-layer{top:50%!important;width:1408px!important;height:768px!important}}
 @media(max-width:490px){.medical-layer{top:50%!important;width:1408px!important;height:768px!important}}
 
+/* QA: calibration markers remain visible even if anatomy is off. */
+.stage[data-calibration="on"] .medical-layer{opacity:1!important}
 /* V2.2 — cinematic layers: gradient / border / transform only; no video or shaders */
 .glow-column{position:absolute;z-index:2;left:40%;top:10%;width:20%;height:82%;pointer-events:none;background:radial-gradient(ellipse 48% 48% at 50% 45%,rgba(44,222,255,.19),rgba(17,151,225,.055) 54%,transparent 85%);opacity:.60}
 .lens{position:absolute;z-index:3;pointer-events:none;left:22%;top:52%;width:56%;height:1px;background:linear-gradient(90deg,transparent,rgba(255,172,116,.04) 10%,rgba(255,178,110,.42) 48%,rgba(145,245,255,.5) 53%,rgba(255,173,93,.22) 67%,transparent);box-shadow:0 0 14px 3px rgba(42,193,230,.1);opacity:.55}
