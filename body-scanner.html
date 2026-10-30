@@ -2,7 +2,7 @@
 <html lang="zh-Hant-TW">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#020c14"><title>ANATOMICA // Cinematic Hologram Scanner V2.2</title>
+<meta name="theme-color" content="#020c14"><title>ANATOMICA // Cinematic Hologram Scanner V2.3</title>
 <style>
 :root{--cyan:#77f4ff;--cyan2:#11c8e9;--orange:#ffad72;--ink:#061b2a;--line:rgba(130,227,255,.34)}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#01070c;color:#defaff;font-family:Arial,"Noto Sans TC",sans-serif}button{font:inherit}.stage{position:relative;width:100%;height:100%;height:100dvh;min-height:400px;isolation:isolate;background:#010910;overflow:hidden}
@@ -33,6 +33,64 @@
 .stage[data-mode="cinema"] .ecg polyline{animation:trace 4s linear infinite}
 @media(prefers-reduced-motion:reduce){.stage[data-mode="cinema"] .backdrop,.stage[data-mode="cinema"] .ecg polyline{animation:none!important}}
 
+/* V2.3 — lightweight simulated depth separation. The source is still one composite image.
+   Exactly matched background positions prevent the foreground from drifting. No heavy blur. */
+.depth-person{position:absolute;inset:0;z-index:2;pointer-events:none;background:url('assets/anatomy-lab.jpg') center center / cover no-repeat;filter:brightness(1.12) saturate(1.17) contrast(1.06);opacity:.76;-webkit-mask-image:radial-gradient(ellipse 17% 48% at 50% 53%,#000 30%,rgba(0,0,0,.95) 54%,transparent 99%);mask-image:radial-gradient(ellipse 17% 48% at 50% 53%,#000 30%,rgba(0,0,0,.95) 54%,transparent 99%);transform:translateZ(0)}
+.depth-halo{position:absolute;z-index:2;pointer-events:none;left:39%;width:22%;top:17%;height:73%;background:radial-gradient(ellipse closest-side,rgba(57,222,255,.18),rgba(5,140,212,.04) 64%,transparent);opacity:.6}
+.depth-floor{position:absolute;z-index:2;pointer-events:none;left:38%;width:24%;bottom:5%;height:5%;border-radius:50%;background:radial-gradient(ellipse,rgba(79,234,255,.36),rgba(21,152,205,.10) 45%,transparent 75%);transform:scaleY(.35)}
+.stage[data-depth="off"] .depth-person,.stage[data-depth="off"] .depth-halo,.stage[data-depth="off"] .depth-floor{display:none}
+.stage[data-mode="still"] .depth-halo,.stage[data-mode="still"] .depth-floor{opacity:.3}
+@media(max-width:800px){.depth-person{ -webkit-mask-image:radial-gradient(ellipse 23% 40% at 50% 53%,#000 24%,transparent 100%);mask-image:radial-gradient(ellipse 23% 40% at 50% 53%,#000 24%,transparent 100%)}.depth-halo{left:30%;width:40%}.depth-floor{left:30%;width:40%}}
+/* V2.3 QA fix — keep duplicated image pixels registered at all breakpoints.
+   A moving source image behind a static masked copy produces doubled outlines. */
+.stage[data-depth="on"][data-mode="cinema"] .backdrop{animation:none!important;transform:none!important;will-change:auto}
+.depth-person{background-position:center center;background-size:cover;background-repeat:no-repeat}
+@media(max-width:490px){
+  .depth-person{background-size:auto 100%;background-position:center center}
+}
+/* Avoid motion for systems that request reduced motion, including projection lighting. */
+@media(prefers-reduced-motion:reduce){
+  .stage[data-mode="cinema"] .lens,.stage[data-mode="cinema"] .glow-column{animation:none!important}
+}
+
+/* V2.3A — procedural medical illustration overlays, no external image generation.
+   These are cinematic schematic graphics, NOT medical diagnostics or exact anatomy. */
+.medical-layer{position:absolute;z-index:4;left:50%;top:51%;width:min(30vw,375px);height:min(78vh,690px);transform:translate(-50%,-50%);pointer-events:none;opacity:0;transition:opacity .35s ease}
+.medical-layer svg{width:100%;height:100%;overflow:visible;display:block}
+.medical-layer .bone{fill:none;stroke:#b5fcff;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round;opacity:.8}
+.medical-layer .fine{stroke-width:1;opacity:.48}
+.medical-layer .nerve{fill:none;stroke:#ffb577;stroke-width:1.7;stroke-linecap:round;opacity:.85}
+.medical-layer .nerve-core{stroke:#83f5ff;stroke-width:3;opacity:.8}
+.medical-layer .organ{fill:rgba(255,133,90,.12);stroke:#ffb577;stroke-width:2}
+.medical-layer[data-layer="skeletal"] .anatomy-nerve,.medical-layer[data-layer="neural"] .anatomy-bone{display:none}
+.stage[data-anatomy="skeletal"] .medical-layer[data-layer="skeletal"],.stage[data-anatomy="neural"] .medical-layer[data-layer="neural"]{opacity:.82}
+.stage[data-anatomy="skeletal"] .depth-person,.stage[data-anatomy="neural"] .depth-person{opacity:.42}
+.stage[data-anatomy="skeletal"] .glow-column,.stage[data-anatomy="neural"] .glow-column{opacity:.25}
+@media(max-width:800px){.medical-layer{width:min(49vw,335px);height:min(70vh,580px);top:49%}}
+@media(max-width:490px){.medical-layer{width:55vw;height:66vh;top:48%}}
+@media(prefers-reduced-motion:reduce){.medical-layer{transition:none}}
+
+/* V2.3A-2 calibrated in source-image coordinates (1408 x 768).
+   The same cover scale is used for background, person mask and SVG; alignment does not depend on viewport breakpoints. */
+.medical-layer,.medical-layer svg{overflow:hidden}
+.medical-layer{left:50%!important;top:50%!important;width:1408px!important;height:768px!important;transform:translate(-50%,-50%) scale(var(--image-scale,1))!important;transform-origin:50% 50%;transition:opacity .2s linear}
+.medical-layer svg{width:1408px!important;height:768px!important}
+.medical-layer .calibration-points{display:none}
+.stage[data-calibration="on"] .medical-layer{opacity:1!important}
+.stage[data-calibration="on"] .calibration-points{display:block}
+.calibration-points line{stroke:#b5ffbe;stroke-width:1;stroke-dasharray:5 5;opacity:.72}
+.calibration-points circle{fill:rgba(20,255,170,.2);stroke:#a4ffc6;stroke-width:2}
+.calibration-points text{font:bold 13px monospace;fill:#bcffe0;paint-order:stroke;stroke:#001014;stroke-width:3px}
+.stage[data-anatomy="off"] .medical-layer{opacity:0!important}
+@media(max-width:800px){.medical-layer{top:50%!important;width:1408px!important;height:768px!important}}
+@media(max-width:490px){.medical-layer{top:50%!important;width:1408px!important;height:768px!important}}
+
+/* QA: calibration markers remain visible even if anatomy is off. */
+.stage[data-calibration="on"] .medical-layer{opacity:1!important}
+/* V2.3A-3 lower-body landmarks: screenshot-guided candidate offsets.
+   Display the hip->knee->ankle chains only during calibration; do not assert medical precision. */
+.calibration-lower-guides{display:none;fill:none;stroke:#8bffc5;stroke-width:1.25;stroke-dasharray:7 5;opacity:.75}
+.stage[data-calibration="on"] .calibration-lower-guides{display:block}
 /* V2.2 — cinematic layers: gradient / border / transform only; no video or shaders */
 .glow-column{position:absolute;z-index:2;left:40%;top:10%;width:20%;height:82%;pointer-events:none;background:radial-gradient(ellipse 48% 48% at 50% 45%,rgba(44,222,255,.19),rgba(17,151,225,.055) 54%,transparent 85%);opacity:.60}
 .lens{position:absolute;z-index:3;pointer-events:none;left:22%;top:52%;width:56%;height:1px;background:linear-gradient(90deg,transparent,rgba(255,172,116,.04) 10%,rgba(255,178,110,.42) 48%,rgba(145,245,255,.5) 53%,rgba(255,173,93,.22) 67%,transparent);box-shadow:0 0 14px 3px rgba(42,193,230,.1);opacity:.55}
@@ -53,19 +111,36 @@
 </head>
 <body>
 <main class="stage" id="stage" aria-label="科幻人體全像投影掃描系統">
-<div class="backdrop" aria-hidden="true"></div><div class="glow-column" aria-hidden="true"></div><div class="lens" aria-hidden="true"></div><div class="frame-corners" aria-hidden="true"></div><div class="filmgrain" aria-hidden="true"></div><div class="scan-label" id="scanLabel" aria-hidden="true">ANATOMY // SCAN SEQUENCE ACTIVE</div><canvas id="fx" aria-hidden="true"></canvas><div class="beam" aria-hidden="true"></div><div class="circle" aria-hidden="true"></div><div class="target" aria-hidden="true"></div>
+<div class="backdrop" aria-hidden="true"></div><div class="depth-halo" aria-hidden="true"></div><div class="depth-person" aria-hidden="true"></div><div class="depth-floor" aria-hidden="true"></div><div class="glow-column" aria-hidden="true"></div><div class="lens" aria-hidden="true"></div><div class="medical-layer" id="medicalLayer" data-layer="skeletal" aria-hidden="true"><svg viewBox="0 0 1408 768" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+<defs><filter id="medGlow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+<g transform="translate(509 53) scale(1.30 1.11)"><g class="anatomy-bone" filter="url(#medGlow)">
+<ellipse class="bone" cx="150" cy="47" rx="31" ry="40"/><path class="bone fine" d="M122 48Q150 67 178 48 M136 73Q150 81 164 73"/>
+<path class="bone" d="M150 87 V292 M142 96Q116 114 92 111 M158 96Q184 114 208 111 M149 110Q106 101 101 133Q101 169 149 182 M151 110Q194 101 199 133Q199 169 151 182"/>
+<path class="bone fine" d="M105 128 Q150 147 195 128 M103 141Q150 162 197 141 M104 154Q150 174 196 154 M109 167Q150 186 191 167"/>
+<path class="bone" d="M145 205Q119 217 107 256Q114 291 145 283 M155 205Q181 217 193 256Q186 291 155 283 M105 259Q150 309 195 259"/>
+<path class="bone" d="M99 116L67 199L47 283 M201 116L233 199L253 283 M119 281L103 418L113 547 M181 281L197 418L187 547"/>
+<path class="bone fine" d="M95 199L55 283 M205 199L245 283 M112 418L121 546 M188 418L179 546 M46 284L35 321 M47 284L48 324 M48 284L59 323 M253 284L241 323 M253 284L253 325 M253 284L265 321"/>
+<ellipse class="bone" cx="150" cy="292" rx="8" ry="11"/><ellipse class="bone" cx="106" cy="427" rx="12" ry="13"/><ellipse class="bone" cx="194" cy="427" rx="12" ry="13"/>
+<path class="bone" d="M113 547 L100 570 L81 584 M187 547 L200 570 L219 584"/>
+</g>
+<g class="anatomy-nerve" filter="url(#medGlow)">
+<path class="nerve-core" fill="none" d="M150 30V292 M150 108Q107 115 89 170L48 293 M150 108Q193 115 211 170L252 293 M150 280Q119 310 110 424L110 551 M150 280Q181 310 190 424L190 551"/>
+<path class="nerve" d="M142 78Q115 95 92 128 M158 78Q185 95 208 128 M148 134Q121 155 100 196 M152 134Q179 155 200 196 M148 196Q117 217 105 252 M152 196Q183 217 195 252 M146 270Q125 347 100 380 M154 270Q175 347 200 380 M108 443L91 515 M192 443L209 515 M49 292L32 323 M251 292L268 323"/>
+<path class="organ" d="M150 139C138 125 128 138 136 151L150 171L164 151C172 138 162 125 150 139Z"/>
+<circle cx="150" cy="31" r="16" fill="none" stroke="#ffb577" stroke-width="2"/><circle cx="150" cy="31" r="6" fill="#ffb577"/>
+</g></g><g class="calibration-lower-guides"><path d="M666 365L679 535L675 673 M744 365L729 535L733 673"/></g><g class="calibration-points"><circle cx="704" cy="105" r="7"/><line x1="689" y1="105" x2="719" y2="105"/><line x1="704" y1="90" x2="704" y2="120"/><text x="715" y="94">HEAD</text><circle cx="620" cy="180" r="7"/><line x1="605" y1="180" x2="635" y2="180"/><line x1="620" y1="165" x2="620" y2="195"/><text x="631" y="169">L-SHOULDER</text><circle cx="788" cy="180" r="7"/><line x1="773" y1="180" x2="803" y2="180"/><line x1="788" y1="165" x2="788" y2="195"/><text x="799" y="169">R-SHOULDER</text><circle cx="666" cy="365" r="7"/><line x1="651" y1="365" x2="681" y2="365"/><line x1="666" y1="350" x2="666" y2="380"/><text x="677" y="354">L-HIP</text><circle cx="744" cy="365" r="7"/><line x1="729" y1="365" x2="759" y2="365"/><line x1="744" y1="350" x2="744" y2="380"/><text x="755" y="354">R-HIP</text><circle cx="679" cy="535" r="7"/><line x1="664" y1="535" x2="694" y2="535"/><line x1="679" y1="520" x2="679" y2="550"/><text x="690" y="524">L-KNEE</text><circle cx="729" cy="535" r="7"/><line x1="714" y1="535" x2="744" y2="535"/><line x1="729" y1="520" x2="729" y2="550"/><text x="740" y="524">R-KNEE</text><circle cx="675" cy="673" r="7"/><line x1="660" y1="673" x2="690" y2="673"/><line x1="675" y1="658" x2="675" y2="688"/><text x="686" y="662">L-ANKLE</text><circle cx="733" cy="673" r="7"/><line x1="718" y1="673" x2="748" y2="673"/><line x1="733" y1="658" x2="733" y2="688"/><text x="744" y="662">R-ANKLE</text></g></svg></div><div class="frame-corners" aria-hidden="true"></div><div class="filmgrain" aria-hidden="true"></div><div class="scan-label" id="scanLabel" aria-hidden="true">ANATOMY // SCAN SEQUENCE ACTIVE</div><canvas id="fx" aria-hidden="true"></canvas><div class="beam" aria-hidden="true"></div><div class="circle" aria-hidden="true"></div><div class="target" aria-hidden="true"></div>
 <div class="hud">
 <header class="topbar"><div><div class="eyebrow">ANATOMICA // PROJECTION SYSTEM</div><div class="brand">HUMAN // HOLOGRAM</div><div class="sub">BIOMETRIC VISUALIZATION · CINEMATIC INTERFACE</div></div><div class="pill"><span class="live"></span><span id="status">SYSTEM ONLINE</span></div></header>
 <section class="side left" aria-label="左側診斷資料"><div class="panel"><h2>01 / CENTRAL NERVOUS</h2><div class="row"><span>神經訊號連結</span><span class="value" id="neural">98.2%</span></div><div class="track"><div class="fill" style="--progress:98%"></div></div><div class="row"><span>訊號同步</span><span class="value">STABLE</span></div><div class="small">NEURAL PATHWAYS // ACTIVE</div></div><div class="panel"><h2>02 / CARDIAC SIGNAL</h2><svg class="ecg" viewBox="0 0 220 40" role="img" aria-label="裝飾性心電波形"><polyline points="0,22 38,22 47,19 53,25 60,22 69,22 77,6 85,36 94,22 126,22 135,19 141,25 148,22 157,22 165,6 173,36 182,22 220,22"/></svg><div class="row"><span>模擬心率</span><span class="value orange" id="bpm">072 BPM</span></div></div></section>
 <section class="side right" aria-label="右側掃描資料"><div class="panel"><h2>03 / SKELETAL MAPPING</h2><div class="row"><span>骨骼結構</span><span class="value">LOCKED</span></div><div class="row"><span>掃描覆蓋率</span><span class="value" id="coverage">78.0%</span></div><div class="track"><div class="fill" id="coverageBar" style="--progress:78%"></div></div><div class="small">MULTI-LAYER ANATOMY SCAN</div></div><div class="panel"><h2>04 / PROJECTION CORE</h2><div class="readout" id="integrity">99.6<span style="font-size:13px"> %</span></div><div class="small">HOLOGRAM INTEGRITY</div><div class="row"><span>渲染狀態</span><span class="value">ACTIVE</span></div><div class="row"><span>能量波段</span><span class="value orange">CYAN / AMBER</span></div></div></section>
-<footer class="bottom"><div class="controls" role="group" aria-label="掃描操作"><button id="modeBtn" type="button" title="切換畫面效能">效能：流暢</button><button id="scanBtn" class="active" type="button">● 掃描中</button><button id="pauseBtn" type="button">Ⅱ 暫停動畫</button><button id="viewBtn" type="button">＋ 隱藏面板</button></div><div class="footerdata"><div>ANATOMICAL SYSTEM // CINEMATIC V2.2</div><div>LOCAL SIMULATION · <span class="time" id="clock">00:00:00</span></div></div></footer>
+<footer class="bottom"><div class="controls" role="group" aria-label="掃描操作"><button id="modeBtn" type="button" title="切換畫面效能">效能：流暢</button><button id="depthBtn" type="button" class="active" aria-pressed="true" title="比較原圖與景深合成">景深：開</button><button id="calibrationBtn" type="button" title="顯示人體基準點">定位：關</button><button id="anatomyBtn" type="button" aria-label="切換骨骼、神經示意圖層" title="醫療示意視覺，非診斷用途">醫療：關</button><button id="scanBtn" class="active" type="button">● 掃描中</button><button id="pauseBtn" type="button">Ⅱ 暫停動畫</button><button id="viewBtn" type="button">＋ 隱藏面板</button></div><div class="footerdata"><div>ANATOMICAL SYSTEM // CINEMATIC V2.3A-3</div><div>LOCAL SIMULATION · <span class="time" id="clock">00:00:00</span></div></div></footer>
 </div><div class="cinema top"></div><div class="cinema low"></div>
 </main>
 <script>
 (()=>{'use strict';
 const stage=document.getElementById('stage'),canvas=document.getElementById('fx'),ctx=canvas.getContext('2d',{alpha:true});
 const ids=id=>document.getElementById(id);
-let w=0,h=0,particles=[],last=0,paused=false,scanning=true,mode='lite',raf=0,needsRedraw=true;
+let w=0,h=0,particles=[],last=0,paused=false,scanning=true,mode='lite',raf=0,needsRedraw=true,depth=true;
 const modes=['lite','still','cinema'];const labels={lite:'效能：流暢',still:'效能：靜態',cinema:'效能：電影'};
 function resize(){const r=stage.getBoundingClientRect();w=Math.max(1,r.width);h=Math.max(1,r.height);
 // Cap internal resolution: Retina and large windows must not multiply the workload.
@@ -87,8 +162,15 @@ raf=requestAnimationFrame(render);
 }
 function resume(){if(raf)cancelAnimationFrame(raf);raf=0;last=0;if(mode==='still'){ctx.clearRect(0,0,w,h);return;}if(!paused&&!document.hidden)raf=requestAnimationFrame(render)}
 function setMode(next){mode=next;stage.dataset.mode=next;ids('modeBtn').textContent=labels[next];resume()}
-resize();window.addEventListener('resize',()=>{resize();resume()},{passive:true});
+function alignMedical(){const r=stage.getBoundingClientRect();const scale=Math.max(r.width/1408,r.height/768);ids('medicalLayer').style.setProperty('--image-scale',scale.toFixed(6));}
+resize();alignMedical();window.addEventListener('resize',()=>{resize();alignMedical();resume()},{passive:true});
 ids('modeBtn').addEventListener('click',()=>setMode(modes[(modes.indexOf(mode)+1)%modes.length]));
+ids('depthBtn').addEventListener('click',e=>{depth=!depth;stage.dataset.depth=depth?'on':'off';e.currentTarget.textContent=depth?'景深：開':'景深：關';e.currentTarget.classList.toggle('active',depth);e.currentTarget.setAttribute('aria-pressed',String(depth))});
+stage.dataset.depth='on';
+const anatomyModes=['off','skeletal','neural'];const anatomyLabels={off:'醫療：關',skeletal:'醫療：骨骼',neural:'醫療：神經'};let anatomyIndex=0;
+ids('anatomyBtn').addEventListener('click',e=>{anatomyIndex=(anatomyIndex+1)%anatomyModes.length;const layer=anatomyModes[anatomyIndex];stage.dataset.anatomy=layer;ids('medicalLayer').dataset.layer=layer;e.currentTarget.textContent=anatomyLabels[layer];e.currentTarget.classList.toggle('active',layer!=='off');e.currentTarget.setAttribute('aria-pressed',String(layer!=='off'))});
+stage.dataset.anatomy='off';
+let showCalibration=false;stage.dataset.calibration='off';ids('calibrationBtn').addEventListener('click',e=>{showCalibration=!showCalibration;stage.dataset.calibration=showCalibration?'on':'off';e.currentTarget.textContent=showCalibration?'定位：開':'定位：關';e.currentTarget.classList.toggle('active',showCalibration);});
 ids('pauseBtn').addEventListener('click',e=>{paused=!paused;stage.classList.toggle('paused',paused);e.currentTarget.textContent=paused?'▶ 繼續動畫':'Ⅱ 暫停動畫';ids('status').textContent=paused?'SYSTEM PAUSED':'SYSTEM ONLINE';resume()});
 ids('scanBtn').addEventListener('click',e=>{scanning=!scanning;stage.querySelector('.beam').style.display=scanning?'':'none';e.currentTarget.textContent=scanning?'● 掃描中':'○ 開始掃描';e.currentTarget.classList.toggle('active',scanning);ids('scanLabel').textContent=scanning?'ANATOMY // SCAN SEQUENCE ACTIVE':'ANATOMY // SCAN STANDBY'});
 ids('viewBtn').addEventListener('click',e=>{const sides=stage.querySelectorAll('.side');const hidden=sides[0].style.display!=='none';sides.forEach(s=>s.style.display=hidden?'none':'');e.currentTarget.textContent=hidden?'＋ 顯示面板':'＋ 隱藏面板'});
