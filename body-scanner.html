@@ -41,6 +41,17 @@
 .stage[data-depth="off"] .depth-person,.stage[data-depth="off"] .depth-halo,.stage[data-depth="off"] .depth-floor{display:none}
 .stage[data-mode="still"] .depth-halo,.stage[data-mode="still"] .depth-floor{opacity:.3}
 @media(max-width:800px){.depth-person{ -webkit-mask-image:radial-gradient(ellipse 23% 40% at 50% 53%,#000 24%,transparent 100%);mask-image:radial-gradient(ellipse 23% 40% at 50% 53%,#000 24%,transparent 100%)}.depth-halo{left:30%;width:40%}.depth-floor{left:30%;width:40%}}
+/* V2.3 QA fix — keep duplicated image pixels registered at all breakpoints.
+   A moving source image behind a static masked copy produces doubled outlines. */
+.stage[data-depth="on"][data-mode="cinema"] .backdrop{animation:none!important;transform:none!important;will-change:auto}
+.depth-person{background-position:center center;background-size:cover;background-repeat:no-repeat}
+@media(max-width:490px){
+  .depth-person{background-size:auto 100%;background-position:center center}
+}
+/* Avoid motion for systems that request reduced motion, including projection lighting. */
+@media(prefers-reduced-motion:reduce){
+  .stage[data-mode="cinema"] .lens,.stage[data-mode="cinema"] .glow-column{animation:none!important}
+}
 /* V2.2 — cinematic layers: gradient / border / transform only; no video or shaders */
 .glow-column{position:absolute;z-index:2;left:40%;top:10%;width:20%;height:82%;pointer-events:none;background:radial-gradient(ellipse 48% 48% at 50% 45%,rgba(44,222,255,.19),rgba(17,151,225,.055) 54%,transparent 85%);opacity:.60}
 .lens{position:absolute;z-index:3;pointer-events:none;left:22%;top:52%;width:56%;height:1px;background:linear-gradient(90deg,transparent,rgba(255,172,116,.04) 10%,rgba(255,178,110,.42) 48%,rgba(145,245,255,.5) 53%,rgba(255,173,93,.22) 67%,transparent);box-shadow:0 0 14px 3px rgba(42,193,230,.1);opacity:.55}
