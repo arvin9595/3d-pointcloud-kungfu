@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#020c14"><title>ANATOMICA // Cinematic Hologram Scanner V2.3</title>
+<style>
+:root{--cyan:#77f4ff;--cyan2:#11c8e9;--orange:#ffad72;--ink:#061b2a;--line:rgba(130,227,255,.34)}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#01070c;color:#defaff;font-family:Arial,"Noto Sans TC",sans-serif}button{font:inherit}.stage{position:relative;width:100%;height:100%;height:100dvh;min-height:400px;isolation:isolate;background:#010910;overflow:hidden}
+.backdrop{position:absolute;inset:-3%;background:url('https://arvin9595.github.io/3d-pointcloud-kungfu/assets/anatomy-lab.jpg') center center / cover no-repeat;filter:brightness(.70) saturate(1.2) contrast(1.12);transform:scale(1.05);animation:camera 28s ease-in-out infinite alternate;will-change:transform}
+.stage:before{content:"";position:absolute;inset:0;z-index:1;background:radial-gradient(ellipse 40% 75% at 50% 45%,transparent 10%,rgba(0,6,13,.3) 85%),linear-gradient(90deg,rgba(0,10,18,.82),transparent 27%,transparent 73%,rgba(0,10,18,.8)),linear-gradient(0deg,rgba(0,6,13,.85),transparent 24%,transparent 78%,rgba(0,6,13,.65));pointer-events:none}
+.stage:after{content:"";position:absolute;inset:0;z-index:6;opacity:.22;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0px,transparent 3px,rgba(100,230,255,.07) 4px);mix-blend-mode:screen}
+#fx{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none}.beam{position:absolute;top:7%;bottom:8%;left:37%;width:26%;z-index:3;pointer-events:none;overflow:hidden;mix-blend-mode:screen;opacity:.84}.beam:before{content:"";position:absolute;left:0;right:0;height:14%;top:-20%;background:linear-gradient(180deg,transparent,rgba(33,214,255,.035) 10%,rgba(122,249,255,.24) 70%,rgba(195,255,255,.65) 92%,transparent);filter:blur(5px);animation:scan 7s linear infinite}.beam:after{content:"";position:absolute;inset:0;border-left:1px solid rgba(99,231,255,.06);border-right:1px solid rgba(99,231,255,.06);box-shadow:inset 0 0 70px rgba(25,196,244,.06)}
+.hud{position:absolute;inset:0;z-index:5;pointer-events:none}.hud>*{pointer-events:auto}.topbar{position:absolute;top:4%;left:4%;right:4%;display:flex;justify-content:space-between;align-items:start;gap:15px}.eyebrow{font:700 10px/1.5 monospace;letter-spacing:.28em;color:var(--cyan2);text-shadow:0 0 11px #00e6ff}.brand{font-size:clamp(17px,2.3vw,32px);letter-spacing:.16em;font-weight:700;margin:5px 0 2px;text-shadow:0 0 26px rgba(50,224,253,.55)}.sub{font-size:10px;letter-spacing:.17em;color:#96bbc9}.pill{border:1px solid var(--line);padding:10px 14px;background:rgba(0,15,28,.48);font:11px monospace;letter-spacing:.16em;white-space:nowrap;backdrop-filter:blur(8px)}.live{display:inline-block;width:6px;height:6px;border-radius:100%;margin-right:9px;background:#4dffc4;box-shadow:0 0 10px #4dffc4;animation:blink 2s infinite}
+.side{position:absolute;width:min(25vw,310px);top:25%;display:flex;flex-direction:column;gap:16px}.left{left:4%}.right{right:4%}.panel{position:relative;border-top:1px solid var(--line);border-left:1px solid rgba(115,221,250,.18);background:linear-gradient(100deg,rgba(0,22,37,.62),rgba(0,15,27,.18));padding:15px 14px 14px;backdrop-filter:blur(5px);box-shadow:0 0 35px rgba(0,190,255,.06)}.panel:before{content:"";position:absolute;top:-2px;left:0;width:28px;height:3px;background:var(--cyan);box-shadow:0 0 12px var(--cyan)}.panel h2{font:700 clamp(10px,1vw,13px) monospace;letter-spacing:.17em;margin:0 0 14px;color:var(--cyan)}.row{display:flex;justify-content:space-between;gap:8px;font-size:clamp(10px,.9vw,12px);margin:10px 0;color:#a2c5d0}.value{color:#e0fcff;font-family:monospace}.orange{color:var(--orange)}.track{height:3px;background:#164257;overflow:hidden;margin-top:7px}.fill{height:100%;width:var(--progress,70%);background:linear-gradient(90deg,#1787ac,#88faff);box-shadow:0 0 8px var(--cyan);transition:width 1s}.ecg{width:100%;height:40px;display:block;overflow:visible}.ecg polyline{fill:none;stroke:#6becff;stroke-width:1.5;filter:drop-shadow(0 0 5px #26e0ff);stroke-dasharray:220;animation:trace 4s linear infinite}.small{font:9px monospace;color:#7297a6;letter-spacing:.13em}.readout{font:28px monospace;color:var(--cyan);text-shadow:0 0 20px rgba(39,235,255,.7);line-height:1.4}.circle{position:absolute;left:50%;top:51%;width:min(48vw,570px);height:min(72vh,650px);transform:translate(-50%,-50%);border-radius:50%;border:1px solid rgba(118,240,255,.1);box-shadow:0 0 75px rgba(63,228,255,.06),inset 0 0 90px rgba(63,228,255,.03);pointer-events:none}.circle:before,.circle:after{content:"";position:absolute;inset:8%;border-radius:50%;border:1px dashed rgba(117,237,255,.12);animation:spin 55s linear infinite}.circle:after{inset:20%;border-style:solid;opacity:.3;animation-direction:reverse}.target{position:absolute;left:50%;top:45%;width:22px;height:22px;transform:translate(-50%,-50%);border:1px solid rgba(145,255,255,.5);border-radius:50%;box-shadow:0 0 15px rgba(135,248,255,.4);opacity:.7;pointer-events:none}.target:after{content:"";position:absolute;top:9px;left:-9px;width:38px;height:1px;background:rgba(166,255,255,.6)}
+.bottom{position:absolute;bottom:4%;left:4%;right:4%;display:flex;justify-content:space-between;align-items:end;gap:12px}.controls{display:flex;gap:7px;flex-wrap:wrap}.controls button{cursor:pointer;color:#b9dce6;padding:10px 13px;border:1px solid rgba(111,214,247,.34);background:rgba(2,18,32,.76);text-transform:uppercase;font:10px monospace;letter-spacing:.12em;backdrop-filter:blur(8px);transition:.2s}.controls button:hover,.controls button.active{border-color:var(--cyan);color:white;background:rgba(8,106,137,.38);box-shadow:0 0 15px rgba(22,206,247,.16)}.footerdata{text-align:right;font:10px/1.9 monospace;letter-spacing:.13em;color:#94b8c7}.time{color:#e1fbff}.cinema{position:absolute;left:0;right:0;height:2.5%;background:#000;z-index:8;pointer-events:none}.cinema.top{top:0}.cinema.low{bottom:0}.paused .backdrop,.paused .beam:before,.paused .ecg polyline,.paused .circle:before,.paused .circle:after{animation-play-state:paused}.paused .beam:before{opacity:.12}
+@keyframes camera{from{transform:scale(1.05) translate(0,0)}to{transform:scale(1.13) translate(-.7%,.5%)}}@keyframes scan{to{top:110%}}@keyframes trace{to{stroke-dashoffset:-440}}@keyframes spin{to{transform:rotate(360deg)}}@keyframes blink{50%{opacity:.35}}
+@media(max-width:800px){.topbar{top:4%;left:5%;right:5%}.brand{font-size:19px}.side{top:auto;bottom:19%;width:43%;gap:9px}.left{left:4%}.right{right:4%}.panel{padding:9px}.panel h2{font-size:10px;margin-bottom:7px}.row{font-size:10px;margin:6px 0}.side .panel:nth-child(2){display:none}.circle{width:66vw;height:60vh}.bottom{bottom:6%;left:4%;right:4%;display:block}.footerdata{display:none}.controls{justify-content:center}.controls button{padding:10px}.pill{font-size:9px;padding:7px}.backdrop{background-position:center center}}
+@media(max-width:490px){.stage{min-height:350px}.brand{font-size:15px;letter-spacing:.11em}.sub{font-size:8px}.eyebrow{font-size:8px}.pill{font-size:8px;letter-spacing:0;padding:5px}.side{bottom:17%;width:46%}.panel .row:nth-of-type(n+4){display:none}.panel h2{font-size:9px;letter-spacing:0}.row{font-size:9px}.readout{font-size:17px}.backdrop{background-size:auto 100%;background-position:center}.beam{left:23%;width:54%}.circle{height:50vh;width:80vw}.controls button{font-size:9px;padding:9px 8px}}
+@media(prefers-reduced-motion:reduce){.backdrop,.beam:before,.circle:before,.circle:after,.ecg polyline,.live{animation:none!important}}
+
+/* V2.1: default fast-render mode. Animated backgrounds and blur are intentionally off. */
+.backdrop{inset:0;transform:none;animation:none!important;will-change:auto;filter:brightness(.78) saturate(1.07)}
+.panel,.pill,.controls button{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.beam{mix-blend-mode:normal;opacity:.52}.beam:before{filter:none;animation-duration:11s}
+.stage:after{display:none}.circle:before,.circle:after{animation:none!important}
+.ecg polyline{filter:none;animation:none}
+#fx{opacity:.65}
+.mode{color:#adf5ff;border:1px solid rgba(111,214,247,.34);background:rgba(2,18,32,.8);padding:9px 10px;font:10px monospace;letter-spacing:.05em;cursor:pointer}
+.stage[data-mode="still"] #fx,.stage[data-mode="still"] .beam{display:none}
+.stage[data-mode="still"] .backdrop,.stage[data-mode="still"] .live{animation:none!important}
+.stage[data-mode="cinema"] .backdrop{animation:camera 28s ease-in-out infinite alternate!important;will-change:transform}
+.stage[data-mode="cinema"] .beam{opacity:.8;mix-blend-mode:screen}
+.stage[data-mode="cinema"] .ecg polyline{animation:trace 4s linear infinite}
+@media(prefers-reduced-motion:reduce){.stage[data-mode="cinema"] .backdrop,.stage[data-mode="cinema"] .ecg polyline{animation:none!important}}
+
+/* V2.3 — lightweight simulated depth separation. The source is still one composite image.
+   Exactly matched background positions prevent the foreground from drifting. No heavy blur. */
+.depth-person{position:absolute;inset:0;z-index:2;pointer-events:none;background:url('https://arvin9595.github.io/3d-pointcloud-kungfu/assets/anatomy-lab.jpg') center center / cover no-repeat;filter:brightness(1.12) saturate(1.17) contrast(1.06);opacity:.76;-webkit-mask-image:radial-gradient(ellipse 17% 48% at 50% 53%,#000 30%,rgba(0,0,0,.95) 54%,transparent 99%);mask-image:radial-gradient(ellipse 17% 48% at 50% 53%,#000 30%,rgba(0,0,0,.95) 54%,transparent 99%);transform:translateZ(0)}
+.depth-halo{position:absolute;z-index:2;pointer-events:none;left:39%;width:22%;top:17%;height:73%;background:radial-gradient(ellipse closest-side,rgba(57,222,255,.18),rgba(5,140,212,.04) 64%,transparent);opacity:.6}
+.depth-floor{position:absolute;z-index:2;pointer-events:none;left:38%;width:24%;bottom:5%;height:5%;border-radius:50%;background:radial-gradient(ellipse,rgba(79,234,255,.36),rgba(21,152,205,.10) 45%,transparent 75%);transform:scaleY(.35)}
+.stage[data-depth="off"] .depth-person,.stage[data-depth="off"] .depth-halo,.stage[data-depth="off"] .depth-floor{display:none}
+.stage[data-mode="still"] .depth-halo,.stage[data-mode="still"] .depth-floor{opacity:.3}
+@media(max-width:800px){.depth-person{ -webkit-mask-image:radial-gradient(ellipse 23% 40% at 50% 53%,#000 24%,transparent 100%);mask-image:radial-gradient(ellipse 23% 40% at 50% 53%,#000 24%,transparent 100%)}.depth-halo{left:30%;width:40%}.depth-floor{left:30%;width:40%}}
+/* V2.3 QA fix — keep duplicated image pixels registered at all breakpoints.
+   A moving source image behind a static masked copy produces doubled outlines. */
+.stage[data-depth="on"][data-mode="cinema"] .backdrop{animation:none!important;transform:none!important;will-change:auto}
+.depth-person{background-position:center center;background-size:cover;background-repeat:no-repeat}
+@media(max-width:490px){
+  .depth-person{background-size:auto 100%;background-position:center center}
+}
+/* Avoid motion for systems that request reduced motion, including projection lighting. */
+@media(prefers-reduced-motion:reduce){
+  .stage[data-mode="cinema"] .lens,.stage[data-mode="cinema"] .glow-column{animation:none!important}
+}
+
+/* V2.3A — procedural medical illustration overlays, no external image generation.
+   These are cinematic schematic graphics, NOT medical diagnostics or exact anatomy. */
+.medical-layer{position:absolute;z-index:4;left:50%;top:51%;width:min(30vw,375px);height:min(78vh,690px);transform:translate(-50%,-50%);pointer-events:none;opacity:0;transition:opacity .35s ease}
+.medical-layer svg{width:100%;height:100%;overflow:visible;display:block}
+.medical-layer .bone{fill:none;stroke:#b5fcff;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round;opacity:.8}
+.medical-layer .fine{stroke-width:1;opacity:.48}
+.medical-layer .nerve{fill:none;stroke:#ffb577;stroke-width:1.7;stroke-linecap:round;opacity:.85}
+.medical-layer .nerve-core{stroke:#83f5ff;stroke-width:3;opacity:.8}
+.medical-layer .organ{fill:rgba(255,133,90,.12);stroke:#ffb577;stroke-width:2}
+.medical-layer[data-layer="skeletal"] .anatomy-nerve,.medical-layer[data-layer="neural"] .anatomy-bone{display:none}
+.stage[data-anatomy="skeletal"] .medical-layer[data-layer="skeletal"],.stage[data-anatomy="neural"] .medical-layer[data-layer="neural"]{opacity:.82}
+.stage[data-anatomy="skeletal"] .depth-person,.stage[data-anatomy="neural"] .depth-person{opacity:.42}
+.stage[data-anatomy="skeletal"] .glow-column,.stage[data-anatomy="neural"] .glow-column{opacity:.25}
+@media(max-width:800px){.medical-layer{width:min(49vw,335px);height:min(70vh,580px);top:49%}}
+@media(max-width:490px){.medical-layer{width:55vw;height:66vh;top:48%}}
+@media(prefers-reduced-motion:reduce){.medical-layer{transition:none}}
+
+/* V2.3A-2 calibrated in source-image coordinates (1408 x 768).
+   The same cover scale is used for background, person mask and SVG; alignment does not depend on viewport breakpoints. */
+.medical-layer,.medical-layer svg{overflow:hidden}
+.medical-layer{left:50%!important;top:50%!important;width:1408px!important;height:768px!important;transform:translate(-50%,-50%) scale(var(--image-scale,1))!important;transform-origin:50% 50%;transition:opacity .2s linear}
+.medical-layer svg{width:1408px!important;height:768px!important}
+.medical-layer .calibration-points{display:none}
+.stage[data-calibration="on"] .medical-layer{opacity:1!important}
+.stage[data-calibration="on"] .calibration-points{display:block}
+.calibration-points line{stroke:#b5ffbe;stroke-width:1;stroke-dasharray:5 5;opacity:.72}
+.calibration-points circle{fill:rgba(20,255,170,.2);stroke:#a4ffc6;stroke-width:2}
+.calibration-points text{font:bold 13px monospace;fill:#bcffe0;paint-order:stroke;stroke:#001014;stroke-width:3px}
+.stage[data-anatomy="off"] .medical-layer{opacity:0!important}
+@media(max-width:800px){.medical-layer{top:50%!important;width:1408px!important;height:768px!important}}
+@media(max-width:490px){.medical-layer{top:50%!important;width:1408px!important;height:768px!important}}
+
+/* QA: calibration markers remain visible even if anatomy is off. */
+.stage[data-calibration="on"] .medical-layer{opacity:1!important}
+/* V2.3A-3 lower-body landmarks: screenshot-guided candidate offsets.
+   Display the hip->knee->ankle chains only during calibration; do not assert medical precision. */
+.calibration-lower-guides{display:none;fill:none;stroke:#8bffc5;stroke-width:1.25;stroke-dasharray:7 5;opacity:.75}
+.stage[data-calibration="on"] .calibration-lower-guides{display:block}
+/* V2.3A-4: overlay paths use calibrated native image coordinate space.
+   Disable SVG Gaussian blur during lite/still modes to protect performance. */
+.stage[data-mode="lite"] .anatomy-bone,.stage[data-mode="lite"] .anatomy-nerve,.stage[data-mode="still"] .anatomy-bone,.stage[data-mode="still"] .anatomy-nerve{filter:none}
+/* V2.2 — cinematic layers: gradient / border / transform only; no video or shaders */
+.glow-column{position:absolute;z-index:2;left:40%;top:10%;width:20%;height:82%;pointer-events:none;background:radial-gradient(ellipse 48% 48% at 50% 45%,rgba(44,222,255,.19),rgba(17,151,225,.055) 54%,transparent 85%);opacity:.60}
+.lens{position:absolute;z-index:3;pointer-events:none;left:22%;top:52%;width:56%;height:1px;background:linear-gradient(90deg,transparent,rgba(255,172,116,.04) 10%,rgba(255,178,110,.42) 48%,rgba(145,245,255,.5) 53%,rgba(255,173,93,.22) 67%,transparent);box-shadow:0 0 14px 3px rgba(42,193,230,.1);opacity:.55}
+.frame-corners{position:absolute;inset:12% 30%;z-index:4;pointer-events:none;opacity:.5;background:linear-gradient(var(--cyan),var(--cyan)) top left/22px 1px no-repeat,linear-gradient(var(--cyan),var(--cyan)) top left/1px 22px no-repeat,linear-gradient(var(--cyan),var(--cyan)) top right/22px 1px no-repeat,linear-gradient(var(--cyan),var(--cyan)) top right/1px 22px no-repeat,linear-gradient(var(--cyan),var(--cyan)) bottom left/22px 1px no-repeat,linear-gradient(var(--cyan),var(--cyan)) bottom left/1px 22px no-repeat,linear-gradient(var(--cyan),var(--cyan)) bottom right/22px 1px no-repeat,linear-gradient(var(--cyan),var(--cyan)) bottom right/1px 22px no-repeat}
+.scan-label{position:absolute;z-index:4;pointer-events:none;left:50%;top:13%;transform:translateX(-50%);font:10px monospace;color:rgba(145,244,255,.9);letter-spacing:.24em;text-shadow:0 0 9px #00d9ff;white-space:nowrap}
+.filmgrain{position:absolute;inset:0;z-index:3;pointer-events:none;opacity:.13;background:repeating-linear-gradient(0deg,transparent 0px,rgba(40,166,192,.09) 1px,transparent 2px,transparent 6px)}
+.cinema.top,.cinema.low{height:3.2%}.stage[data-mode="cinema"] .cinema.top,.stage[data-mode="cinema"] .cinema.low{height:4%}
+.stage[data-mode="still"] .lens,.stage[data-mode="still"] .glow-column,.stage[data-mode="still"] .filmgrain{display:none}
+.stage[data-mode="lite"] .lens{opacity:.4}
+.stage[data-mode="cinema"] .lens{animation:light-breathe 7s ease-in-out infinite alternate}
+.stage[data-mode="cinema"] .glow-column{animation:light-breathe 5s ease-in-out infinite alternate}
+.stage[data-mode="cinema"] .frame-corners{opacity:.75}
+.stage.paused .lens,.stage.paused .glow-column{animation-play-state:paused!important}
+@keyframes light-breathe{from{opacity:.25}to{opacity:.75}}
+@media(max-width:800px){.frame-corners{inset:14% 20%}.scan-label{top:15%;font-size:8px}.lens{left:12%;width:76%}}
+@media(prefers-reduced-motion:reduce){.stage[data-mode="cinema"] .lens,.stage[data-mode="cinema"] .glow-column{animation:none!important}}
+</style>
+</head>
+<body>
+<main class="stage" id="stage" aria-label="科幻人體全像投影掃描系統">
+<div class="backdrop" aria-hidden="true"></div><div class="depth-halo" aria-hidden="true"></div><div class="depth-person" aria-hidden="true"></div><div class="depth-floor" aria-hidden="true"></div><div class="glow-column" aria-hidden="true"></div><div class="lens" aria-hidden="true"></div><div class="medical-layer" id="medicalLayer" data-layer="skeletal" aria-hidden="true"><svg viewBox="0 0 1408 768" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+<defs><filter id="medGlow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+<g class="anatomy-bone" filter="url(#medGlow)">
+<ellipse class="bone" cx="704" cy="105" rx="28" ry="34"/>
+<path class="bone" d="M704 137L704 367 M704 148Q669 150 647 165Q633 173 620 180 M704 148Q739 150 761 165Q775 173 788 180"/>
+<path class="bone fine" d="M704 185Q651 158 640 220Q658 264 704 271 M704 185Q757 158 768 220Q750 264 704 271 M648 202Q704 225 760 202 M653 222Q704 246 755 222 M661 242Q704 262 747 242"/>
+<path class="bone" d="M704 344Q680 334 666 365Q682 396 704 384 M704 344Q728 334 744 365Q726 396 704 384"/>
+<path class="bone" d="M620 180Q601 203 597 235Q586 281 571 328 M788 180Q807 203 811 235Q822 281 837 328 M666 365L679 535L675 673 M744 365L729 535L733 673"/>
+<path class="bone fine" d="M627 196Q612 246 581 319 M781 196Q796 246 827 319 M671 373L688 520 M737 373L720 520 M678 547L686 654 M730 547L722 654"/>
+<circle class="bone" cx="679" cy="535" r="10"/><circle class="bone" cx="729" cy="535" r="10"/>
+<path class="bone" d="M675 673L660 698L650 704 M733 673L748 698L759 704"/>
+</g>
+<g class="anatomy-nerve" filter="url(#medGlow)">
+<path class="nerve-core" fill="none" d="M704 92L704 365 M704 167Q658 155 620 180Q598 225 570 327 M704 167Q750 155 788 180Q810 225 838 327 M704 355L666 365L679 535L675 673 M704 355L744 365L729 535L733 673"/>
+<path class="nerve" d="M700 147Q655 156 624 182Q604 213 593 254 M708 147Q753 156 784 182Q804 213 815 254 M620 186Q592 255 573 317 M788 186Q816 255 835 317 M699 236Q667 270 650 307 M709 236Q741 270 758 307 M675 399Q654 463 663 518 M733 399Q754 463 745 518 M674 543L658 633 M734 543L750 633"/>
+<path class="organ" d="M704 212C690 196 676 215 686 232L704 252L722 232C732 215 718 196 704 212Z"/>
+</g><g class="calibration-lower-guides"><path d="M666 365L679 535L675 673 M744 365L729 535L733 673"/></g><g class="calibration-points"><circle cx="704" cy="105" r="7"/><line x1="689" y1="105" x2="719" y2="105"/><line x1="704" y1="90" x2="704" y2="120"/><text x="715" y="94">HEAD</text><circle cx="620" cy="180" r="7"/><line x1="605" y1="180" x2="635" y2="180"/><line x1="620" y1="165" x2="620" y2="195"/><text x="631" y="169">L-SHOULDER</text><circle cx="788" cy="180" r="7"/><line x1="773" y1="180" x2="803" y2="180"/><line x1="788" y1="165" x2="788" y2="195"/><text x="799" y="169">R-SHOULDER</text><circle cx="666" cy="365" r="7"/><line x1="651" y1="365" x2="681" y2="365"/><line x1="666" y1="350" x2="666" y2="380"/><text x="677" y="354">L-HIP</text><circle cx="744" cy="365" r="7"/><line x1="729" y1="365" x2="759" y2="365"/><line x1="744" y1="350" x2="744" y2="380"/><text x="755" y="354">R-HIP</text><circle cx="679" cy="535" r="7"/><line x1="664" y1="535" x2="694" y2="535"/><line x1="679" y1="520" x2="679" y2="550"/><text x="690" y="524">L-KNEE</text><circle cx="729" cy="535" r="7"/><line x1="714" y1="535" x2="744" y2="535"/><line x1="729" y1="520" x2="729" y2="550"/><text x="740" y="524">R-KNEE</text><circle cx="675" cy="673" r="7"/><line x1="660" y1="673" x2="690" y2="673"/><line x1="675" y1="658" x2="675" y2="688"/><text x="686" y="662">L-ANKLE</text><circle cx="733" cy="673" r="7"/><line x1="718" y1="673" x2="748" y2="673"/><line x1="733" y1="658" x2="733" y2="688"/><text x="744" y="662">R-ANKLE</text></g></svg></div><div class="frame-corners" aria-hidden="true"></div><div class="filmgrain" aria-hidden="true"></div><div class="scan-label" id="scanLabel" aria-hidden="true">ANATOMY // SCAN SEQUENCE ACTIVE</div><canvas id="fx" aria-hidden="true"></canvas><div class="beam" aria-hidden="true"></div><div class="circle" aria-hidden="true"></div><div class="target" aria-hidden="true"></div>
+<div class="hud">
+<header class="topbar"><div><div class="eyebrow">ANATOMICA // PROJECTION SYSTEM</div><div class="brand">HUMAN // HOLOGRAM</div><div class="sub">BIOMETRIC VISUALIZATION · CINEMATIC INTERFACE</div></div><div class="pill"><span class="live"></span><span id="status">SYSTEM ONLINE</span></div></header>
+<section class="side left" aria-label="左側診斷資料"><div class="panel"><h2>01 / CENTRAL NERVOUS</h2><div class="row"><span>神經訊號連結</span><span class="value" id="neural">98.2%</span></div><div class="track"><div class="fill" style="--progress:98%"></div></div><div class="row"><span>訊號同步</span><span class="value">STABLE</span></div><div class="small">NEURAL PATHWAYS // ACTIVE</div></div><div class="panel"><h2>02 / CARDIAC SIGNAL</h2><svg class="ecg" viewBox="0 0 220 40" role="img" aria-label="裝飾性心電波形"><polyline points="0,22 38,22 47,19 53,25 60,22 69,22 77,6 85,36 94,22 126,22 135,19 141,25 148,22 157,22 165,6 173,36 182,22 220,22"/></svg><div class="row"><span>模擬心率</span><span class="value orange" id="bpm">072 BPM</span></div></div></section>
+<section class="side right" aria-label="右側掃描資料"><div class="panel"><h2>03 / SKELETAL MAPPING</h2><div class="row"><span>骨骼結構</span><span class="value">LOCKED</span></div><div class="row"><span>掃描覆蓋率</span><span class="value" id="coverage">78.0%</span></div><div class="track"><div class="fill" id="coverageBar" style="--progress:78%"></div></div><div class="small">MULTI-LAYER ANATOMY SCAN</div></div><div class="panel"><h2>04 / PROJECTION CORE</h2><div class="readout" id="integrity">99.6<span style="font-size:13px"> %</span></div><div class="small">HOLOGRAM INTEGRITY</div><div class="row"><span>渲染狀態</span><span class="value">ACTIVE</span></div><div class="row"><span>能量波段</span><span class="value orange">CYAN / AMBER</span></div></div></section>
+<footer class="bottom"><div class="controls" role="group" aria-label="掃描操作"><button id="modeBtn" type="button" title="切換畫面效能">效能：流暢</button><button id="depthBtn" type="button" class="active" aria-pressed="true" title="比較原圖與景深合成">景深：開</button><button id="calibrationBtn" type="button" title="顯示人體基準點">定位：關</button><button id="anatomyBtn" type="button" aria-label="切換骨骼、神經示意圖層" title="醫療示意視覺，非診斷用途">醫療：關</button><button id="scanBtn" class="active" type="button">● 掃描中</button><button id="pauseBtn" type="button">Ⅱ 暫停動畫</button><button id="viewBtn" type="button">＋ 隱藏面板</button></div><div class="footerdata"><div>ANATOMICAL SYSTEM // CINEMATIC V2.3A-5 MOBILE QA</div><div>LOCAL SIMULATION · <span class="time" id="clock">00:00:00</span></div></div></footer>
+</div><div class="cinema top"></div><div class="cinema low"></div>
+</main>
+<script>
+(()=>{'use strict';
+const stage=document.getElementById('stage'),canvas=document.getElementById('fx'),ctx=canvas.getContext('2d',{alpha:true});
+const ids=id=>document.getElementById(id);
+let w=0,h=0,particles=[],last=0,paused=false,scanning=true,mode='lite',raf=0,needsRedraw=true,depth=true;
+const modes=['lite','still','cinema'];const labels={lite:'效能：流暢',still:'效能：靜態',cinema:'效能：電影'};
+function resize(){const r=stage.getBoundingClientRect();w=Math.max(1,r.width);h=Math.max(1,r.height);
+// Cap internal resolution: Retina and large windows must not multiply the workload.
+const ratio=Math.min(window.devicePixelRatio||1,1.25,1280/w,800/h);
+canvas.width=Math.round(w*ratio);canvas.height=Math.round(h*ratio);
+ctx.setTransform(ratio,0,0,ratio,0,0);
+particles=Array.from({length:Math.min(38,Math.max(16,Math.floor(w*h/26000)))},()=>({x:Math.random()*w,y:Math.random()*h,v:.16+Math.random()*.24,rad:.4+Math.random()*.9,alpha:.15+Math.random()*.48,amber:Math.random()>.78}));needsRedraw=true;
+}
+function render(t){raf=0;if(paused||document.hidden||mode==='still')return;
+// Limit to 20 frames/s by default, 30 in cinema mode.
+const interval=mode==='cinema'?1000/30:1000/20;
+if(t-last>=interval){const dt=Math.min(t-last||interval,100);last=t;
+ctx.clearRect(0,0,w,h);
+for(const p of particles){p.y-=p.v*dt*.027;if(p.y<0){p.y=h;p.x=Math.random()*w}
+ctx.beginPath();ctx.arc(p.x,p.y,p.rad,0,Math.PI*2);
+ctx.fillStyle=p.amber?`rgba(255,165,109,${p.alpha})`:`rgba(77,227,255,${p.alpha})`;ctx.fill();}
+}
+raf=requestAnimationFrame(render);
+}
+function resume(){if(raf)cancelAnimationFrame(raf);raf=0;last=0;if(mode==='still'){ctx.clearRect(0,0,w,h);return;}if(!paused&&!document.hidden)raf=requestAnimationFrame(render)}
+function setMode(next){mode=next;stage.dataset.mode=next;ids('modeBtn').textContent=labels[next];resume()}
+function alignMedical(){const r=stage.getBoundingClientRect();const scale=Math.max(r.width/1408,r.height/768);ids('medicalLayer').style.setProperty('--image-scale',scale.toFixed(6));}
+resize();alignMedical();window.addEventListener('resize',()=>{resize();alignMedical();resume()},{passive:true});
+ids('modeBtn').addEventListener('click',()=>setMode(modes[(modes.indexOf(mode)+1)%modes.length]));
+ids('depthBtn').addEventListener('click',e=>{depth=!depth;stage.dataset.depth=depth?'on':'off';e.currentTarget.textContent=depth?'景深：開':'景深：關';e.currentTarget.classList.toggle('active',depth);e.currentTarget.setAttribute('aria-pressed',String(depth))});
+stage.dataset.depth='on';
+const anatomyModes=['off','skeletal','neural'];const anatomyLabels={off:'醫療：關',skeletal:'醫療：骨骼',neural:'醫療：神經'};let anatomyIndex=0;
+ids('anatomyBtn').addEventListener('click',e=>{anatomyIndex=(anatomyIndex+1)%anatomyModes.length;const layer=anatomyModes[anatomyIndex];stage.dataset.anatomy=layer;ids('medicalLayer').dataset.layer=layer;e.currentTarget.textContent=anatomyLabels[layer];e.currentTarget.classList.toggle('active',layer!=='off');e.currentTarget.setAttribute('aria-pressed',String(layer!=='off'))});
+stage.dataset.anatomy='off';
+let showCalibration=false;stage.dataset.calibration='off';ids('calibrationBtn').addEventListener('click',e=>{showCalibration=!showCalibration;stage.dataset.calibration=showCalibration?'on':'off';e.currentTarget.textContent=showCalibration?'定位：開':'定位：關';e.currentTarget.classList.toggle('active',showCalibration);});
+ids('pauseBtn').addEventListener('click',e=>{paused=!paused;stage.classList.toggle('paused',paused);e.currentTarget.textContent=paused?'▶ 繼續動畫':'Ⅱ 暫停動畫';ids('status').textContent=paused?'SYSTEM PAUSED':'SYSTEM ONLINE';resume()});
+ids('scanBtn').addEventListener('click',e=>{scanning=!scanning;stage.querySelector('.beam').style.display=scanning?'':'none';e.currentTarget.textContent=scanning?'● 掃描中':'○ 開始掃描';e.currentTarget.classList.toggle('active',scanning);ids('scanLabel').textContent=scanning?'ANATOMY // SCAN SEQUENCE ACTIVE':'ANATOMY // SCAN STANDBY'});
+ids('viewBtn').addEventListener('click',e=>{const sides=stage.querySelectorAll('.side');const hidden=sides[0].style.display!=='none';sides.forEach(s=>s.style.display=hidden?'none':'');e.currentTarget.textContent=hidden?'＋ 顯示面板':'＋ 隱藏面板'});
+document.addEventListener('visibilitychange',resume);
+const timer=()=>{if(document.hidden)return;const d=new Date();ids('clock').textContent=d.toLocaleTimeString('en-GB',{hour12:false});if(!paused){const s=d.getSeconds();ids('bpm').textContent=String(70+s%5).padStart(3,'0')+' BPM';ids('neural').textContent=(98.1+(s%3)*.1).toFixed(1)+'%';if(scanning){const n=72+s%28;ids('coverage').textContent=n.toFixed(1)+'%';ids('coverageBar').style.setProperty('--progress',n+'%')}}};timer();setInterval(timer,1000);
+setMode('lite');
+})();
+</script>
+</body></html>
