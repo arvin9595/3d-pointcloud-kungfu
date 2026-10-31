@@ -111,7 +111,11 @@
 @media(max-width:800px){.frame-corners{inset:14% 20%}.scan-label{top:15%;font-size:8px}.lens{left:12%;width:76%}}
 @media(prefers-reduced-motion:reduce){.stage[data-mode="cinema"] .lens,.stage[data-mode="cinema"] .glow-column{animation:none!important}}
 </style>
-</head>
+<style>
+#qaPanel{position:fixed;z-index:99;right:10px;top:12%;width:min(380px,calc(100vw - 20px));max-height:72dvh;overflow:auto;background:rgba(1,14,27,.95);color:#dffaff;border:1px solid #51d9e6;border-radius:10px;padding:14px;font:12px/1.5 system-ui,sans-serif;box-shadow:0 8px 36px #0009}
+#qaPanel h3{margin:0 0 10px;font-size:15px}#qaPanel button{padding:9px;margin:3px;border:1px solid #6be9ec;background:#07344c;color:#fff;border-radius:5px}#qaPanel pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;max-height:32vh;overflow:auto}
+#qaLauncher{position:fixed;right:10px;bottom:9%;z-index:100;background:#06506d;border:1px solid #8af5ff;border-radius:6px;color:white;padding:10px}
+</style></head>
 <body>
 <main class="stage" id="stage" aria-label="科幻人體全像投影掃描系統">
 <div class="backdrop" aria-hidden="true"></div><div class="depth-halo" aria-hidden="true"></div><div class="depth-person" aria-hidden="true"></div><div class="depth-floor" aria-hidden="true"></div><div class="glow-column" aria-hidden="true"></div><div class="lens" aria-hidden="true"></div><div class="medical-layer" id="medicalLayer" data-layer="skeletal" aria-hidden="true"><svg viewBox="0 0 1408 768" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
@@ -181,4 +185,31 @@ const timer=()=>{if(document.hidden)return;const d=new Date();ids('clock').textC
 setMode('lite');
 })();
 </script>
-</body></html>
+<button id="qaLauncher" type="button">開啟 QA 檢測</button>
+<section id="qaPanel" hidden aria-label="自動檢測面板"><h3>V2.3A｜自動 QA 診斷</h3><p>測量 SVG、背景定位與 rAF 更新率；結果可直接複製回聊天室。所有數據為裝置本機檢測，不會自動上傳。</p><button id="qaRun">開始檢測（約 6 秒）</button><button id="qaCopy">複製報告</button><button id="qaClose">關閉</button><pre id="qaResult">尚未檢測</pre></section><script>
+(()=>{'use strict';
+const el=id=>document.getElementById(id),panel=el('qaPanel'),out=el('qaResult');
+let report='尚未檢測';
+el('qaLauncher').onclick=()=>{panel.hidden=!panel.hidden};
+el('qaClose').onclick=()=>{panel.hidden=true};
+el('qaCopy').onclick=async()=>{try{await navigator.clipboard.writeText(report);out.textContent=report+'\n\n已複製至剪貼簿'}catch(e){const t=document.createElement('textarea');t.value=report;document.body.append(t);t.select();document.execCommand('copy');t.remove();out.textContent=report+'\n\n已嘗試複製'}};
+const wait=ms=>new Promise(ok=>setTimeout(ok,ms));
+async function fpsSample(ms=1800){let n=0,prev=0,gaps=[],active=true;const start=performance.now();return new Promise(resolve=>{function step(t){if(!active)return;if(prev)gaps.push(t-prev);prev=t;n++;if(t-start>=ms){active=false;const sec=(t-start)/1000;const sorted=gaps.sort((a,b)=>a-b);resolve({rafHz:Math.round(n/sec),p95Ms:Math.round(sorted[Math.floor(sorted.length*.95)]||0),frames:n});return}requestAnimationFrame(step)}requestAnimationFrame(step)})}
+const pt=(x,y,r,scale)=>({x:Math.round(r.left+r.width/2+(x-704)*scale),y:Math.round(r.top+r.height/2+(y-384)*scale)});
+el('qaRun').onclick=async()=>{
+out.textContent='檢測中…';const st=el('stage'),layer=el('medicalLayer');const old={mode:st.dataset.mode,anatomy:st.dataset.anatomy,calibration:st.dataset.calibration,layer:layer.dataset.layer};
+let data={test:'Body Scanner V2.3A mobile QA',timestamp:new Date().toISOString(),viewport:{width:innerWidth,height:innerHeight,dpr:devicePixelRatio},userAgent:navigator.userAgent,tests:{},modes:{}};
+try{
+const r=st.getBoundingClientRect(),scale=Math.max(r.width/1408,r.height/768);
+const actual=parseFloat(getComputedStyle(layer).getPropertyValue('--image-scale'))||parseFloat(layer.style.getPropertyValue('--image-scale'));
+data.tests.asset=await new Promise(resolve=>{const im=new Image();im.onload=()=>resolve({ok:true,width:im.naturalWidth,height:im.naturalHeight});im.onerror=()=>resolve({ok:false});im.src='https://arvin9595.github.io/3d-pointcloud-kungfu/assets/anatomy-lab.jpg'});
+data.tests.coverScale={computed:+scale.toFixed(5),css:actual,delta:typeof actual==='number'?+Math.abs(actual-scale).toFixed(5):null,pass:Math.abs(actual-scale)<.001};
+data.tests.svg={viewBox:layer.querySelector('svg')?.getAttribute('viewBox'),pass:layer.querySelector('svg')?.getAttribute('viewBox')==='0 0 1408 768'};
+data.tests.landmarks={head:pt(704,105,r,scale),leftShoulder:pt(620,180,r,scale),rightShoulder:pt(788,180,r,scale),leftKnee:pt(679,535,r,scale),rightKnee:pt(729,535,r,scale),leftAnkle:pt(675,673,r,scale),rightAnkle:pt(733,673,r,scale)};
+for(const m of ['lite','still','cinema']){st.dataset.mode=m;await wait(300);data.modes[m]=await fpsSample(1500)}
+data.notes=['rAF frequency is NOT full-site rendering FPS','SVG/image geometric alignment does not confirm anatomical pixel accuracy','Mode measurements use this QA replay, not production deployment'];
+}catch(e){data.error=String(e)}finally{st.dataset.mode=old.mode;st.dataset.anatomy=old.anatomy;st.dataset.calibration=old.calibration;layer.dataset.layer=old.layer}
+report=JSON.stringify(data,null,2);out.textContent=report;
+};
+})();
+</script></body></html>
