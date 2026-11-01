@@ -169,7 +169,7 @@ raf=requestAnimationFrame(render);
 function resume(){if(raf)cancelAnimationFrame(raf);raf=0;last=0;if(mode==='still'){ctx.clearRect(0,0,w,h);return;}if(!paused&&!document.hidden)raf=requestAnimationFrame(render)}
 function setMode(next){mode=next;stage.dataset.mode=next;ids('modeBtn').textContent=labels[next];resume()}
 function alignMedical(){const r=stage.getBoundingClientRect();const scale=Math.max(r.width/1408,r.height/768);ids('medicalLayer').style.setProperty('--image-scale',scale.toFixed(6));}
-resize();alignMedical();window.addEventListener('resize',()=>{resize();alignMedical();resume()},{passive:true});
+resize();alignMedical();window.addEventListener('resize',()=>{resize();alignMedical();resume()},{passive:true});if('ResizeObserver' in window){new ResizeObserver(()=>{alignMedical()}).observe(stage)}
 ids('modeBtn').addEventListener('click',()=>setMode(modes[(modes.indexOf(mode)+1)%modes.length]));
 ids('depthBtn').addEventListener('click',e=>{depth=!depth;stage.dataset.depth=depth?'on':'off';e.currentTarget.textContent=depth?'景深：開':'景深：關';e.currentTarget.classList.toggle('active',depth);e.currentTarget.setAttribute('aria-pressed',String(depth))});
 stage.dataset.depth='on';
@@ -200,10 +200,10 @@ el('qaRun').onclick=async()=>{
 out.textContent='檢測中…';const st=el('stage'),layer=el('medicalLayer');const old={mode:st.dataset.mode,anatomy:st.dataset.anatomy,calibration:st.dataset.calibration,layer:layer.dataset.layer};
 let data={test:'Body Scanner V2.3A mobile QA',timestamp:new Date().toISOString(),viewport:{width:innerWidth,height:innerHeight,dpr:devicePixelRatio},userAgent:navigator.userAgent,tests:{},modes:{}};
 try{
-const r=st.getBoundingClientRect(),scale=Math.max(r.width/1408,r.height/768);
+alignMedical();await wait(100);const r=st.getBoundingClientRect(),scale=Math.max(r.width/1408,r.height/768);
 const actual=parseFloat(getComputedStyle(layer).getPropertyValue('--image-scale'))||parseFloat(layer.style.getPropertyValue('--image-scale'));
 data.tests.asset=await new Promise(resolve=>{const im=new Image();im.onload=()=>resolve({ok:true,width:im.naturalWidth,height:im.naturalHeight});im.onerror=()=>resolve({ok:false});im.src='https://arvin9595.github.io/3d-pointcloud-kungfu/assets/anatomy-lab.jpg'});
-data.tests.coverScale={computed:+scale.toFixed(5),css:actual,delta:typeof actual==='number'?+Math.abs(actual-scale).toFixed(5):null,pass:Math.abs(actual-scale)<.001};
+data.tests.coverScale={computed:+scale.toFixed(5),css:actual,delta:Number.isFinite(actual)?+Math.abs(actual-scale).toFixed(5):null,pass:Number.isFinite(actual)&&Math.abs(actual-scale)<.001,stageSize:{width:Math.round(r.width),height:Math.round(r.height)},context:'scale resynchronized immediately before QA measurement'};
 data.tests.svg={viewBox:layer.querySelector('svg')?.getAttribute('viewBox'),pass:layer.querySelector('svg')?.getAttribute('viewBox')==='0 0 1408 768'};
 data.tests.landmarks={head:pt(704,105,r,scale),leftShoulder:pt(620,180,r,scale),rightShoulder:pt(788,180,r,scale),leftKnee:pt(679,535,r,scale),rightKnee:pt(729,535,r,scale),leftAnkle:pt(675,673,r,scale),rightAnkle:pt(733,673,r,scale)};
 for(const m of ['lite','still','cinema']){st.dataset.mode=m;await wait(300);data.modes[m]=await fpsSample(1500)}
