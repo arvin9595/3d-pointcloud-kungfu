@@ -115,6 +115,24 @@
 #qaPanel{position:fixed;z-index:99;right:10px;top:12%;width:min(380px,calc(100vw - 20px));max-height:72dvh;overflow:auto;background:rgba(1,14,27,.95);color:#dffaff;border:1px solid #51d9e6;border-radius:10px;padding:14px;font:12px/1.5 system-ui,sans-serif;box-shadow:0 8px 36px #0009}
 #qaPanel h3{margin:0 0 10px;font-size:15px}#qaPanel button{padding:9px;margin:3px;border:1px solid #6be9ec;background:#07344c;color:#fff;border-radius:5px}#qaPanel pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;max-height:32vh;overflow:auto}
 #qaLauncher{position:fixed;right:10px;bottom:9%;z-index:100;background:#06506d;border:1px solid #8af5ff;border-radius:6px;color:white;padding:10px}
+</style><style>
+/* V2.3A-6 Mobile HUD: desktop is unchanged; no expensive visual filters */
+#mobileDrawerToggle{display:none}
+@media(max-width:800px){
+ .stage .side{display:none!important}
+ .stage .topbar{top:5%;left:4%;right:4%;z-index:7}
+ .stage .brand{font-size:clamp(15px,4vw,20px)}
+ .stage .sub{max-width:220px;font-size:8px;line-height:1.35}
+ .stage .scan-label{top:18%;max-width:85vw;text-align:center;white-space:normal}
+ .stage .bottom{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 3%);left:3%;right:3%;display:block;z-index:9}
+ .stage .controls{display:none}
+ #mobileDrawerToggle{position:absolute;display:block;z-index:11;bottom:calc(env(safe-area-inset-bottom,0px) + 5%);left:14px;border:1px solid #75edff;color:#e8ffff;background:rgba(0,38,59,.91);padding:10px 15px;border-radius:9px;font-size:12px}
+ .stage[data-drawer="open"] .controls{display:flex;position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 11%);left:3%;right:3%;max-height:42dvh;overflow-y:auto;justify-content:flex-start;align-content:flex-start;gap:7px;padding:12px;border:1px solid rgba(104,238,255,.5);border-radius:12px;background:rgba(1,18,29,.96);box-shadow:0 5px 20px #0009}
+ .stage[data-drawer="open"] .controls button{padding:11px 9px;min-height:40px}
+ .stage[data-drawer="open"] .side{display:none!important}
+ #qaLauncher{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 5%);right:12px;padding:9px 12px;border-radius:30px;font-size:12px;z-index:101}
+ #qaPanel{top:8%;max-height:79dvh;right:8px}
+}
 </style></head>
 <body>
 <main class="stage" id="stage" aria-label="科幻人體全像投影掃描系統">
@@ -135,11 +153,11 @@
 <path class="nerve" d="M700 147Q655 156 624 182Q604 213 593 254 M708 147Q753 156 784 182Q804 213 815 254 M620 186Q592 255 573 317 M788 186Q816 255 835 317 M699 236Q667 270 650 307 M709 236Q741 270 758 307 M675 399Q654 463 663 518 M733 399Q754 463 745 518 M674 543L658 633 M734 543L750 633"/>
 <path class="organ" d="M704 212C690 196 676 215 686 232L704 252L722 232C732 215 718 196 704 212Z"/>
 </g><g class="calibration-lower-guides"><path d="M666 365L679 535L675 673 M744 365L729 535L733 673"/></g><g class="calibration-points"><circle cx="704" cy="105" r="7"/><line x1="689" y1="105" x2="719" y2="105"/><line x1="704" y1="90" x2="704" y2="120"/><text x="715" y="94">HEAD</text><circle cx="620" cy="180" r="7"/><line x1="605" y1="180" x2="635" y2="180"/><line x1="620" y1="165" x2="620" y2="195"/><text x="631" y="169">L-SHOULDER</text><circle cx="788" cy="180" r="7"/><line x1="773" y1="180" x2="803" y2="180"/><line x1="788" y1="165" x2="788" y2="195"/><text x="799" y="169">R-SHOULDER</text><circle cx="666" cy="365" r="7"/><line x1="651" y1="365" x2="681" y2="365"/><line x1="666" y1="350" x2="666" y2="380"/><text x="677" y="354">L-HIP</text><circle cx="744" cy="365" r="7"/><line x1="729" y1="365" x2="759" y2="365"/><line x1="744" y1="350" x2="744" y2="380"/><text x="755" y="354">R-HIP</text><circle cx="679" cy="535" r="7"/><line x1="664" y1="535" x2="694" y2="535"/><line x1="679" y1="520" x2="679" y2="550"/><text x="690" y="524">L-KNEE</text><circle cx="729" cy="535" r="7"/><line x1="714" y1="535" x2="744" y2="535"/><line x1="729" y1="520" x2="729" y2="550"/><text x="740" y="524">R-KNEE</text><circle cx="675" cy="673" r="7"/><line x1="660" y1="673" x2="690" y2="673"/><line x1="675" y1="658" x2="675" y2="688"/><text x="686" y="662">L-ANKLE</text><circle cx="733" cy="673" r="7"/><line x1="718" y1="673" x2="748" y2="673"/><line x1="733" y1="658" x2="733" y2="688"/><text x="744" y="662">R-ANKLE</text></g></svg></div><div class="frame-corners" aria-hidden="true"></div><div class="filmgrain" aria-hidden="true"></div><div class="scan-label" id="scanLabel" aria-hidden="true">ANATOMY // SCAN SEQUENCE ACTIVE</div><canvas id="fx" aria-hidden="true"></canvas><div class="beam" aria-hidden="true"></div><div class="circle" aria-hidden="true"></div><div class="target" aria-hidden="true"></div>
-<div class="hud">
+<div class="hud"><button id="mobileDrawerToggle" type="button" aria-expanded="false" aria-controls="mobileControls">☷ 控制台</button>
 <header class="topbar"><div><div class="eyebrow">ANATOMICA // PROJECTION SYSTEM</div><div class="brand">HUMAN // HOLOGRAM</div><div class="sub">BIOMETRIC VISUALIZATION · CINEMATIC INTERFACE</div></div><div class="pill"><span class="live"></span><span id="status">SYSTEM ONLINE</span></div></header>
 <section class="side left" aria-label="左側診斷資料"><div class="panel"><h2>01 / CENTRAL NERVOUS</h2><div class="row"><span>神經訊號連結</span><span class="value" id="neural">98.2%</span></div><div class="track"><div class="fill" style="--progress:98%"></div></div><div class="row"><span>訊號同步</span><span class="value">STABLE</span></div><div class="small">NEURAL PATHWAYS // ACTIVE</div></div><div class="panel"><h2>02 / CARDIAC SIGNAL</h2><svg class="ecg" viewBox="0 0 220 40" role="img" aria-label="裝飾性心電波形"><polyline points="0,22 38,22 47,19 53,25 60,22 69,22 77,6 85,36 94,22 126,22 135,19 141,25 148,22 157,22 165,6 173,36 182,22 220,22"/></svg><div class="row"><span>模擬心率</span><span class="value orange" id="bpm">072 BPM</span></div></div></section>
 <section class="side right" aria-label="右側掃描資料"><div class="panel"><h2>03 / SKELETAL MAPPING</h2><div class="row"><span>骨骼結構</span><span class="value">LOCKED</span></div><div class="row"><span>掃描覆蓋率</span><span class="value" id="coverage">78.0%</span></div><div class="track"><div class="fill" id="coverageBar" style="--progress:78%"></div></div><div class="small">MULTI-LAYER ANATOMY SCAN</div></div><div class="panel"><h2>04 / PROJECTION CORE</h2><div class="readout" id="integrity">99.6<span style="font-size:13px"> %</span></div><div class="small">HOLOGRAM INTEGRITY</div><div class="row"><span>渲染狀態</span><span class="value">ACTIVE</span></div><div class="row"><span>能量波段</span><span class="value orange">CYAN / AMBER</span></div></div></section>
-<footer class="bottom"><div class="controls" role="group" aria-label="掃描操作"><button id="modeBtn" type="button" title="切換畫面效能">效能：流暢</button><button id="depthBtn" type="button" class="active" aria-pressed="true" title="比較原圖與景深合成">景深：開</button><button id="calibrationBtn" type="button" title="顯示人體基準點">定位：關</button><button id="anatomyBtn" type="button" aria-label="切換骨骼、神經示意圖層" title="醫療示意視覺，非診斷用途">醫療：關</button><button id="scanBtn" class="active" type="button">● 掃描中</button><button id="pauseBtn" type="button">Ⅱ 暫停動畫</button><button id="viewBtn" type="button">＋ 隱藏面板</button></div><div class="footerdata"><div>ANATOMICAL SYSTEM // CINEMATIC V2.3A-5 MOBILE QA</div><div>LOCAL SIMULATION · <span class="time" id="clock">00:00:00</span></div></div></footer>
+<footer class="bottom"><div class="controls" id="mobileControls" role="group" aria-label="掃描操作"><button id="modeBtn" type="button" title="切換畫面效能">效能：流暢</button><button id="depthBtn" type="button" class="active" aria-pressed="true" title="比較原圖與景深合成">景深：開</button><button id="calibrationBtn" type="button" title="顯示人體基準點">定位：關</button><button id="anatomyBtn" type="button" aria-label="切換骨骼、神經示意圖層" title="醫療示意視覺，非診斷用途">醫療：關</button><button id="scanBtn" class="active" type="button">● 掃描中</button><button id="pauseBtn" type="button">Ⅱ 暫停動畫</button><button id="viewBtn" type="button">＋ 隱藏面板</button></div><div class="footerdata"><div>ANATOMICAL SYSTEM // CINEMATIC V2.3A-6 MOBILE QA</div><div>LOCAL SIMULATION · <span class="time" id="clock">00:00:00</span></div></div></footer>
 </div><div class="cinema top"></div><div class="cinema low"></div>
 </main>
 <script>
@@ -185,7 +203,7 @@ const timer=()=>{if(document.hidden)return;const d=new Date();ids('clock').textC
 setMode('lite');
 })();
 </script>
-<button id="qaLauncher" type="button">開啟 QA 檢測</button>
+<button id="qaLauncher" type="button">QA</button>
 <section id="qaPanel" hidden aria-label="自動檢測面板"><h3>V2.3A｜自動 QA 診斷</h3><p>測量 SVG、背景定位與 rAF 更新率；結果可直接複製回聊天室。所有數據為裝置本機檢測，不會自動上傳。</p><button id="qaRun">開始檢測（約 6 秒）</button><button id="qaCopy">複製報告</button><button id="qaClose">關閉</button><pre id="qaResult">尚未檢測</pre></section><script>
 (()=>{'use strict';
 const el=id=>document.getElementById(id),panel=el('qaPanel'),out=el('qaResult');
@@ -211,5 +229,10 @@ data.notes=['rAF frequency is NOT full-site rendering FPS','SVG/image geometric 
 }catch(e){data.error=String(e)}finally{st.dataset.mode=old.mode;st.dataset.anatomy=old.anatomy;st.dataset.calibration=old.calibration;layer.dataset.layer=old.layer}
 report=JSON.stringify(data,null,2);out.textContent=report;
 };
+})();
+</script><script>
+(()=>{'use strict';const b=document.getElementById('mobileDrawerToggle'),st=document.getElementById('stage');if(!b||!st)return;
+b.addEventListener('click',()=>{const opened=st.dataset.drawer!=='open';st.dataset.drawer=opened?'open':'closed';b.setAttribute('aria-expanded',String(opened));b.textContent=opened?'✕ 關閉控制台':'☷ 控制台';});
+st.dataset.drawer='closed';
 })();
 </script></body></html>
