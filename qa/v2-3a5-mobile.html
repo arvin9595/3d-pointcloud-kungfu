@@ -147,6 +147,21 @@
  #qaLauncher::after{content:"QA";font:700 12px monospace}
  #mobileDrawerToggle{min-height:42px}
 }
+</style><style>
+/* V2.3A-6B: mobile controls live BELOW the projection, never on top of anatomy. */
+@media(max-width:800px){
+ html,body{height:auto!important;min-height:100%;overflow-x:hidden!important;overflow-y:auto!important}
+ .stage{height:100dvh!important;min-height:500px}
+ #mobileDrawerToggle{position:absolute!important;left:12px!important;bottom:calc(14px + env(safe-area-inset-bottom,0px))!important;z-index:12!important}
+ .stage .bottom .controls{display:none!important}
+ #mobileControlSection{display:none;position:relative;z-index:20;width:100%;background:#031724;padding:20px 14px calc(28px + env(safe-area-inset-bottom,0px));border-top:1px solid #46c9df}
+ body[data-controls="open"] #mobileControlSection{display:block}
+ #mobileControlSection .controls{display:flex!important;position:static!important;flex-flow:row wrap!important;max-height:none!important;overflow:visible!important;gap:10px!important;padding:14px!important;border:1px solid rgba(104,238,255,.5);border-radius:12px;background:#071d2c}
+ #mobileControlSection #mobileDiagnostics{display:grid!important;grid-template-columns:1fr 1fr;gap:8px 12px;width:100%;border-bottom:1px solid #317085;padding-bottom:14px}
+ #mobileControlSection button{min-height:44px;padding:10px}
+ #qaLauncher{position:fixed!important;bottom:calc(14px + env(safe-area-inset-bottom,0px))!important;right:12px!important;z-index:101!important}
+ #qaPanel{position:fixed;top:8%;max-height:78dvh}
+}
 </style></head>
 <body>
 <main class="stage" id="stage" aria-label="科幻人體全像投影掃描系統">
@@ -248,5 +263,16 @@ report=JSON.stringify(data,null,2);out.textContent=report;
 (()=>{'use strict';const stage=document.getElementById('stage'),toggle=document.getElementById('mobileDrawerToggle');if(!toggle)return;
 function refresh(){for(const [src,dst] of [['neural','mdNeural'],['bpm','mdBpm'],['coverage','mdCoverage'],['integrity','mdIntegrity']]){const a=document.getElementById(src),b=document.getElementById(dst);if(a&&b)b.textContent=a.textContent.trim();}}
 toggle.addEventListener('click',()=>{const open=stage.dataset.drawer!=='open';stage.dataset.drawer=open?'open':'closed';toggle.textContent=open?'✕ 關閉控制台':'☷ 控制台';toggle.setAttribute('aria-expanded',String(open));if(open)refresh()});stage.dataset.drawer='closed';setInterval(()=>{if(stage.dataset.drawer==='open'&&!document.hidden)refresh()},2000);
+})();
+</script><script>
+/* V2.3A-6B: move existing functional controls to a separate scroll section on narrow screens */
+(()=>{'use strict';const btn=document.getElementById('mobileDrawerToggle'),controls=document.getElementById('mobileControls'),stage=document.getElementById('stage');if(!btn||!controls||!stage)return;
+const section=document.createElement('section');section.id='mobileControlSection';section.setAttribute('aria-label','診斷控制台');section.innerHTML='<h2 style="margin:0 0 12px;font-size:17px">診斷控制台｜模擬資料</h2>';
+stage.insertAdjacentElement('afterend',section);
+function place(){if(window.matchMedia('(max-width:800px)').matches){if(controls.parentElement!==section)section.appendChild(controls)}}
+place();
+const observer=new MutationObserver(()=>{if(stage.dataset.drawer==='open'){document.body.dataset.controls='open';btn.textContent='✕ 關閉控制台';btn.setAttribute('aria-expanded','true');requestAnimationFrame(()=>section.scrollIntoView({block:'start',behavior:'smooth'}))}else{document.body.dataset.controls='closed';btn.textContent='☷ 控制台';btn.setAttribute('aria-expanded','false')}});
+observer.observe(stage,{attributes:true,attributeFilter:['data-drawer']});
+window.addEventListener('resize',place,{passive:true});
 })();
 </script></body></html>
