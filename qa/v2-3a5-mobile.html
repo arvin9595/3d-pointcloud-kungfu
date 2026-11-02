@@ -133,6 +133,20 @@
  #qaLauncher{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 5%);right:12px;padding:9px 12px;border-radius:30px;font-size:12px;z-index:101}
  #qaPanel{top:8%;max-height:79dvh;right:8px}
 }
+
+
+/* V2.3A-6 Refinement: collapsible diagnostics within mobile controls */
+#mobileDiagnostics{display:none}
+@media(max-width:800px){
+ .stage[data-drawer="open"] .controls{bottom:calc(env(safe-area-inset-bottom,0px) + 12%);max-height:51dvh;align-items:flex-start}
+ #mobileDiagnostics{display:none;width:100%;border-bottom:1px solid rgba(110,237,255,.3);padding-bottom:9px;margin-bottom:4px}
+ .stage[data-drawer="open"] #mobileDiagnostics{display:grid;grid-template-columns:1fr 1fr;gap:5px 12px}
+ #mobileDiagnostics .md-value{color:#90f4ff;font:12px monospace;text-align:right}
+ #mobileDiagnostics .md-label{color:#9abcc9;font-size:11px}
+ #qaLauncher{max-width:42px;max-height:42px;overflow:hidden;white-space:nowrap;font-size:0!important;padding:9px!important;min-width:42px}
+ #qaLauncher::after{content:"QA";font:700 12px monospace}
+ #mobileDrawerToggle{min-height:42px}
+}
 </style></head>
 <body>
 <main class="stage" id="stage" aria-label="科幻人體全像投影掃描系統">
@@ -157,7 +171,7 @@
 <header class="topbar"><div><div class="eyebrow">ANATOMICA // PROJECTION SYSTEM</div><div class="brand">HUMAN // HOLOGRAM</div><div class="sub">BIOMETRIC VISUALIZATION · CINEMATIC INTERFACE</div></div><div class="pill"><span class="live"></span><span id="status">SYSTEM ONLINE</span></div></header>
 <section class="side left" aria-label="左側診斷資料"><div class="panel"><h2>01 / CENTRAL NERVOUS</h2><div class="row"><span>神經訊號連結</span><span class="value" id="neural">98.2%</span></div><div class="track"><div class="fill" style="--progress:98%"></div></div><div class="row"><span>訊號同步</span><span class="value">STABLE</span></div><div class="small">NEURAL PATHWAYS // ACTIVE</div></div><div class="panel"><h2>02 / CARDIAC SIGNAL</h2><svg class="ecg" viewBox="0 0 220 40" role="img" aria-label="裝飾性心電波形"><polyline points="0,22 38,22 47,19 53,25 60,22 69,22 77,6 85,36 94,22 126,22 135,19 141,25 148,22 157,22 165,6 173,36 182,22 220,22"/></svg><div class="row"><span>模擬心率</span><span class="value orange" id="bpm">072 BPM</span></div></div></section>
 <section class="side right" aria-label="右側掃描資料"><div class="panel"><h2>03 / SKELETAL MAPPING</h2><div class="row"><span>骨骼結構</span><span class="value">LOCKED</span></div><div class="row"><span>掃描覆蓋率</span><span class="value" id="coverage">78.0%</span></div><div class="track"><div class="fill" id="coverageBar" style="--progress:78%"></div></div><div class="small">MULTI-LAYER ANATOMY SCAN</div></div><div class="panel"><h2>04 / PROJECTION CORE</h2><div class="readout" id="integrity">99.6<span style="font-size:13px"> %</span></div><div class="small">HOLOGRAM INTEGRITY</div><div class="row"><span>渲染狀態</span><span class="value">ACTIVE</span></div><div class="row"><span>能量波段</span><span class="value orange">CYAN / AMBER</span></div></div></section>
-<footer class="bottom"><div class="controls" id="mobileControls" role="group" aria-label="掃描操作"><button id="modeBtn" type="button" title="切換畫面效能">效能：流暢</button><button id="depthBtn" type="button" class="active" aria-pressed="true" title="比較原圖與景深合成">景深：開</button><button id="calibrationBtn" type="button" title="顯示人體基準點">定位：關</button><button id="anatomyBtn" type="button" aria-label="切換骨骼、神經示意圖層" title="醫療示意視覺，非診斷用途">醫療：關</button><button id="scanBtn" class="active" type="button">● 掃描中</button><button id="pauseBtn" type="button">Ⅱ 暫停動畫</button><button id="viewBtn" type="button">＋ 隱藏面板</button></div><div class="footerdata"><div>ANATOMICAL SYSTEM // CINEMATIC V2.3A-6 MOBILE QA</div><div>LOCAL SIMULATION · <span class="time" id="clock">00:00:00</span></div></div></footer>
+<footer class="bottom"><div class="controls" id="mobileControls" role="group" aria-label="掃描操作"><div id="mobileDiagnostics" aria-label="模擬診斷摘要"><span class="md-label">神經連結</span><span class="md-value" id="mdNeural">—</span><span class="md-label">模擬心率</span><span class="md-value" id="mdBpm">—</span><span class="md-label">骨骼覆蓋</span><span class="md-value" id="mdCoverage">—</span><span class="md-label">投影完整性</span><span class="md-value" id="mdIntegrity">—</span></div><button id="modeBtn" type="button" title="切換畫面效能">效能：流暢</button><button id="depthBtn" type="button" class="active" aria-pressed="true" title="比較原圖與景深合成">景深：開</button><button id="calibrationBtn" type="button" title="顯示人體基準點">定位：關</button><button id="anatomyBtn" type="button" aria-label="切換骨骼、神經示意圖層" title="醫療示意視覺，非診斷用途">醫療：關</button><button id="scanBtn" class="active" type="button">● 掃描中</button><button id="pauseBtn" type="button">Ⅱ 暫停動畫</button><button id="viewBtn" type="button">＋ 隱藏面板</button></div><div class="footerdata"><div>ANATOMICAL SYSTEM // CINEMATIC V2.3A-6 MOBILE QA</div><div>LOCAL SIMULATION · <span class="time" id="clock">00:00:00</span></div></div></footer>
 </div><div class="cinema top"></div><div class="cinema low"></div>
 </main>
 <script>
@@ -231,8 +245,8 @@ report=JSON.stringify(data,null,2);out.textContent=report;
 };
 })();
 </script><script>
-(()=>{'use strict';const b=document.getElementById('mobileDrawerToggle'),st=document.getElementById('stage');if(!b||!st)return;
-b.addEventListener('click',()=>{const opened=st.dataset.drawer!=='open';st.dataset.drawer=opened?'open':'closed';b.setAttribute('aria-expanded',String(opened));b.textContent=opened?'✕ 關閉控制台':'☷ 控制台';});
-st.dataset.drawer='closed';
+(()=>{'use strict';const stage=document.getElementById('stage'),toggle=document.getElementById('mobileDrawerToggle');if(!toggle)return;
+function refresh(){for(const [src,dst] of [['neural','mdNeural'],['bpm','mdBpm'],['coverage','mdCoverage'],['integrity','mdIntegrity']]){const a=document.getElementById(src),b=document.getElementById(dst);if(a&&b)b.textContent=a.textContent.trim();}}
+toggle.addEventListener('click',()=>{const open=stage.dataset.drawer!=='open';stage.dataset.drawer=open?'open':'closed';toggle.textContent=open?'✕ 關閉控制台':'☷ 控制台';toggle.setAttribute('aria-expanded',String(open));if(open)refresh()});stage.dataset.drawer='closed';setInterval(()=>{if(stage.dataset.drawer==='open'&&!document.hidden)refresh()},2000);
 })();
 </script></body></html>
