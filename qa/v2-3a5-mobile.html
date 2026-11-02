@@ -266,7 +266,7 @@ el('qaRun').onclick=async()=>{
 out.textContent='檢測中…';const st=el('stage'),layer=el('medicalLayer');const old={mode:st.dataset.mode,anatomy:st.dataset.anatomy,calibration:st.dataset.calibration,layer:layer.dataset.layer};
 let data={test:'Body Scanner V2.3A mobile QA',timestamp:new Date().toISOString(),viewport:{width:innerWidth,height:innerHeight,dpr:devicePixelRatio},userAgent:navigator.userAgent,tests:{},modes:{}};
 try{
-alignMedical();await wait(100);const r=st.getBoundingClientRect(),scale=Math.max(r.width/1408,r.height/768);
+const preRect=st.getBoundingClientRect();const synchronizedScale=Math.max(preRect.width/1408,preRect.height/768);layer.style.setProperty('--image-scale',synchronizedScale.toFixed(6));await wait(100);const r=st.getBoundingClientRect(),scale=Math.max(r.width/1408,r.height/768);
 const actual=parseFloat(getComputedStyle(layer).getPropertyValue('--image-scale'))||parseFloat(layer.style.getPropertyValue('--image-scale'));
 data.tests.asset=await new Promise(resolve=>{const im=new Image();im.onload=()=>resolve({ok:true,width:im.naturalWidth,height:im.naturalHeight});im.onerror=()=>resolve({ok:false});im.src='https://arvin9595.github.io/3d-pointcloud-kungfu/assets/anatomy-lab.jpg'});
 data.tests.coverScale={computed:+scale.toFixed(5),css:actual,delta:Number.isFinite(actual)?+Math.abs(actual-scale).toFixed(5):null,pass:Number.isFinite(actual)&&Math.abs(actual-scale)<.001,stageSize:{width:Math.round(r.width),height:Math.round(r.height)},context:'scale resynchronized immediately before QA measurement'};
