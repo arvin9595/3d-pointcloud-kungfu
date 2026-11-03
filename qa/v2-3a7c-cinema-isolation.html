@@ -241,7 +241,7 @@ particles=Array.from({length:Math.min(38,Math.max(16,Math.floor(w*h/26000)))},()
 function render(t){raf=0;if(paused||document.hidden||mode==='still')return;
 // Limit to 20 frames/s by default, 30 in cinema mode.
 const interval=(mode==='cinema'&&!window.__v23DiagCanvas20)?1000/30:1000/20;
-if(t-last>=interval){const dt=Math.min(t-last||interval,100);last=t;
+if(window.__v23DiagNoCanvas){last=t;raf=requestAnimationFrame(render);return;}if(t-last>=interval){const dt=Math.min(t-last||interval,100);last=t;
 ctx.clearRect(0,0,w,h);
 for(const p of particles){p.y-=p.v*dt*.027;if(p.y<0){p.y=h;p.x=Math.random()*w}
 ctx.beginPath();ctx.arc(p.x,p.y,p.rad,0,Math.PI*2);
@@ -408,8 +408,8 @@ const scenarios=[
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
 const rd=x=>Math.round(x*10)/10;
 async function mode(next){for(let i=0;i<4&&st.dataset.mode!==next;i++){$('modeBtn').click();await delay(120)}if(st.dataset.mode!==next)throw Error('cannot select mode '+next)}
-function apply(id){st.dataset.diagnostic=id;window.__v23DiagCanvas20=(id==='canvas-20')}
-function clear(){delete st.dataset.diagnostic;window.__v23DiagCanvas20=false}
+function apply(id){st.dataset.diagnostic=id;window.__v23DiagCanvas20=(id==='canvas-20');window.__v23DiagNoCanvas=(id==='no-canvas')}
+function clear(){delete st.dataset.diagnostic;window.__v23DiagCanvas20=false;window.__v23DiagNoCanvas=false}
 async function sample(sec,id){
  let last=0,frames=0,done=false,unfocused=false,raf=0;const gaps=[];const start=performance.now();
  return new Promise(resolve=>{
@@ -426,11 +426,11 @@ $('diagStop').onclick=()=>{stop=true;out.textContent+='\n停止中'};
 $('diagCopy').onclick=async()=>{try{await navigator.clipboard.writeText(lastReport)}catch(e){const t=document.createElement('textarea');t.value=lastReport;document.body.append(t);t.select();document.execCommand('copy');t.remove()}out.textContent=lastReport+'\n已嘗試複製'};
 $('diagStart').onclick=async()=>{
  if(active)return;active=true;stop=false;
- const previousMode=st.dataset.mode,previousDiag=st.dataset.diagnostic,previousCanvas20=!!window.__v23DiagCanvas20;const sec=Number($('diagSeconds').value);
+ const previousMode=st.dataset.mode,previousDiag=st.dataset.diagnostic,previousCanvas20=!!window.__v23DiagCanvas20,previousNoCanvas=!!window.__v23DiagNoCanvas;const sec=Number($('diagSeconds').value);
  const data={test:'V2.3A-7C Cinema A/B diagnostic',timestamp:new Date().toISOString(),userAgent:navigator.userAgent,viewport:{width:innerWidth,height:innerHeight,dpr:devicePixelRatio},secondsPerScenario:sec,scenarios:[],note:'Separate isolated scenario comparisons on preview; rAF does not equal GPU frame presentation FPS. A/B may vary with browser state; confirm by repeat + DevTools trace.'};
  try{await mode('cinema');for(const scenario of scenarios){if(stop)break;apply(scenario.id);await delay(600);out.textContent='測試中：'+scenario.label;const result=await sample(sec,scenario.id);data.scenarios.push(result);if(!result.valid)break}}
  catch(e){data.error=String(e)}
- finally{clear();try{await mode(previousMode||'lite')}catch(e){data.restoreError=String(e)}if(previousDiag)st.dataset.diagnostic=previousDiag;window.__v23DiagCanvas20=previousCanvas20;data.completed= data.scenarios.length===scenarios.length&&data.scenarios.every(x=>x.valid)&&!data.error;data.finishedAt=new Date().toISOString();lastReport=JSON.stringify(data,null,2);out.textContent=lastReport;active=false}
+ finally{clear();try{await mode(previousMode||'lite')}catch(e){data.restoreError=String(e)}if(previousDiag)st.dataset.diagnostic=previousDiag;window.__v23DiagCanvas20=previousCanvas20;window.__v23DiagNoCanvas=previousNoCanvas;data.completed= data.scenarios.length===scenarios.length&&data.scenarios.every(x=>x.valid)&&!data.error;data.finishedAt=new Date().toISOString();lastReport=JSON.stringify(data,null,2);out.textContent=lastReport;active=false}
 };
 })();
 </script></body></html>
