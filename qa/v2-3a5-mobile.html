@@ -181,7 +181,15 @@
  #mobileMoreMenu[data-open="yes"]{display:flex}
  #mobileMoreMenu>button{min-height:40px}
 }
-</style><style>/* V2.3A-6D: Safari lower control panel bottom spacing */@media(max-width:800px){#mobileControlSection{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))!important}#mobileMoreMenu{padding-bottom:24px}#qaLauncher{bottom:calc(72px + env(safe-area-inset-bottom,0px))!important}}</style></head>
+</style><style>/* V2.3A-6D: Safari lower control panel bottom spacing */@media(max-width:800px){#mobileControlSection{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))!important}#mobileMoreMenu{padding-bottom:24px}#qaLauncher{bottom:calc(72px + env(safe-area-inset-bottom,0px))!important}}</style><style>
+#longQaPanel{position:fixed;z-index:105;left:10px;top:10%;width:min(420px,calc(100vw - 20px));max-height:77dvh;overflow:auto;color:#d6f8ff;background:rgba(1,15,27,.97);border:1px solid #62dcea;border-radius:12px;padding:14px;font:13px/1.5 system-ui,sans-serif}
+#longQaPanel[hidden]{display:none}
+#longQaPanel h3{margin:0 0 8px;font-size:16px}
+#longQaPanel button,#longQaPanel select{background:#07364e;color:white;border:1px solid #5cdbea;border-radius:5px;padding:10px;margin:3px}
+#longQaPanel pre{max-height:34dvh;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font:11px/1.45 monospace}
+#longQaLaunch{position:fixed;z-index:101;top:13%;right:8px;border:1px solid #64ddf0;border-radius:30px;background:#05364c;color:white;padding:8px 10px;font:700 11px monospace}
+@media(max-width:800px){#longQaLaunch{top:auto;bottom:calc(130px + env(safe-area-inset-bottom,0px));right:10px}#longQaPanel{top:8%;max-height:80dvh}}
+</style></head>
 <body>
 <main class="stage" id="stage" aria-label="科幻人體全像投影掃描系統">
 <div class="backdrop" aria-hidden="true"></div><div class="depth-halo" aria-hidden="true"></div><div class="depth-person" aria-hidden="true"></div><div class="depth-floor" aria-hidden="true"></div><div class="glow-column" aria-hidden="true"></div><div class="lens" aria-hidden="true"></div><div class="medical-layer" id="medicalLayer" data-layer="skeletal" aria-hidden="true"><svg viewBox="0 0 1408 768" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
@@ -307,5 +315,68 @@ for(const id of ['scanBtn','pauseBtn','viewBtn']){const e=document.getElementByI
 controls.append(bar,secondary);
 more.addEventListener('click',()=>{const open=secondary.dataset.open!=='yes';secondary.dataset.open=open?'yes':'no';more.setAttribute('aria-expanded',String(open))});
 document.getElementById('mobileClose').addEventListener('click',()=>{st.dataset.drawer='closed';document.body.dataset.controls='closed';if(toggle){toggle.textContent='☷ 控制台';toggle.setAttribute('aria-expanded','false')}secondary.dataset.open='no';more.setAttribute('aria-expanded','false');st.scrollIntoView({block:'start',behavior:'smooth'})});
+})();
+</script><button id="longQaLaunch" type="button">長測</button>
+<section id="longQaPanel" hidden aria-label="長時間效能 QA">
+<h3>V2.3A-7｜長時間效能檢測</h3>
+<p>依序測試流暢、靜態、電影模式。測量的是此開發 QA 網頁的 rAF 與長影格，不是 GPU 完整 FPS。測試期間保持頁面前景開啟。</p>
+<label for="longQaDuration">每種模式測試時長：</label>
+<select id="longQaDuration"><option value="15">15 秒（快速預檢）</option><option value="60" selected>60 秒</option><option value="180">180 秒</option></select>
+<div><button id="longQaStart" type="button">開始長測</button><button id="longQaStop" type="button">停止</button><button id="longQaCopy" type="button">複製 JSON</button><button id="longQaClose" type="button">關閉</button></div>
+<pre id="longQaOutput">尚未測試</pre>
+</section><script>
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id),panel=$('longQaPanel'),output=$('longQaOutput'),stage=$('stage');
+let cancel=false,running=false,lastReport='';const errors=[];
+window.addEventListener('error',e=>errors.push(String(e.message||e.error||'unknown').slice(0,300)));
+window.addEventListener('unhandledrejection',e=>errors.push('unhandled rejection: '+String(e.reason).slice(0,300)));
+$('longQaLaunch').onclick=()=>panel.hidden=false;
+$('longQaClose').onclick=()=>panel.hidden=true;
+$('longQaStop').onclick=()=>{cancel=true;output.textContent+='\n停止請求已送出'};
+$('longQaCopy').onclick=async()=>{try{await navigator.clipboard.writeText(lastReport)}catch(e){const t=document.createElement('textarea');t.value=lastReport;document.body.append(t);t.select();document.execCommand('copy');t.remove();}output.textContent=lastReport+'\n複製完成'};
+const sleep=ms=>new Promise(ok=>setTimeout(ok,ms));
+const rounded=n=>Math.round(n*10)/10;
+async function selectMode(target){
+ for(let j=0;j<4&&stage.dataset.mode!==target;j++){$('modeBtn').click();await sleep(120)}
+ if(stage.dataset.mode!==target)throw Error('mode switch failed: '+target);
+}
+async function sample(mode,seconds){
+ const count=[];const slow={over34:0,over50:0,over100:0};
+ let frames=0,last=0,unfocused=false,raf=0,done=false;
+ const start=performance.now();
+ return await new Promise(resolve=>{
+ function finish(){if(done)return;done=true;cancelAnimationFrame(raf);
+ const elapsed=(performance.now()-start)/1000;
+ count.sort((a,b)=>a-b);const pct=p=>count.length?count[Math.min(count.length-1,Math.floor((count.length-1)*p))]:null;
+ resolve({mode,secondsRequested:seconds,secondsObserved:rounded(elapsed),rafHz:rounded(frames/Math.max(.001,elapsed)),p50Ms:pct(.5)==null?null:rounded(pct(.5)),p95Ms:pct(.95)==null?null:rounded(pct(.95)),p99Ms:pct(.99)==null?null:rounded(pct(.99)),longFrameCount:slow,frames,valid:!unfocused&&!cancel&&elapsed>=seconds*.95,visibilityChanged:unfocused});
+ }
+ function tick(t){
+ if(done)return;
+ if(document.hidden)unfocused=true;
+ if(cancel||document.hidden||performance.now()-start>=seconds*1000){finish();return}
+ if(last){const d=t-last;count.push(d);if(d>34)slow.over34++;if(d>50)slow.over50++;if(d>100)slow.over100++}
+ last=t;frames++;raf=requestAnimationFrame(tick)
+ }
+ raf=requestAnimationFrame(tick);
+ const monitor=setInterval(()=>{if(done){clearInterval(monitor);return}if(cancel||document.hidden||performance.now()-start>=seconds*1000){finish();clearInterval(monitor)}},250);
+ })
+}
+$('longQaStart').onclick=async()=>{
+ if(running)return;
+ running=true;cancel=false;const old=stage.dataset.mode||'lite',duration=Number($('longQaDuration').value);const baselineErrors=errors.length;
+ const data={test:'Body Scanner V2.3A-7 development QA long-run',timestamp:new Date().toISOString(),context:'third-party HTML preview of development QA code; not production page or full rendering FPS',userAgent:navigator.userAgent,viewport:{width:innerWidth,height:innerHeight,dpr:devicePixelRatio},visibilityStart:document.visibilityState,durationPerModeSec:duration,modes:{},errors:[],memory:{supported:false},disclaimer:'rAF frequency is not frame presentation FPS; mode switching is real UI click; background tab invalidates sample'};
+ try {
+ for(const mode of ['lite','still','cinema']){
+ if(cancel)break;
+ await selectMode(mode);await sleep(450);
+ output.textContent='測試中：'+mode+'（請保持 Safari 在前景）';
+ data.modes[mode]=await sample(mode,duration);
+ if(data.modes[mode].valid===false)break;
+ }
+ if(performance.memory && Number.isFinite(performance.memory.usedJSHeapSize)){data.memory={supported:true,usedJSHeapBytes:performance.memory.usedJSHeapSize,note:'Chrome only; single sample, not leak diagnosis'}}
+ }catch(e){data.error=String(e)}
+ finally {try{await selectMode(old)}catch(e){data.restoreError=String(e)}data.errors=errors.slice(baselineErrors);data.finishedAt=new Date().toISOString();data.complete=['lite','still','cinema'].every(m=>data.modes[m]&&data.modes[m].valid)&&!data.error&&data.errors.length===0;lastReport=JSON.stringify(data,null,2);output.textContent=lastReport;running=false;}
+};
 })();
 </script></body></html>
