@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#020c14"><title>ANATOMICA // V2.3A-7D Cinema Optimization Candidate V0.1</title>
+<style>
+:root{--cyan:#77f4ff;--cyan2:#11c8e9;--orange:#ffad72;--ink:#061b2a;--line:rgba(130,227,255,.34)}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#01070c;color:#defaff;font-family:Arial,"Noto Sans TC",sans-serif}button{font:inherit}.stage{position:relative;width:100%;height:100%;height:100dvh;min-height:400px;isolation:isolate;background:#010910;overflow:hidden}
+.backdrop{position:absolute;inset:-3%;background:url('https://arvin9595.github.io/3d-pointcloud-kungfu/assets/anatomy-lab.jpg') center center / cover no-repeat;filter:brightness(.70) saturate(1.2) contrast(1.12);transform:scale(1.05);animation:camera 28s ease-in-out infinite alternate;will-change:transform}
+.stage:before{content:"";position:absolute;inset:0;z-index:1;background:radial-gradient(ellipse 40% 75% at 50% 45%,transparent 10%,rgba(0,6,13,.3) 85%),linear-gradient(90deg,rgba(0,10,18,.82),transparent 27%,transparent 73%,rgba(0,10,18,.8)),linear-gradient(0deg,rgba(0,6,13,.85),transparent 24%,transparent 78%,rgba(0,6,13,.65));pointer-events:none}
+.stage:after{content:"";position:absolute;inset:0;z-index:6;opacity:.22;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0px,transparent 3px,rgba(100,230,255,.07) 4px);mix-blend-mode:screen}
+#fx{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none}.beam{position:absolute;top:7%;bottom:8%;left:37%;width:26%;z-index:3;pointer-events:none;overflow:hidden;mix-blend-mode:screen;opacity:.84}.beam:before{content:"";position:absolute;left:0;right:0;height:14%;top:-20%;background:linear-gradient(180deg,transparent,rgba(33,214,255,.035) 10%,rgba(122,249,255,.24) 70%,rgba(195,255,255,.65) 92%,transparent);filter:blur(5px);animation:scan 7s linear infinite}.beam:after{content:"";position:absolute;inset:0;border-left:1px solid rgba(99,231,255,.06);border-right:1px solid rgba(99,231,255,.06);box-shadow:inset 0 0 70px rgba(25,196,244,.06)}
+.hud{position:absolute;inset:0;z-index:5;pointer-events:none}.hud>*{pointer-events:auto}.topbar{position:absolute;top:4%;left:4%;right:4%;display:flex;justify-content:space-between;align-items:start;gap:15px}.eyebrow{font:700 10px/1.5 monospace;letter-spacing:.28em;color:var(--cyan2);text-shadow:0 0 11px #00e6ff}.brand{font-size:clamp(17px,2.3vw,32px);letter-spacing:.16em;font-weight:700;margin:5px 0 2px;text-shadow:0 0 26px rgba(50,224,253,.55)}.sub{font-size:10px;letter-spacing:.17em;color:#96bbc9}.pill{border:1px solid var(--line);padding:10px 14px;background:rgba(0,15,28,.48);font:11px monospace;letter-spacing:.16em;white-space:nowrap;backdrop-filter:blur(8px)}.live{display:inline-block;width:6px;height:6px;border-radius:100%;margin-right:9px;background:#4dffc4;box-shadow:0 0 10px #4dffc4;animation:blink 2s infinite}
+.side{position:absolute;width:min(25vw,310px);top:25%;display:flex;flex-direction:column;gap:16px}.left{left:4%}.right{right:4%}.panel{position:relative;border-top:1px solid var(--line);border-left:1px solid rgba(115,221,250,.18);background:linear-gradient(100deg,rgba(0,22,37,.62),rgba(0,15,27,.18));padding:15px 14px 14px;backdrop-filter:blur(5px);box-shadow:0 0 35px rgba(0,190,255,.06)}.panel:before{content:"";position:absolute;top:-2px;left:0;width:28px;height:3px;background:var(--cyan);box-shadow:0 0 12px var(--cyan)}.panel h2{font:700 clamp(10px,1vw,13px) monospace;letter-spacing:.17em;margin:0 0 14px;color:var(--cyan)}.row{display:flex;justify-content:space-between;gap:8px;font-size:clamp(10px,.9vw,12px);margin:10px 0;color:#a2c5d0}.value{color:#e0fcff;font-family:monospace}.orange{color:var(--orange)}.track{height:3px;background:#164257;overflow:hidden;margin-top:7px}.fill{height:100%;width:var(--progress,70%);background:linear-gradient(90deg,#1787ac,#88faff);box-shadow:0 0 8px var(--cyan);transition:width 1s}.ecg{width:100%;height:40px;display:block;overflow:visible}.ecg polyline{fill:none;stroke:#6becff;stroke-width:1.5;filter:drop-shadow(0 0 5px #26e0ff);stroke-dasharray:220;animation:trace 4s linear infinite}.small{font:9px monospace;color:#7297a6;letter-spacing:.13em}.readout{font:28px monospace;color:var(--cyan);text-shadow:0 0 20px rgba(39,235,255,.7);line-height:1.4}.circle{position:absolute;left:50%;top:51%;width:min(48vw,570px);height:min(72vh,650px);transform:translate(-50%,-50%);border-radius:50%;border:1px solid rgba(118,240,255,.1);box-shadow:0 0 75px rgba(63,228,255,.06),inset 0 0 90px rgba(63,228,255,.03);pointer-events:none}.circle:before,.circle:after{content:"";position:absolute;inset:8%;border-radius:50%;border:1px dashed rgba(117,237,255,.12);animation:spin 55s linear infinite}.circle:after{inset:20%;border-style:solid;opacity:.3;animation-direction:reverse}.target{position:absolute;left:50%;top:45%;width:22px;height:22px;transform:translate(-50%,-50%);border:1px solid rgba(145,255,255,.5);border-radius:50%;box-shadow:0 0 15px rgba(135,248,255,.4);opacity:.7;pointer-events:none}.target:after{content:"";position:absolute;top:9px;left:-9px;width:38px;height:1px;background:rgba(166,255,255,.6)}
+.bottom{position:absolute;bottom:4%;left:4%;right:4%;display:flex;justify-content:space-between;align-items:end;gap:12px}.controls{display:flex;gap:7px;flex-wrap:wrap}.controls button{cursor:pointer;color:#b9dce6;padding:10px 13px;border:1px solid rgba(111,214,247,.34);background:rgba(2,18,32,.76);text-transform:uppercase;font:10px monospace;letter-spacing:.12em;backdrop-filter:blur(8px);transition:.2s}.controls button:hover,.controls button.active{border-color:var(--cyan);color:white;background:rgba(8,106,137,.38);box-shadow:0 0 15px rgba(22,206,247,.16)}.footerdata{text-align:right;font:10px/1.9 monospace;letter-spacing:.13em;color:#94b8c7}.time{color:#e1fbff}.cinema{position:absolute;left:0;right:0;height:2.5%;background:#000;z-index:8;pointer-events:none}.cinema.top{top:0}.cinema.low{bottom:0}.paused .backdrop,.paused .beam:before,.paused .ecg polyline,.paused .circle:before,.paused .circle:after{animation-play-state:paused}.paused .beam:before{opacity:.12}
+@keyframes camera{from{transform:scale(1.05) translate(0,0)}to{transform:scale(1.13) translate(-.7%,.5%)}}@keyframes scan{to{top:110%}}@keyframes trace{to{stroke-dashoffset:-440}}@keyframes spin{to{transform:rotate(360deg)}}@keyframes blink{50%{opacity:.35}}
+@media(max-width:800px){.topbar{top:4%;left:5%;right:5%}.brand{font-size:19px}.side{top:auto;bottom:19%;width:43%;gap:9px}.left{left:4%}.right{right:4%}.panel{padding:9px}.panel h2{font-size:10px;margin-bottom:7px}.row{font-size:10px;margin:6px 0}.side .panel:nth-child(2){display:none}.circle{width:66vw;height:60vh}.bottom{bottom:6%;left:4%;right:4%;display:block}.footerdata{display:none}.controls{justify-content:center}.controls button{padding:10px}.pill{font-size:9px;padding:7px}.backdrop{background-position:center center}}
+@media(max-width:490px){.stage{min-height:350px}.brand{font-size:15px;letter-spacing:.11em}.sub{font-size:8px}.eyebrow{font-size:8px}.pill{font-size:8px;letter-spacing:0;padding:5px}.side{bottom:17%;width:46%}.panel .row:nth-of-type(n+4){display:none}.panel h2{font-size:9px;letter-spacing:0}.row{font-size:9px}.readout{font-size:17px}.backdrop{background-size:auto 100%;background-position:center}.beam{left:23%;width:54%}.circle{height:50vh;width:80vw}.controls button{font-size:9px;padding:9px 8px}}
+@media(prefers-reduced-motion:reduce){.backdrop,.beam:before,.circle:before,.circle:after,.ecg polyline,.live{animation:none!important}}
+
+/* V2.1: default fast-render mode. Animated backgrounds and blur are intentionally off. */
+.backdrop{inset:0;transform:none;animation:none!important;will-change:auto;filter:brightness(.78) saturate(1.07)}
+.panel,.pill,.controls button{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.beam{mix-blend-mode:normal;opacity:.52}.beam:before{filter:none;animation-duration:11s}
+.stage:after{display:none}.circle:before,.circle:after{animation:none!important}
+.ecg polyline{filter:none;animation:none}
+#fx{opacity:.65}
+.mode{color:#adf5ff;border:1px solid rgba(111,214,247,.34);background:rgba(2,18,32,.8);padding:9px 10px;font:10px monospace;letter-spacing:.05em;cursor:pointer}
+.stage[data-mode="still"] #fx,.stage[data-mode="still"] .beam{display:none}
+.stage[data-mode="still"] .backdrop,.stage[data-mode="still"] .live{animation:none!important}
+.stage[data-mode="cinema"] .backdrop{animation:camera 28s ease-in-out infinite alternate!important;will-change:transform}
+.stage[data-mode="cinema"] .beam{opacity:.8;mix-blend-mode:screen}
+.stage[data-mode="cinema"] .ecg polyline{animation:trace 4s linear infinite}
+@media(prefers-reduced-motion:reduce){.stage[data-mode="cinema"] .backdrop,.stage[data-mode="cinema"] .ecg polyline{animation:none!important}}
+
+/* V2.3 — lightweight simulated depth separation. The source is still one composite image.
+   Exactly matched background positions prevent the foreground from drifting. No heavy blur. */
+.depth-person{position:absolute;inset:0;z-index:2;pointer-events:none;background:url('https://arvin9595.github.io/3d-pointcloud-kungfu/assets/anatomy-lab.jpg') center center / cover no-repeat;filter:brightness(1.12) saturate(1.17) contrast(1.06);opacity:.76;-webkit-mask-image:radial-gradient(ellipse 17% 48% at 50% 53%,#000 30%,rgba(0,0,0,.95) 54%,transparent 99%);mask-image:radial-gradient(ellipse 17% 48% at 50% 53%,#000 30%,rgba(0,0,0,.95) 54%,transparent 99%);transform:translateZ(0)}
+.depth-halo{position:absolute;z-index:2;pointer-events:none;left:39%;width:22%;top:17%;height:73%;background:radial-gradient(ellipse closest-side,rgba(57,222,255,.18),rgba(5,140,212,.04) 64%,transparent);opacity:.6}
+.depth-floor{position:absolute;z-index:2;pointer-events:none;left:38%;width:24%;bottom:5%;height:5%;border-radius:50%;background:radial-gradient(ellipse,rgba(79,234,255,.36),rgba(21,152,205,.10) 45%,transparent 75%);transform:scaleY(.35)}
+.stage[data-depth="off"] .depth-person,.stage[data-depth="off"] .depth-halo,.stage[data-depth="off"] .depth-floor{display:none}
+.stage[data-mode="still"] .depth-halo,.stage[data-mode="still"] .depth-floor{opacity:.3}
+@media(max-width:800px){.depth-person{ -webkit-mask-image:radial-gradient(ellipse 23% 40% at 50% 53%,#000 24%,transparent 100%);mask-image:radial-gradient(ellipse 23% 40% at 50% 53%,#000 24%,transparent 100%)}.depth-halo{left:30%;width:40%}.depth-floor{left:30%;width:40%}}
+/* V2.3 QA fix — keep duplicated image pixels registered at all breakpoints.
+   A moving source image behind a static masked copy produces doubled outlines. */
+.stage[data-depth="on"][data-mode="cinema"] .backdrop{animation:none!important;transform:none!important;will-change:auto}
+.depth-person{background-position:center center;background-size:cover;background-repeat:no-repeat}
+@media(max-width:490px){
+  .depth-person{background-size:auto 100%;background-position:center center}
+}
+/* Avoid motion for systems that request reduced motion, including projection lighting. */
+@media(prefers-reduced-motion:reduce){
+  .stage[data-mode="cinema"] .lens,.stage[data-mode="cinema"] .glow-column{animation:none!important}
+}
+
+/* V2.3A — procedural medical illustration overlays, no external image generation.
+   These are cinematic schematic graphics, NOT medical diagnostics or exact anatomy. */
+.medical-layer{position:absolute;z-index:4;left:50%;top:51%;width:min(30vw,375px);height:min(78vh,690px);transform:translate(-50%,-50%);pointer-events:none;opacity:0;transition:opacity .35s ease}
+.medical-layer svg{width:100%;height:100%;overflow:visible;display:block}
+.medical-layer .bone{fill:none;stroke:#b5fcff;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round;opacity:.8}
+.medical-layer .fine{stroke-width:1;opacity:.48}
+.medical-layer .nerve{fill:none;stroke:#ffb577;stroke-width:1.7;stroke-linecap:round;opacity:.85}
+.medical-layer .nerve-core{stroke:#83f5ff;stroke-width:3;opacity:.8}
+.medical-layer .organ{fill:rgba(255,133,90,.12);stroke:#ffb577;stroke-width:2}
+.medical-layer[data-layer="skeletal"] .anatomy-nerve,.medical-layer[data-layer="neural"] .anatomy-bone{display:none}
+.stage[data-anatomy="skeletal"] .medical-layer[data-layer="skeletal"],.stage[data-anatomy="neural"] .medical-layer[data-layer="neural"]{opacity:.82}
+.stage[data-anatomy="skeletal"] .depth-person,.stage[data-anatomy="neural"] .depth-person{opacity:.42}
+.stage[data-anatomy="skeletal"] .glow-column,.stage[data-anatomy="neural"] .glow-column{opacity:.25}
+@media(max-width:800px){.medical-layer{width:min(49vw,335px);height:min(70vh,580px);top:49%}}
+@media(max-width:490px){.medical-layer{width:55vw;height:66vh;top:48%}}
+@media(prefers-reduced-motion:reduce){.medical-layer{transition:none}}
+
+/* V2.3A-2 calibrated in source-image coordinates (1408 x 768).
+   The same cover scale is used for background, person mask and SVG; alignment does not depend on viewport breakpoints. */
+.medical-layer,.medical-layer svg{overflow:hidden}
+.medical-layer{left:50%!important;top:50%!important;width:1408px!important;height:768px!important;transform:translate(-50%,-50%) scale(var(--image-scale,1))!important;transform-origin:50% 50%;transition:opacity .2s linear}
+.medical-layer svg{width:1408px!important;height:768px!important}
+.medical-layer .calibration-points{display:none}
+.stage[data-calibration="on"] .medical-layer{opacity:1!important}
+.stage[data-calibration="on"] .calibration-points{display:block}
+.calibration-points line{stroke:#b5ffbe;stroke-width:1;stroke-dasharray:5 5;opacity:.72}
+.calibration-points circle{fill:rgba(20,255,170,.2);stroke:#a4ffc6;stroke-width:2}
+.calibration-points text{font:bold 13px monospace;fill:#bcffe0;paint-order:stroke;stroke:#001014;stroke-width:3px}
+.stage[data-anatomy="off"] .medical-layer{opacity:0!important}
+@media(max-width:800px){.medical-layer{top:50%!important;width:1408px!important;height:768px!important}}
+@media(max-width:490px){.medical-layer{top:50%!important;width:1408px!important;height:768px!important}}
+
+/* QA: calibration markers remain visible even if anatomy is off. */
+.stage[data-calibration="on"] .medical-layer{opacity:1!important}
+/* V2.3A-3 lower-body landmarks: screenshot-guided candidate offsets.
+   Display the hip->knee->ankle chains only during calibration; do not assert medical precision. */
+.calibration-lower-guides{display:none;fill:none;stroke:#8bffc5;stroke-width:1.25;stroke-dasharray:7 5;opacity:.75}
+.stage[data-calibration="on"] .calibration-lower-guides{display:block}
+/* V2.3A-4: overlay paths use calibrated native image coordinate space.
+   Disable SVG Gaussian blur during lite/still modes to protect performance. */
+.stage[data-mode="lite"] .anatomy-bone,.stage[data-mode="lite"] .anatomy-nerve,.stage[data-mode="still"] .anatomy-bone,.stage[data-mode="still"] .anatomy-nerve{filter:none}
+/* V2.2 — cinematic layers: gradient / border / transform only; no video or shaders */
+.glow-column{position:absolute;z-index:2;left:40%;top:10%;width:20%;height:82%;pointer-events:none;background:radial-gradient(ellipse 48% 48% at 50% 45%,rgba(44,222,255,.19),rgba(17,151,225,.055) 54%,transparent 85%);opacity:.60}
+.lens{position:absolute;z-index:3;pointer-events:none;left:22%;top:52%;width:56%;height:1px;background:linear-gradient(90deg,transparent,rgba(255,172,116,.04) 10%,rgba(255,178,110,.42) 48%,rgba(145,245,255,.5) 53%,rgba(255,173,93,.22) 67%,transparent);box-shadow:0 0 14px 3px rgba(42,193,230,.1);opacity:.55}
+.frame-corners{position:absolute;inset:12% 30%;z-index:4;pointer-events:none;opacity:.5;background:linear-gradient(var(--cyan),var(--cyan)) top left/22px 1px no-repeat,linear-gradient(var(--cyan),var(--cyan)) top left/1px 22px no-repeat,linear-gradient(var(--cyan),var(--cyan)) top right/22px 1px no-repeat,linear-gradient(var(--cyan),var(--cyan)) top right/1px 22px no-repeat,linear-gradient(var(--cyan),var(--cyan)) bottom left/22px 1px no-repeat,linear-gradient(var(--cyan),var(--cyan)) bottom left/1px 22px no-repeat,linear-gradient(var(--cyan),var(--cyan)) bottom right/22px 1px no-repeat,linear-gradient(var(--cyan),var(--cyan)) bottom right/1px 22px no-repeat}
+.scan-label{position:absolute;z-index:4;pointer-events:none;left:50%;top:13%;transform:translateX(-50%);font:10px monospace;color:rgba(145,244,255,.9);letter-spacing:.24em;text-shadow:0 0 9px #00d9ff;white-space:nowrap}
+.filmgrain{position:absolute;inset:0;z-index:3;pointer-events:none;opacity:.13;background:repeating-linear-gradient(0deg,transparent 0px,rgba(40,166,192,.09) 1px,transparent 2px,transparent 6px)}
+.cinema.top,.cinema.low{height:3.2%}.stage[data-mode="cinema"] .cinema.top,.stage[data-mode="cinema"] .cinema.low{height:4%}
+.stage[data-mode="still"] .lens,.stage[data-mode="still"] .glow-column,.stage[data-mode="still"] .filmgrain{display:none}
+.stage[data-mode="lite"] .lens{opacity:.4}
+.stage[data-mode="cinema"] .lens{animation:light-breathe 7s ease-in-out infinite alternate}
+.stage[data-mode="cinema"] .glow-column{animation:light-breathe 5s ease-in-out infinite alternate}
+.stage[data-mode="cinema"] .frame-corners{opacity:.75}
+.stage.paused .lens,.stage.paused .glow-column{animation-play-state:paused!important}
+@keyframes light-breathe{from{opacity:.25}to{opacity:.75}}
+@media(max-width:800px){.frame-corners{inset:14% 20%}.scan-label{top:15%;font-size:8px}.lens{left:12%;width:76%}}
+@media(prefers-reduced-motion:reduce){.stage[data-mode="cinema"] .lens,.stage[data-mode="cinema"] .glow-column{animation:none!important}}
+</style>
+<style>
+#qaPanel{position:fixed;z-index:99;right:10px;top:12%;width:min(380px,calc(100vw - 20px));max-height:72dvh;overflow:auto;background:rgba(1,14,27,.95);color:#dffaff;border:1px solid #51d9e6;border-radius:10px;padding:14px;font:12px/1.5 system-ui,sans-serif;box-shadow:0 8px 36px #0009}
+#qaPanel h3{margin:0 0 10px;font-size:15px}#qaPanel button{padding:9px;margin:3px;border:1px solid #6be9ec;background:#07344c;color:#fff;border-radius:5px}#qaPanel pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;max-height:32vh;overflow:auto}
+#qaLauncher{position:fixed;right:10px;bottom:9%;z-index:100;background:#06506d;border:1px solid #8af5ff;border-radius:6px;color:white;padding:10px}
+</style><style>
+/* V2.3A-6 Mobile HUD: desktop is unchanged; no expensive visual filters */
+#mobileDrawerToggle{display:none}
+@media(max-width:800px){
+ .stage .side{display:none!important}
+ .stage .topbar{top:5%;left:4%;right:4%;z-index:7}
+ .stage .brand{font-size:clamp(15px,4vw,20px)}
+ .stage .sub{max-width:220px;font-size:8px;line-height:1.35}
+ .stage .scan-label{top:18%;max-width:85vw;text-align:center;white-space:normal}
+ .stage .bottom{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 3%);left:3%;right:3%;display:block;z-index:9}
+ .stage .controls{display:none}
+ #mobileDrawerToggle{position:absolute;display:block;z-index:11;bottom:calc(env(safe-area-inset-bottom,0px) + 5%);left:14px;border:1px solid #75edff;color:#e8ffff;background:rgba(0,38,59,.91);padding:10px 15px;border-radius:9px;font-size:12px}
+ .stage[data-drawer="open"] .controls{display:flex;position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 11%);left:3%;right:3%;max-height:42dvh;overflow-y:auto;justify-content:flex-start;align-content:flex-start;gap:7px;padding:12px;border:1px solid rgba(104,238,255,.5);border-radius:12px;background:rgba(1,18,29,.96);box-shadow:0 5px 20px #0009}
+ .stage[data-drawer="open"] .controls button{padding:11px 9px;min-height:40px}
+ .stage[data-drawer="open"] .side{display:none!important}
+ #qaLauncher{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 5%);right:12px;padding:9px 12px;border-radius:30px;font-size:12px;z-index:101}
+ #qaPanel{top:8%;max-height:79dvh;right:8px}
+}
+
+
+/* V2.3A-6 Refinement: collapsible diagnostics within mobile controls */
+#mobileDiagnostics{display:none}
+@media(max-width:800px){
+ .stage[data-drawer="open"] .controls{bottom:calc(env(safe-area-inset-bottom,0px) + 12%);max-height:51dvh;align-items:flex-start}
+ #mobileDiagnostics{display:none;width:100%;border-bottom:1px solid rgba(110,237,255,.3);padding-bottom:9px;margin-bottom:4px}
+ .stage[data-drawer="open"] #mobileDiagnostics{display:grid;grid-template-columns:1fr 1fr;gap:5px 12px}
+ #mobileDiagnostics .md-value{color:#90f4ff;font:12px monospace;text-align:right}
+ #mobileDiagnostics .md-label{color:#9abcc9;font-size:11px}
+ #qaLauncher{max-width:42px;max-height:42px;overflow:hidden;white-space:nowrap;font-size:0!important;padding:9px!important;min-width:42px}
+ #qaLauncher::after{content:"QA";font:700 12px monospace}
+ #mobileDrawerToggle{min-height:42px}
+}
+</style><style>
+/* V2.3A-6B: mobile controls live BELOW the projection, never on top of anatomy. */
+@media(max-width:800px){
+ html,body{height:auto!important;min-height:100%;overflow-x:hidden!important;overflow-y:auto!important}
+ .stage{height:100dvh!important;min-height:500px}
+ #mobileDrawerToggle{position:absolute!important;left:12px!important;bottom:calc(14px + env(safe-area-inset-bottom,0px))!important;z-index:12!important}
+ .stage .bottom .controls{display:none!important}
+ #mobileControlSection{display:none;position:relative;z-index:20;width:100%;background:#031724;padding:20px 14px calc(28px + env(safe-area-inset-bottom,0px));border-top:1px solid #46c9df}
+ body[data-controls="open"] #mobileControlSection{display:block}
+ #mobileControlSection .controls{display:flex!important;position:static!important;flex-flow:row wrap!important;max-height:none!important;overflow:visible!important;gap:10px!important;padding:14px!important;border:1px solid rgba(104,238,255,.5);border-radius:12px;background:#071d2c}
+ #mobileControlSection #mobileDiagnostics{display:grid!important;grid-template-columns:1fr 1fr;gap:8px 12px;width:100%;border-bottom:1px solid #317085;padding-bottom:14px}
+ #mobileControlSection button{min-height:44px;padding:10px}
+ #qaLauncher{position:fixed!important;bottom:calc(14px + env(safe-area-inset-bottom,0px))!important;right:12px!important;z-index:101!important}
+ #qaPanel{position:fixed;top:8%;max-height:78dvh}
+}
+</style><style>
+/* V2.3A-6C: one-row mobile control bar, separate dismiss and overflow menu */
+@media(max-width:800px){
+ #mobileDrawerToggle{display:block!important}
+ body[data-controls="open"] #mobileDrawerToggle{display:none!important}
+ #mobileControlSection{max-height:30dvh;overflow-y:auto;scroll-margin-top:0;padding:8px 12px calc(12px + env(safe-area-inset-bottom,0px))!important}
+ #mobileControlSection .mobile-section-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+ #mobileControlSection .mobile-section-heading h2{font-size:14px;margin:0;letter-spacing:.05em}
+ #mobileClose{min-width:40px;min-height:40px;border:1px solid #7beeff;background:#082c3e;color:white;border-radius:6px}
+ #mobileControlSection .controls{display:block!important;padding:8px!important}
+ #mobileControlSection #mobileDiagnostics{grid-template-columns:1fr 1fr;gap:2px 8px;padding-bottom:6px;margin-bottom:6px}
+ #mobileControlSection #mobileDiagnostics .md-label,#mobileControlSection #mobileDiagnostics .md-value{font-size:10px}
+ #mobileControlSection #mobilePrimaryRow{display:flex;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;gap:7px;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+ #mobilePrimaryRow>button{flex:0 0 auto;white-space:nowrap;min-height:40px!important;padding:8px 10px!important}
+ #mobileMore{border:1px solid #6bddea;background:#0b3447;color:#fff}
+ #mobileMoreMenu{display:none;gap:8px;flex-direction:column;margin-top:9px;padding:8px;border-top:1px solid #3d758b}
+ #mobileMoreMenu[data-open="yes"]{display:flex}
+ #mobileMoreMenu>button{min-height:40px}
+}
+</style><style>/* V2.3A-6D: Safari lower control panel bottom spacing */@media(max-width:800px){#mobileControlSection{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))!important}#mobileMoreMenu{padding-bottom:24px}#qaLauncher{bottom:calc(72px + env(safe-area-inset-bottom,0px))!important}}</style><style>
+#longQaPanel{position:fixed;z-index:105;left:10px;top:10%;width:min(420px,calc(100vw - 20px));max-height:77dvh;overflow:auto;color:#d6f8ff;background:rgba(1,15,27,.97);border:1px solid #62dcea;border-radius:12px;padding:14px;font:13px/1.5 system-ui,sans-serif}
+#longQaPanel[hidden]{display:none}
+#longQaPanel h3{margin:0 0 8px;font-size:16px}
+#longQaPanel button,#longQaPanel select{background:#07364e;color:white;border:1px solid #5cdbea;border-radius:5px;padding:10px;margin:3px}
+#longQaPanel pre{max-height:34dvh;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font:11px/1.45 monospace}
+#longQaLaunch{position:fixed;z-index:101;top:13%;right:8px;border:1px solid #64ddf0;border-radius:30px;background:#05364c;color:white;padding:8px 10px;font:700 11px monospace}
+@media(max-width:800px){#longQaLaunch{top:auto;bottom:calc(130px + env(safe-area-inset-bottom,0px));right:10px}#longQaPanel{top:8%;max-height:80dvh}}
+</style><style>
+/* V2.3A-7C isolated A/B diagnostics: QA copy only, never production */
+.stage[data-diagnostic="no-canvas"] #fx{display:none!important}
+.stage[data-diagnostic="no-beam"] .beam{display:none!important}
+.stage[data-diagnostic="no-ecg"] .ecg polyline{animation:none!important;filter:none!important}
+#diagPanel{position:fixed;z-index:120;left:12px;top:12%;width:min(440px,calc(100vw - 24px));max-height:76dvh;overflow:auto;color:#d9f8ff;background:rgba(0,16,28,.97);border:1px solid #5bdeed;border-radius:12px;padding:14px;font:13px/1.5 system-ui}
+#diagPanel[hidden]{display:none}#diagPanel button,#diagPanel select{background:#07364e;color:white;border:1px solid #5cdbea;border-radius:6px;padding:9px;margin:3px}
+#diagPanel pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:34dvh;overflow:auto;font:11px/1.4 monospace}
+#diagOpen{position:fixed;z-index:108;top:22%;right:8px;border:1px solid #6de9fa;border-radius:25px;background:#05364c;color:white;padding:8px 10px;font:700 11px monospace}
+</style><style>
+/* V2.3A-7D Candidate V0.1: composite-friendly beam treatment, retain cyan scan aesthetic.
+   Avoid blur filter and screen blending on large animated beam bounds. */
+.stage[data-mode="cinema"] .beam{mix-blend-mode:normal!important;opacity:.62;isolation:isolate}
+.stage[data-mode="cinema"] .beam:before{filter:none!important;top:0!important;height:21%;background:linear-gradient(180deg,transparent 0%,rgba(38,221,255,.02) 14%,rgba(76,233,255,.11) 60%,rgba(172,255,255,.31) 87%,transparent 100%);animation:v23d-scan 8s linear infinite!important;will-change:transform;transform:translate3d(0,-110%,0)}
+@keyframes v23d-scan{from{transform:translate3d(0,-110%,0)}to{transform:translate3d(0,570%,0)}}
+.stage[data-mode="cinema"] .beam:after{box-shadow:inset 0 0 24px rgba(25,196,244,.04)}
+@media(prefers-reduced-motion:reduce){.stage[data-mode="cinema"] .beam:before{animation:none!important;will-change:auto}}
+</style></head>
+<body>
+<main class="stage" id="stage" aria-label="科幻人體全像投影掃描系統">
+<div class="backdrop" aria-hidden="true"></div><div class="depth-halo" aria-hidden="true"></div><div class="depth-person" aria-hidden="true"></div><div class="depth-floor" aria-hidden="true"></div><div class="glow-column" aria-hidden="true"></div><div class="lens" aria-hidden="true"></div><div class="medical-layer" id="medicalLayer" data-layer="skeletal" aria-hidden="true"><svg viewBox="0 0 1408 768" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+<defs><filter id="medGlow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+<g class="anatomy-bone" filter="url(#medGlow)">
+<ellipse class="bone" cx="704" cy="105" rx="28" ry="34"/>
+<path class="bone" d="M704 137L704 367 M704 148Q669 150 647 165Q633 173 620 180 M704 148Q739 150 761 165Q775 173 788 180"/>
+<path class="bone fine" d="M704 185Q651 158 640 220Q658 264 704 271 M704 185Q757 158 768 220Q750 264 704 271 M648 202Q704 225 760 202 M653 222Q704 246 755 222 M661 242Q704 262 747 242"/>
+<path class="bone" d="M704 344Q680 334 666 365Q682 396 704 384 M704 344Q728 334 744 365Q726 396 704 384"/>
+<path class="bone" d="M620 180Q601 203 597 235Q586 281 571 328 M788 180Q807 203 811 235Q822 281 837 328 M666 365L679 535L675 673 M744 365L729 535L733 673"/>
+<path class="bone fine" d="M627 196Q612 246 581 319 M781 196Q796 246 827 319 M671 373L688 520 M737 373L720 520 M678 547L686 654 M730 547L722 654"/>
+<circle class="bone" cx="679" cy="535" r="10"/><circle class="bone" cx="729" cy="535" r="10"/>
+<path class="bone" d="M675 673L660 698L650 704 M733 673L748 698L759 704"/>
+</g>
+<g class="anatomy-nerve" filter="url(#medGlow)">
+<path class="nerve-core" fill="none" d="M704 92L704 365 M704 167Q658 155 620 180Q598 225 570 327 M704 167Q750 155 788 180Q810 225 838 327 M704 355L666 365L679 535L675 673 M704 355L744 365L729 535L733 673"/>
+<path class="nerve" d="M700 147Q655 156 624 182Q604 213 593 254 M708 147Q753 156 784 182Q804 213 815 254 M620 186Q592 255 573 317 M788 186Q816 255 835 317 M699 236Q667 270 650 307 M709 236Q741 270 758 307 M675 399Q654 463 663 518 M733 399Q754 463 745 518 M674 543L658 633 M734 543L750 633"/>
+<path class="organ" d="M704 212C690 196 676 215 686 232L704 252L722 232C732 215 718 196 704 212Z"/>
+</g><g class="calibration-lower-guides"><path d="M666 365L679 535L675 673 M744 365L729 535L733 673"/></g><g class="calibration-points"><circle cx="704" cy="105" r="7"/><line x1="689" y1="105" x2="719" y2="105"/><line x1="704" y1="90" x2="704" y2="120"/><text x="715" y="94">HEAD</text><circle cx="620" cy="180" r="7"/><line x1="605" y1="180" x2="635" y2="180"/><line x1="620" y1="165" x2="620" y2="195"/><text x="631" y="169">L-SHOULDER</text><circle cx="788" cy="180" r="7"/><line x1="773" y1="180" x2="803" y2="180"/><line x1="788" y1="165" x2="788" y2="195"/><text x="799" y="169">R-SHOULDER</text><circle cx="666" cy="365" r="7"/><line x1="651" y1="365" x2="681" y2="365"/><line x1="666" y1="350" x2="666" y2="380"/><text x="677" y="354">L-HIP</text><circle cx="744" cy="365" r="7"/><line x1="729" y1="365" x2="759" y2="365"/><line x1="744" y1="350" x2="744" y2="380"/><text x="755" y="354">R-HIP</text><circle cx="679" cy="535" r="7"/><line x1="664" y1="535" x2="694" y2="535"/><line x1="679" y1="520" x2="679" y2="550"/><text x="648" y="517" text-anchor="end">L-KNEE</text><circle cx="729" cy="535" r="7"/><line x1="714" y1="535" x2="744" y2="535"/><line x1="729" y1="520" x2="729" y2="550"/><text x="760" y="517" text-anchor="start">R-KNEE</text><circle cx="675" cy="673" r="7"/><line x1="660" y1="673" x2="690" y2="673"/><line x1="675" y1="658" x2="675" y2="688"/><text x="645" y="655" text-anchor="end">L-ANKLE</text><circle cx="733" cy="673" r="7"/><line x1="718" y1="673" x2="748" y2="673"/><line x1="733" y1="658" x2="733" y2="688"/><text x="761" y="655" text-anchor="start">R-ANKLE</text></g></svg></div><div class="frame-corners" aria-hidden="true"></div><div class="filmgrain" aria-hidden="true"></div><div class="scan-label" id="scanLabel" aria-hidden="true">ANATOMY // SCAN SEQUENCE ACTIVE</div><canvas id="fx" aria-hidden="true"></canvas><div class="beam" aria-hidden="true"></div><div class="circle" aria-hidden="true"></div><div class="target" aria-hidden="true"></div>
+<div class="hud"><button id="mobileDrawerToggle" type="button" aria-expanded="false" aria-controls="mobileControls">☷ 控制台</button>
+<header class="topbar"><div><div class="eyebrow">ANATOMICA // PROJECTION SYSTEM</div><div class="brand">HUMAN // HOLOGRAM</div><div class="sub">BIOMETRIC VISUALIZATION · CINEMATIC INTERFACE</div></div><div class="pill"><span class="live"></span><span id="status">SYSTEM ONLINE</span></div></header>
+<section class="side left" aria-label="左側診斷資料"><div class="panel"><h2>01 / CENTRAL NERVOUS</h2><div class="row"><span>神經訊號連結</span><span class="value" id="neural">98.2%</span></div><div class="track"><div class="fill" style="--progress:98%"></div></div><div class="row"><span>訊號同步</span><span class="value">STABLE</span></div><div class="small">NEURAL PATHWAYS // ACTIVE</div></div><div class="panel"><h2>02 / CARDIAC SIGNAL</h2><svg class="ecg" viewBox="0 0 220 40" role="img" aria-label="裝飾性心電波形"><polyline points="0,22 38,22 47,19 53,25 60,22 69,22 77,6 85,36 94,22 126,22 135,19 141,25 148,22 157,22 165,6 173,36 182,22 220,22"/></svg><div class="row"><span>模擬心率</span><span class="value orange" id="bpm">072 BPM</span></div></div></section>
+<section class="side right" aria-label="右側掃描資料"><div class="panel"><h2>03 / SKELETAL MAPPING</h2><div class="row"><span>骨骼結構</span><span class="value">LOCKED</span></div><div class="row"><span>掃描覆蓋率</span><span class="value" id="coverage">78.0%</span></div><div class="track"><div class="fill" id="coverageBar" style="--progress:78%"></div></div><div class="small">MULTI-LAYER ANATOMY SCAN</div></div><div class="panel"><h2>04 / PROJECTION CORE</h2><div class="readout" id="integrity">99.6<span style="font-size:13px"> %</span></div><div class="small">HOLOGRAM INTEGRITY</div><div class="row"><span>渲染狀態</span><span class="value">ACTIVE</span></div><div class="row"><span>能量波段</span><span class="value orange">CYAN / AMBER</span></div></div></section>
+<footer class="bottom"><div class="controls" id="mobileControls" role="group" aria-label="掃描操作"><div id="mobileDiagnostics" aria-label="模擬診斷摘要"><span class="md-label">神經連結</span><span class="md-value" id="mdNeural">—</span><span class="md-label">模擬心率</span><span class="md-value" id="mdBpm">—</span><span class="md-label">骨骼覆蓋</span><span class="md-value" id="mdCoverage">—</span><span class="md-label">投影完整性</span><span class="md-value" id="mdIntegrity">—</span></div><button id="modeBtn" type="button" title="切換畫面效能">效能：流暢</button><button id="depthBtn" type="button" class="active" aria-pressed="true" title="比較原圖與景深合成">景深：開</button><button id="calibrationBtn" type="button" title="顯示人體基準點">定位：關</button><button id="anatomyBtn" type="button" aria-label="切換骨骼、神經示意圖層" title="醫療示意視覺，非診斷用途">醫療：關</button><button id="scanBtn" class="active" type="button">● 掃描中</button><button id="pauseBtn" type="button">Ⅱ 暫停動畫</button><button id="viewBtn" type="button">＋ 隱藏面板</button></div><div class="footerdata"><div>ANATOMICAL SYSTEM // CINEMATIC V2.3A-6D MOBILE QA</div><div>LOCAL SIMULATION · <span class="time" id="clock">00:00:00</span></div></div></footer>
+</div><div class="cinema top"></div><div class="cinema low"></div>
+</main>
+<script>
+(()=>{'use strict';
+const stage=document.getElementById('stage'),canvas=document.getElementById('fx'),ctx=canvas.getContext('2d',{alpha:true});
+const ids=id=>document.getElementById(id);
+let w=0,h=0,particles=[],last=0,paused=false,scanning=true,mode='lite',raf=0,needsRedraw=true,depth=true;
+const modes=['lite','still','cinema'];const labels={lite:'效能：流暢',still:'效能：靜態',cinema:'效能：電影'};
+function resize(){const r=stage.getBoundingClientRect();w=Math.max(1,r.width);h=Math.max(1,r.height);
+// Cap internal resolution: Retina and large windows must not multiply the workload.
+const ratio=Math.min(window.devicePixelRatio||1,mode==='cinema'?.85:1.25,mode==='cinema'?960/w:1280/w,mode==='cinema'?600/h:800/h);
+canvas.width=Math.round(w*ratio);canvas.height=Math.round(h*ratio);
+ctx.setTransform(ratio,0,0,ratio,0,0);
+particles=Array.from({length:Math.min(mode==='cinema'?24:38,Math.max(16,Math.floor(w*h/(mode==='cinema'?42000:26000))))},()=>({x:Math.random()*w,y:Math.random()*h,v:.16+Math.random()*.24,rad:.4+Math.random()*.9,alpha:.15+Math.random()*.48,amber:Math.random()>.78}));needsRedraw=true;
+}
+function render(t){raf=0;if(paused||document.hidden||mode==='still')return;
+// Limit to 20 frames/s by default, 30 in cinema mode.
+const interval=(mode==='cinema'&&!window.__v23DiagCanvas20)?1000/24:1000/20;
+if(window.__v23DiagNoCanvas){last=t;raf=requestAnimationFrame(render);return;}if(t-last>=interval){const dt=Math.min(t-last||interval,100);last=t;
+ctx.clearRect(0,0,w,h);
+for(const p of particles){p.y-=p.v*dt*.027;if(p.y<0){p.y=h;p.x=Math.random()*w}
+ctx.beginPath();ctx.arc(p.x,p.y,p.rad,0,Math.PI*2);
+ctx.fillStyle=p.amber?`rgba(255,165,109,${p.alpha})`:`rgba(77,227,255,${p.alpha})`;ctx.fill();}
+}
+raf=requestAnimationFrame(render);
+}
+function resume(){if(raf)cancelAnimationFrame(raf);raf=0;last=0;if(mode==='still'){ctx.clearRect(0,0,w,h);return;}if(!paused&&!document.hidden)raf=requestAnimationFrame(render)}
+function setMode(next){mode=next;stage.dataset.mode=next;ids('modeBtn').textContent=labels[next];resize();resume()}
+function alignMedical(){const r=stage.getBoundingClientRect();const scale=Math.max(r.width/1408,r.height/768);ids('medicalLayer').style.setProperty('--image-scale',scale.toFixed(6));}
+resize();alignMedical();window.addEventListener('resize',()=>{resize();alignMedical();resume()},{passive:true});if('ResizeObserver' in window){new ResizeObserver(()=>{alignMedical()}).observe(stage)}
+ids('modeBtn').addEventListener('click',()=>setMode(modes[(modes.indexOf(mode)+1)%modes.length]));
+ids('depthBtn').addEventListener('click',e=>{depth=!depth;stage.dataset.depth=depth?'on':'off';e.currentTarget.textContent=depth?'景深：開':'景深：關';e.currentTarget.classList.toggle('active',depth);e.currentTarget.setAttribute('aria-pressed',String(depth))});
+stage.dataset.depth='on';
+const anatomyModes=['off','skeletal','neural'];const anatomyLabels={off:'醫療：關',skeletal:'醫療：骨骼',neural:'醫療：神經'};let anatomyIndex=0;
+ids('anatomyBtn').addEventListener('click',e=>{anatomyIndex=(anatomyIndex+1)%anatomyModes.length;const layer=anatomyModes[anatomyIndex];stage.dataset.anatomy=layer;ids('medicalLayer').dataset.layer=layer;e.currentTarget.textContent=anatomyLabels[layer];e.currentTarget.classList.toggle('active',layer!=='off');e.currentTarget.setAttribute('aria-pressed',String(layer!=='off'))});
+stage.dataset.anatomy='off';
+let showCalibration=false;stage.dataset.calibration='off';ids('calibrationBtn').addEventListener('click',e=>{showCalibration=!showCalibration;stage.dataset.calibration=showCalibration?'on':'off';e.currentTarget.textContent=showCalibration?'定位：開':'定位：關';e.currentTarget.classList.toggle('active',showCalibration);});
+ids('pauseBtn').addEventListener('click',e=>{paused=!paused;stage.classList.toggle('paused',paused);e.currentTarget.textContent=paused?'▶ 繼續動畫':'Ⅱ 暫停動畫';ids('status').textContent=paused?'SYSTEM PAUSED':'SYSTEM ONLINE';resume()});
+ids('scanBtn').addEventListener('click',e=>{scanning=!scanning;stage.querySelector('.beam').style.display=scanning?'':'none';e.currentTarget.textContent=scanning?'● 掃描中':'○ 開始掃描';e.currentTarget.classList.toggle('active',scanning);ids('scanLabel').textContent=scanning?'ANATOMY // SCAN SEQUENCE ACTIVE':'ANATOMY // SCAN STANDBY'});
+ids('viewBtn').addEventListener('click',e=>{const sides=stage.querySelectorAll('.side');const hidden=sides[0].style.display!=='none';sides.forEach(s=>s.style.display=hidden?'none':'');e.currentTarget.textContent=hidden?'＋ 顯示面板':'＋ 隱藏面板'});
+document.addEventListener('visibilitychange',resume);
+const timer=()=>{if(document.hidden)return;const d=new Date();ids('clock').textContent=d.toLocaleTimeString('en-GB',{hour12:false});if(!paused){const s=d.getSeconds();ids('bpm').textContent=String(70+s%5).padStart(3,'0')+' BPM';ids('neural').textContent=(98.1+(s%3)*.1).toFixed(1)+'%';if(scanning){const n=72+s%28;ids('coverage').textContent=n.toFixed(1)+'%';ids('coverageBar').style.setProperty('--progress',n+'%')}}};timer();setInterval(timer,1000);
+setMode('lite');
+})();
+</script>
+<button id="qaLauncher" type="button">QA</button>
+<section id="qaPanel" hidden aria-label="自動檢測面板"><h3>V2.3A｜自動 QA 診斷</h3><p>測量 SVG、背景定位與 rAF 更新率；結果可直接複製回聊天室。所有數據為裝置本機檢測，不會自動上傳。</p><button id="qaRun">開始檢測（約 6 秒）</button><button id="qaCopy">複製報告</button><button id="qaClose">關閉</button><pre id="qaResult">尚未檢測</pre></section><script>
+(()=>{'use strict';
+const el=id=>document.getElementById(id),panel=el('qaPanel'),out=el('qaResult');
+let report='尚未檢測';
+el('qaLauncher').onclick=()=>{panel.hidden=!panel.hidden};
+el('qaClose').onclick=()=>{panel.hidden=true};
+el('qaCopy').onclick=async()=>{try{await navigator.clipboard.writeText(report);out.textContent=report+'\n\n已複製至剪貼簿'}catch(e){const t=document.createElement('textarea');t.value=report;document.body.append(t);t.select();document.execCommand('copy');t.remove();out.textContent=report+'\n\n已嘗試複製'}};
+const wait=ms=>new Promise(ok=>setTimeout(ok,ms));
+async function fpsSample(ms=1800){let n=0,prev=0,gaps=[],active=true;const start=performance.now();return new Promise(resolve=>{function step(t){if(!active)return;if(prev)gaps.push(t-prev);prev=t;n++;if(t-start>=ms){active=false;const sec=(t-start)/1000;const sorted=gaps.sort((a,b)=>a-b);resolve({rafHz:Math.round(n/sec),p95Ms:Math.round(sorted[Math.floor(sorted.length*.95)]||0),frames:n});return}requestAnimationFrame(step)}requestAnimationFrame(step)})}
+const pt=(x,y,r,scale)=>({x:Math.round(r.left+r.width/2+(x-704)*scale),y:Math.round(r.top+r.height/2+(y-384)*scale)});
+el('qaRun').onclick=async()=>{
+out.textContent='檢測中…';const st=el('stage'),layer=el('medicalLayer');const old={mode:st.dataset.mode,anatomy:st.dataset.anatomy,calibration:st.dataset.calibration,layer:layer.dataset.layer};
+let data={test:'Body Scanner V2.3A mobile QA',timestamp:new Date().toISOString(),viewport:{width:innerWidth,height:innerHeight,dpr:devicePixelRatio},userAgent:navigator.userAgent,tests:{},modes:{}};
+try{
+const preRect=st.getBoundingClientRect();const synchronizedScale=Math.max(preRect.width/1408,preRect.height/768);layer.style.setProperty('--image-scale',synchronizedScale.toFixed(6));await wait(100);const r=st.getBoundingClientRect(),scale=Math.max(r.width/1408,r.height/768);
+const actual=parseFloat(getComputedStyle(layer).getPropertyValue('--image-scale'))||parseFloat(layer.style.getPropertyValue('--image-scale'));
+data.tests.asset=await new Promise(resolve=>{const im=new Image();im.onload=()=>resolve({ok:true,width:im.naturalWidth,height:im.naturalHeight});im.onerror=()=>resolve({ok:false});im.src='https://arvin9595.github.io/3d-pointcloud-kungfu/assets/anatomy-lab.jpg'});
+data.tests.coverScale={computed:+scale.toFixed(5),css:actual,delta:Number.isFinite(actual)?+Math.abs(actual-scale).toFixed(5):null,pass:Number.isFinite(actual)&&Math.abs(actual-scale)<.001,stageSize:{width:Math.round(r.width),height:Math.round(r.height)},context:'scale resynchronized immediately before QA measurement'};
+data.tests.svg={viewBox:layer.querySelector('svg')?.getAttribute('viewBox'),pass:layer.querySelector('svg')?.getAttribute('viewBox')==='0 0 1408 768'};
+data.tests.landmarks={head:pt(704,105,r,scale),leftShoulder:pt(620,180,r,scale),rightShoulder:pt(788,180,r,scale),leftKnee:pt(679,535,r,scale),rightKnee:pt(729,535,r,scale),leftAnkle:pt(675,673,r,scale),rightAnkle:pt(733,673,r,scale)};
+for(const m of ['lite','still','cinema']){st.dataset.mode=m;await wait(300);data.modes[m]=await fpsSample(1500)}
+data.notes=['rAF frequency is NOT full-site rendering FPS','SVG/image geometric alignment does not confirm anatomical pixel accuracy','Mode measurements use this QA replay, not production deployment'];
+}catch(e){data.error=String(e)}finally{st.dataset.mode=old.mode;st.dataset.anatomy=old.anatomy;st.dataset.calibration=old.calibration;layer.dataset.layer=old.layer}
+report=JSON.stringify(data,null,2);out.textContent=report;
+};
+})();
+</script><script>
+(()=>{'use strict';const stage=document.getElementById('stage'),toggle=document.getElementById('mobileDrawerToggle');if(!toggle)return;
+function refresh(){for(const [src,dst] of [['neural','mdNeural'],['bpm','mdBpm'],['coverage','mdCoverage'],['integrity','mdIntegrity']]){const a=document.getElementById(src),b=document.getElementById(dst);if(a&&b)b.textContent=a.textContent.trim();}}
+toggle.addEventListener('click',()=>{const open=stage.dataset.drawer!=='open';stage.dataset.drawer=open?'open':'closed';toggle.textContent=open?'✕ 關閉控制台':'☷ 控制台';toggle.setAttribute('aria-expanded',String(open));if(open)refresh()});stage.dataset.drawer='closed';setInterval(()=>{if(stage.dataset.drawer==='open'&&!document.hidden)refresh()},2000);
+})();
+</script><script>
+/* V2.3A-6B: move existing functional controls to a separate scroll section on narrow screens */
+(()=>{'use strict';const btn=document.getElementById('mobileDrawerToggle'),controls=document.getElementById('mobileControls'),stage=document.getElementById('stage');if(!btn||!controls||!stage)return;
+const section=document.createElement('section');section.id='mobileControlSection';section.setAttribute('aria-label','診斷控制台');section.innerHTML='<h2 style="margin:0 0 12px;font-size:17px">診斷控制台｜模擬資料</h2>';
+stage.insertAdjacentElement('afterend',section);
+function place(){if(window.matchMedia('(max-width:800px)').matches){if(controls.parentElement!==section)section.appendChild(controls)}}
+place();
+const observer=new MutationObserver(()=>{if(stage.dataset.drawer==='open'){document.body.dataset.controls='open';btn.textContent='✕ 關閉控制台';btn.setAttribute('aria-expanded','true');requestAnimationFrame(()=>section.scrollIntoView({block:'start',behavior:'smooth'}))}else{document.body.dataset.controls='closed';btn.textContent='☷ 控制台';btn.setAttribute('aria-expanded','false')}});
+observer.observe(stage,{attributes:true,attributeFilter:['data-drawer']});
+window.addEventListener('resize',place,{passive:true});
+})();
+</script><script>
+(()=>{'use strict';const st=document.getElementById('stage'),section=document.getElementById('mobileControlSection'),controls=document.getElementById('mobileControls'),toggle=document.getElementById('mobileDrawerToggle');if(!st||!section||!controls)return;
+const heading=section.querySelector('h2');if(heading)heading.remove();
+const head=document.createElement('div');head.className='mobile-section-heading';head.innerHTML='<h2>診斷控制台｜模擬資料</h2><button type="button" id="mobileClose" aria-label="關閉控制台">✕</button>';section.prepend(head);
+const bar=document.createElement('div');bar.id='mobilePrimaryRow';bar.setAttribute('role','group');bar.setAttribute('aria-label','主控制列');
+const more=document.createElement('button');more.id='mobileMore';more.type='button';more.textContent='⋯ 更多';more.setAttribute('aria-expanded','false');
+const secondary=document.createElement('div');secondary.id='mobileMoreMenu';secondary.dataset.open='no';
+for(const id of ['modeBtn','depthBtn','calibrationBtn','anatomyBtn']){const e=document.getElementById(id);if(e)bar.appendChild(e)}
+bar.appendChild(more);
+for(const id of ['scanBtn','pauseBtn','viewBtn']){const e=document.getElementById(id);if(e)secondary.appendChild(e)}
+controls.append(bar,secondary);
+more.addEventListener('click',()=>{const open=secondary.dataset.open!=='yes';secondary.dataset.open=open?'yes':'no';more.setAttribute('aria-expanded',String(open))});
+document.getElementById('mobileClose').addEventListener('click',()=>{st.dataset.drawer='closed';document.body.dataset.controls='closed';if(toggle){toggle.textContent='☷ 控制台';toggle.setAttribute('aria-expanded','false')}secondary.dataset.open='no';more.setAttribute('aria-expanded','false');st.scrollIntoView({block:'start',behavior:'smooth'})});
+})();
+</script><button id="longQaLaunch" type="button">長測</button>
+<section id="longQaPanel" hidden aria-label="長時間效能 QA">
+<h3>V2.3A-7B｜Mac Chrome 效能驗收</h3>
+<p>依序執行三模式長測，新增 Long Tasks 與可用的 JS Heap 量測。請保持 Chrome 前景，搭配 Chrome DevTools Performance 與 Memory 實測；rAF 不是完整渲染 FPS。</p>
+<label for="longQaDuration">每種模式測試時長：</label>
+<select id="longQaDuration"><option value="15">15 秒（快速預檢）</option><option value="60" selected>60 秒</option><option value="300">300 秒（延長測試）</option><option value="180">180 秒</option></select>
+<div><button id="longQaStart" type="button">開始長測</button><button id="longQaStop" type="button">停止</button><button id="longQaCopy" type="button">複製 JSON</button><button id="longQaClose" type="button">關閉</button></div>
+<pre id="longQaOutput">尚未測試</pre>
+</section><script>
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id),panel=$('longQaPanel'),output=$('longQaOutput'),stage=$('stage');
+let cancel=false,running=false,lastReport='';const errors=[];const longTasks=[];let longTaskSupported=false;try{if(PerformanceObserver.supportedEntryTypes?.includes('longtask')){new PerformanceObserver(list=>{for(const e of list.getEntries())longTasks.push({start:e.startTime,duration:e.duration});if(longTasks.length>5000)longTasks.splice(0,1000)}).observe({entryTypes:['longtask']});longTaskSupported=true}}catch(e){}
+window.addEventListener('error',e=>errors.push(String(e.message||e.error||'unknown').slice(0,300)));
+window.addEventListener('unhandledrejection',e=>errors.push('unhandled rejection: '+String(e.reason).slice(0,300)));
+$('longQaLaunch').onclick=()=>panel.hidden=false;
+$('longQaClose').onclick=()=>panel.hidden=true;
+$('longQaStop').onclick=()=>{cancel=true;output.textContent+='\n停止請求已送出'};
+$('longQaCopy').onclick=async()=>{try{await navigator.clipboard.writeText(lastReport)}catch(e){const t=document.createElement('textarea');t.value=lastReport;document.body.append(t);t.select();document.execCommand('copy');t.remove();}output.textContent=lastReport+'\n複製完成'};
+const sleep=ms=>new Promise(ok=>setTimeout(ok,ms));
+const rounded=n=>Math.round(n*10)/10;
+async function selectMode(target){
+ for(let j=0;j<4&&stage.dataset.mode!==target;j++){$('modeBtn').click();await sleep(120)}
+ if(stage.dataset.mode!==target)throw Error('mode switch failed: '+target);
+}
+async function sample(mode,seconds){
+ const count=[];const slow={over34:0,over50:0,over100:0};
+ let frames=0,last=0,unfocused=false,raf=0,done=false;
+ const start=performance.now();const heapStart=performance.memory?.usedJSHeapSize??null;
+ return await new Promise(resolve=>{
+ function finish(){if(done)return;done=true;cancelAnimationFrame(raf);
+ const elapsed=(performance.now()-start)/1000;
+ count.sort((a,b)=>a-b);const pct=p=>count.length?count[Math.min(count.length-1,Math.floor((count.length-1)*p))]:null;
+ const inWindow=longTasks.filter(e=>e.start>=start&&e.start<=performance.now());const heapEnd=performance.memory?.usedJSHeapSize??null;resolve({mode,secondsRequested:seconds,secondsObserved:rounded(elapsed),rafHz:rounded(frames/Math.max(.001,elapsed)),p50Ms:pct(.5)==null?null:rounded(pct(.5)),p95Ms:pct(.95)==null?null:rounded(pct(.95)),p99Ms:pct(.99)==null?null:rounded(pct(.99)),longFrameCount:slow,mainThreadLongTasks:{supported:longTaskSupported,count:inWindow.length,totalMs:rounded(inWindow.reduce((a,b)=>a+b.duration,0)),maxMs:rounded(Math.max(0,...inWindow.map(x=>x.duration)))},jsHeap:{supported:heapStart!=null&&heapEnd!=null,startBytes:heapStart,endBytes:heapEnd,deltaBytes:heapStart!=null&&heapEnd!=null?heapEnd-heapStart:null,note:'Single interval delta can reflect GC; does not prove a leak'},frames,valid:!unfocused&&!cancel&&elapsed>=seconds*.95,visibilityChanged:unfocused});
+ }
+ function tick(t){
+ if(done)return;
+ if(document.hidden)unfocused=true;
+ if(cancel||document.hidden||performance.now()-start>=seconds*1000){finish();return}
+ if(last){const d=t-last;count.push(d);if(d>34)slow.over34++;if(d>50)slow.over50++;if(d>100)slow.over100++}
+ last=t;frames++;raf=requestAnimationFrame(tick)
+ }
+ raf=requestAnimationFrame(tick);
+ const monitor=setInterval(()=>{if(done){clearInterval(monitor);return}if(cancel||document.hidden||performance.now()-start>=seconds*1000){finish();clearInterval(monitor)}},250);
+ })
+}
+$('longQaStart').onclick=async()=>{
+ if(running)return;
+ running=true;cancel=false;const old=stage.dataset.mode||'lite',duration=Number($('longQaDuration').value);const baselineErrors=errors.length;
+ const data={test:'Body Scanner V2.3A-7B Mac Chrome QA long-run',timestamp:new Date().toISOString(),context:'development QA preview running in Chrome; not production deployment or compositor FPS',userAgent:navigator.userAgent,viewport:{width:innerWidth,height:innerHeight,dpr:devicePixelRatio},visibilityStart:document.visibilityState,durationPerModeSec:duration,modes:{},errors:[],memory:{supported:false},disclaimer:'rAF frequency is not presentation FPS; PerformanceObserver longtasks and JS heap are partial proxies; DevTools trace required for rendering/jank/heap validation'};
+ try {
+ for(const mode of ['lite','still','cinema']){
+ if(cancel)break;
+ await selectMode(mode);await sleep(450);
+ output.textContent='測試中：'+mode+'（請保持 Chrome 在前景）';
+ data.modes[mode]=await sample(mode,duration);
+ if(data.modes[mode].valid===false)break;
+ }
+ if(performance.memory && Number.isFinite(performance.memory.usedJSHeapSize)){data.memory={supported:true,usedJSHeapBytes:performance.memory.usedJSHeapSize,note:'Chrome only; single sample, not leak diagnosis'}}
+ }catch(e){data.error=String(e)}
+ finally {try{await selectMode(old)}catch(e){data.restoreError=String(e)}data.errors=errors.slice(baselineErrors);data.finishedAt=new Date().toISOString();data.complete=['lite','still','cinema'].every(m=>data.modes[m]&&data.modes[m].valid)&&!data.error&&data.errors.length===0;lastReport=JSON.stringify(data,null,2);output.textContent=lastReport;running=false;}
+};
+})();
+</script><button type="button" id="diagOpen">7D 診斷</button>
+<section id="diagPanel" hidden>
+<h3>V2.3A-7D｜優化候選效果隔離</h3>
+<p>使用已優化的 7D 電影模式作為基準，逐一隔離效果；請與獨立 7C 頁的相同 Mac Chrome 測試比較。此實驗僅量測 rAF 回呼節奏，結果需搭配 DevTools Performance Trace 才能判斷繪製與合成瓶頸。</p>
+<label for="diagSeconds">每組秒數：</label><select id="diagSeconds"><option value="15">15 秒（預檢）</option><option value="30" selected>30 秒</option><option value="60">60 秒</option></select>
+<div><button id="diagStart">開始 A/B</button><button id="diagStop">停止</button><button id="diagCopy">複製 JSON</button><button id="diagClose">關閉</button></div>
+<pre id="diagOut">未開始。請保持 Chrome 分頁可見，並避免同時執行「長測」。</pre>
+</section>
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id),st=$('stage'),out=$('diagOut');let active=false,stop=false,lastReport='';
+const scenarios=[
+ {id:'baseline',label:'7D 優化電影模式'},
+ {id:'no-canvas',label:'電影：停用粒子 Canvas'},
+ {id:'canvas-20',label:'電影：Canvas 維持預設 20 次（比較）'},
+ {id:'no-beam',label:'電影：停用光束'},
+ {id:'no-ecg',label:'電影：停用 ECG 動畫'}];
+const delay=ms=>new Promise(r=>setTimeout(r,ms));
+const rd=x=>Math.round(x*10)/10;
+async function mode(next){for(let i=0;i<4&&st.dataset.mode!==next;i++){$('modeBtn').click();await delay(120)}if(st.dataset.mode!==next)throw Error('cannot select mode '+next)}
+function apply(id){st.dataset.diagnostic=id;window.__v23DiagCanvas20=(id==='canvas-20');window.__v23DiagNoCanvas=(id==='no-canvas')}
+function clear(){delete st.dataset.diagnostic;window.__v23DiagCanvas20=false;window.__v23DiagNoCanvas=false}
+async function sample(sec,id){
+ let last=0,frames=0,done=false,unfocused=false,raf=0;const gaps=[];const start=performance.now();
+ return new Promise(resolve=>{
+ function finish(){if(done)return;done=true;cancelAnimationFrame(raf);const elapsed=(performance.now()-start)/1000;gaps.sort((a,b)=>a-b);const pct=p=>gaps.length?rd(gaps[Math.floor((gaps.length-1)*p)]):null;
+ resolve({scenario:id,seconds:rd(elapsed),frames,rafHz:rd(frames/Math.max(elapsed,.001)),p95Ms:pct(.95),p99Ms:pct(.99),over34:gaps.filter(x=>x>34).length,over50:gaps.filter(x=>x>50).length,valid:!stop&&!unfocused&&elapsed>=sec*.95})}
+ function tick(t){if(done)return;if(document.hidden)unfocused=true;if(stop||document.hidden||performance.now()-start>=sec*1000){finish();return}if(last)gaps.push(t-last);last=t;frames++;raf=requestAnimationFrame(tick)}
+ raf=requestAnimationFrame(tick);
+ const interval=setInterval(()=>{if(done){clearInterval(interval);return}if(stop||document.hidden||performance.now()-start>=sec*1000){finish();clearInterval(interval)}},250)
+ })
+}
+$('diagOpen').onclick=()=>{$('diagPanel').hidden=false};
+$('diagClose').onclick=()=>{$('diagPanel').hidden=true};
+$('diagStop').onclick=()=>{stop=true;out.textContent+='\n停止中'};
+$('diagCopy').onclick=async()=>{try{await navigator.clipboard.writeText(lastReport)}catch(e){const t=document.createElement('textarea');t.value=lastReport;document.body.append(t);t.select();document.execCommand('copy');t.remove()}out.textContent=lastReport+'\n已嘗試複製'};
+$('diagStart').onclick=async()=>{
+ if(active)return;active=true;stop=false;
+ const previousMode=st.dataset.mode,previousDiag=st.dataset.diagnostic,previousCanvas20=!!window.__v23DiagCanvas20,previousNoCanvas=!!window.__v23DiagNoCanvas;const sec=Number($('diagSeconds').value);
+ const data={test:'V2.3A-7D Cinema Candidate A/B diagnostic',timestamp:new Date().toISOString(),userAgent:navigator.userAgent,viewport:{width:innerWidth,height:innerHeight,dpr:devicePixelRatio},secondsPerScenario:sec,scenarios:[],note:'Separate isolated scenario comparisons on preview; rAF does not equal GPU frame presentation FPS. A/B may vary with browser state; confirm by repeat + DevTools trace.'};
+ try{await mode('cinema');for(const scenario of scenarios){if(stop)break;apply(scenario.id);await delay(600);out.textContent='測試中：'+scenario.label;const result=await sample(sec,scenario.id);data.scenarios.push(result);if(!result.valid)break}}
+ catch(e){data.error=String(e)}
+ finally{clear();try{await mode(previousMode||'lite')}catch(e){data.restoreError=String(e)}if(previousDiag)st.dataset.diagnostic=previousDiag;window.__v23DiagCanvas20=previousCanvas20;window.__v23DiagNoCanvas=previousNoCanvas;data.completed= data.scenarios.length===scenarios.length&&data.scenarios.every(x=>x.valid)&&!data.error;data.finishedAt=new Date().toISOString();lastReport=JSON.stringify(data,null,2);out.textContent=lastReport;active=false}
+};
+})();
+</script></body></html>
